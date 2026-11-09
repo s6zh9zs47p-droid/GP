@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gran Premio">
+<title>El Gran Premio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%8E%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e1116;--bg2:#151a22;--card:#1b212b;--card2:#222a36;--line:#2c3644;
+  --txt:#e9eef5;--dim:#93a0b3;--dim2:#6b7889;--acc:#ffd23f;--ok:#3ddc84;--no:#ff5c72;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);height:100%}
+body{font:16px/1.4 'Archivo',system-ui,-apple-system,sans-serif;overscroll-behavior:none}
+h1,h2,h3,.negra{font-family:'Archivo Black','Archivo',sans-serif;font-weight:400;letter-spacing:-.01em}
+button{font:inherit;color:inherit;touch-action:manipulation}
+.hide{display:none!important}
+.pantalla{position:fixed;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* ---------- menú ---------- */
+#menu .wrap{max-width:860px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) max(16px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 28px) max(16px,env(safe-area-inset-left))}
+.tope{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.tope h1{margin:0;font-size:26px;line-height:1}
+.tope h1 span{color:var(--acc)}
+.tope small{display:block;color:var(--dim2);font-size:12px;margin-top:4px;font-family:'Archivo',sans-serif;letter-spacing:0}
+.grilla{display:grid;gap:12px}
+@media (min-width:720px){.grilla{grid-template-columns:1fr 1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card h2{margin:0 0 10px;font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim)}
+.card h2 b{color:var(--acc);font-weight:400}
+.btn{border:1px solid var(--line);background:var(--card2);border-radius:11px;padding:11px 14px;font-weight:700;font-size:14.5px;cursor:pointer}
+.btn:active{transform:translateY(1px)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#14181f}
+.btn.sm{padding:8px 11px;font-size:13px}
+.btn.gh{background:transparent}
+.fila{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--dim);font-size:13.5px}
+.tiny{color:var(--dim2);font-size:12px;line-height:1.4}
+.seg{display:flex;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:9px 6px;font-weight:700;font-size:13.5px;color:var(--dim);cursor:pointer}
+.seg button.on{background:var(--acc);color:#14181f}
+.volbox{display:flex;gap:14px;align-items:center;margin:4px 0 10px}
+#volRueda{width:112px;height:112px;flex:none}
+#volRueda .giro{transition:transform .05s linear;transform-origin:60px 60px}
+.volest{flex:1;min-width:0}
+.volest b{display:block;font-size:16px;margin-bottom:2px}
+.barra{height:10px;background:var(--bg2);border:1px solid var(--line);border-radius:99px;position:relative;margin:8px 0 2px;overflow:hidden}
+.barra i{position:absolute;top:0;bottom:0;left:50%;width:0;background:var(--acc)}
+.barra::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:var(--dim2);margin-left:-1px}
+.ctl{margin-top:12px}
+.ctl label{display:flex;justify-content:space-between;font-size:13.5px;font-weight:600;margin-bottom:6px}
+.ctl label span{color:var(--acc)}
+input[type=range]{width:100%;accent-color:var(--acc)}
+input[type=text]{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:11px 12px;font:600 16px 'Archivo',sans-serif}
+.chk{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px;cursor:pointer}
+.ctl label.chk{justify-content:flex-start;margin-bottom:0;font-weight:600}
+.ctl label.chk span{color:var(--txt)}
+.chk:first-of-type{border-top:0}
+.chk input{width:20px;height:20px;accent-color:var(--acc);flex:none}
+.chk span{flex:1}
+.chk small{display:block;color:var(--dim2);font-size:12px}
+.pistas{display:grid;gap:8px;grid-template-columns:repeat(3,1fr)}
+.pista{border:1px solid var(--line);background:var(--bg2);border-radius:12px;padding:8px;cursor:pointer;text-align:center}
+.pista canvas{width:100%;height:auto;aspect-ratio:1;display:block}
+.pista b{display:block;font-size:12.5px;line-height:1.2;margin-top:4px}
+.pista small{display:block;color:var(--dim2);font-size:11px;margin-top:2px}
+.pista.on{border-color:var(--acc);background:var(--card2)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--bg2);border-radius:99px;padding:7px 12px;font-weight:700;font-size:13px;cursor:pointer;color:var(--dim)}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#14181f}
+.esc i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.largar{width:100%;font-family:'Archivo Black',sans-serif;font-size:22px;padding:16px;margin-top:14px;letter-spacing:.02em}
+details{margin-top:12px}
+details summary{cursor:pointer;font-weight:700;color:var(--dim);font-size:14px}
+details p{margin:8px 0;font-size:13.5px;color:var(--dim)}
+.aviso{background:#3a2a0b;border:1px solid #8a6a1a;color:#ffe08a;border-radius:11px;padding:10px 12px;font-size:13.5px;margin:10px 0}
+.record{font-size:12.5px;color:var(--dim)}
+.record b{color:var(--acc)}
+
+/* ---------- carrera ---------- */
+#carrera{overflow:hidden;background:#3e8a3c;touch-action:none;user-select:none;-webkit-user-select:none}
+#cv{position:absolute;inset:0;display:block}
+#toque{position:absolute;inset:0;touch-action:none}
+.hud{position:absolute;pointer-events:none;font-family:'Archivo Black',sans-serif;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+#hudIzq{left:calc(env(safe-area-inset-left) + 12px);top:calc(env(safe-area-inset-top) + 10px);background:rgba(0,0,0,.42);border-radius:12px;padding:7px 11px;line-height:1.15}
+#hudIzq .v{font-size:13px;letter-spacing:.06em;color:var(--acc)}
+#hudIzq .t{font-size:24px}
+#hudIzq .m{font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;opacity:.85}
+#hudIzq .k{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px}
+#hudIzq .k b{font-family:'Archivo Black',sans-serif;font-size:19px;font-weight:400}
+#hudMsg{left:50%;top:38%;transform:translate(-50%,-50%);font-size:22px;background:rgba(0,0,0,.6);padding:10px 18px;border-radius:12px;text-align:center;white-space:nowrap}
+#hudVuelta{left:50%;top:24%;transform:translate(-50%,-50%);text-align:center;background:rgba(0,0,0,.6);padding:10px 18px;border-radius:12px;font-size:20px}
+#hudVuelta small{display:block;font-family:'Archivo',sans-serif;font-size:13px;font-weight:700}
+.botonesC{position:absolute;top:calc(env(safe-area-inset-top) + 8px);left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:5}
+.botonesC button{width:44px;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.45);font-size:19px;cursor:pointer}
+.pedal{position:absolute;top:0;bottom:0;pointer-events:none;display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(env(safe-area-inset-bottom) + 14px)}
+.pedal div{width:76px;height:44%;max-height:230px;min-height:110px;border-radius:16px;border:2px solid rgba(255,255,255,.35);background:rgba(0,0,0,.22);display:flex;align-items:flex-end;justify-content:center;padding-bottom:12px;font:800 12px 'Archivo',sans-serif;letter-spacing:.08em;color:rgba(255,255,255,.85)}
+.pedal.on div{background:rgba(255,210,63,.45);border-color:var(--acc)}
+#pedFreno.on div{background:rgba(255,92,114,.5);border-color:var(--no)}
+#pedFreno{left:0;padding-left:env(safe-area-inset-left)}
+#pedAcel{right:0;padding-right:env(safe-area-inset-right)}
+#luces{position:absolute;left:50%;top:16%;transform:translateX(-50%);display:flex;gap:10px;background:#111;padding:10px 14px;border-radius:14px;border:2px solid #333;pointer-events:none}
+#luces i{width:34px;height:34px;border-radius:50%;background:#2a0b0e;box-shadow:inset 0 0 6px #000}
+#luces i.on{background:#ff2a3c;box-shadow:0 0 16px #ff2a3c}
+#luces.verde i{background:#22e06b;box-shadow:0 0 16px #22e06b}
+#ayudaLuz{position:absolute;left:50%;top:calc(16% + 70px);transform:translateX(-50%);text-align:center;pointer-events:none;width:min(92%,520px)}
+#ayudaLuz div{display:inline-block;background:rgba(0,0,0,.62);color:#fff;border-radius:10px;padding:8px 14px;margin:3px 0;font-weight:800;font-size:14.5px}
+.capa{position:absolute;inset:0;background:rgba(6,9,14,.86);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.capa .card{max-width:420px;width:100%;text-align:center}
+.capa h3{margin:0 0 12px;font-size:22px}
+.capa .btn{width:100%;margin-top:8px}
+
+/* ---------- final ---------- */
+#final .wrap{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 28px)}
+.gran{font-family:'Archivo Black',sans-serif;font-size:48px;color:var(--acc);text-align:center;line-height:1;margin:6px 0}
+.vueltas{list-style:none;padding:0;margin:10px 0}
+.vueltas li{display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px solid var(--line);font-weight:600}
+.vueltas li.mej{color:var(--acc)}
+#gira{position:fixed;inset:0;z-index:40;background:rgba(6,9,14,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:10px}
+#gira b{font-size:20px}
+</style>
+</head>
+<body>
+
+<!-- ================= MENÚ ================= -->
+<section id="menu" class="pantalla">
+ <div class="wrap">
+  <div class="tope">
+    <div style="font-size:38px">🏎️</div>
+    <h1>EL GRAN <span>PREMIO</span><small>La Timba Tabernera · práctica en tu celular</small></h1>
+  </div>
+  <div id="avisoSeguro" class="aviso hide"></div>
+  <div class="grilla">
+   <div class="card">
+     <h2><b>1.</b> El volante</h2>
+     <div class="seg" id="segModo">
+       <button data-m="incl">📱 Girando el celular</button>
+       <button data-m="dedo">👆 Con el dedo</button>
+     </div>
+     <div id="bloqueIncl">
+       <div class="volbox">
+         <svg id="volRueda" viewBox="0 0 120 120" aria-hidden="true">
+           <g class="giro">
+             <circle cx="60" cy="60" r="50" fill="none" stroke="#e9eef5" stroke-width="11"/>
+             <circle cx="60" cy="60" r="50" fill="none" stroke="#151a22" stroke-width="2" stroke-dasharray="3 9"/>
+             <path d="M14 58 H44 M76 58 H106 M60 66 V108" stroke="#e9eef5" stroke-width="10" stroke-linecap="round"/>
+             <circle cx="60" cy="60" r="15" fill="#222a36" stroke="#e9eef5" stroke-width="5"/>
+             <rect x="55" y="5" width="10" height="13" rx="3" fill="#ffd23f"/>
+           </g>
+         </svg>
+         <div class="volest">
+           <b id="volTit">Volante apagado</b>
+           <div class="tiny" id="volTxt">Tocá “Activar volante” y girá el celular.</div>
+           <div class="barra"><i id="volBarra"></i></div>
+         </div>
+       </div>
+       <div class="fila">
+         <button class="btn pri" id="btnActivar">Activar volante</button>
+         <button class="btn" id="btnCentrar">🎯 Centrar acá</button>
+       </div>
+       <div class="ctl">
+         <label>Cuánto girar para doblar a fondo <span id="sensTxt">30°</span></label>
+         <input type="range" id="sens" min="12" max="60" step="1">
+         <div class="tiny">Menos grados = más sensible. Al largar se centra solo: durante las luces rojas sostené el celular derecho.</div>
+       </div>
+     </div>
+     <div id="bloqueDedo" class="hide">
+       <p class="muted" style="margin:10px 0 0">Apoyá el pulgar en el medio de la pantalla y deslizalo a los costados para doblar. Los pedales quedan angostos en los bordes.</p>
+     </div>
+     <div class="ctl">
+       <label class="chk"><input type="checkbox" id="chkAuto"><span>Acelera solo<small>Solo manejás y frenás. Sin esto, el pedal derecho acelera.</small></span></label>
+       <label class="chk"><input type="checkbox" id="chkSonido"><span>Sonido del motor</span></label>
+     </div>
+     <div class="ctl">
+       <label>Ayuda de manejo</label>
+       <div class="seg" id="segAyuda">
+         <button data-a="0">Nada</button><button data-a="1">Un poco</button><button data-a="2">Mucha</button>
+       </div>
+     </div>
+   </div>
+
+   <div class="card">
+     <h2><b>2.</b> La carrera</h2>
+     <div class="pistas" id="pistas"></div>
+     <div class="ctl">
+       <label>Vueltas</label>
+       <div class="chips" id="chipsVueltas"></div>
+     </div>
+     <div class="ctl">
+       <label>Tu nombre</label>
+       <input type="text" id="nombre" maxlength="16" placeholder="Ej.: Facu" autocomplete="off">
+     </div>
+     <div class="ctl">
+       <label>Escudería</label>
+       <div class="chips" id="chipsEsc"></div>
+     </div>
+     <div class="record" id="recordTxt" style="margin-top:12px"></div>
+   </div>
+  </div>
+  <button class="btn pri largar" id="btnLargar">🏁 LARGAR</button>
+  <details>
+    <summary>Cómo se maneja</summary>
+    <p><b>Girando el celular:</b> agarralo acostado con las dos manos, como un volante, con la pantalla mirándote. Girarlo hacia la derecha dobla a la derecha. No hace falta tenerlo parado del todo: inclinado hacia atrás también anda.</p>
+    <p><b>Pedales:</b> con los pulgares. Lado izquierdo de la pantalla frena, lado derecho acelera. Si te cansa, prendé “Acelera solo”.</p>
+    <p><b>Pasto:</b> frena. Si te vas lejos o vas de contramano, te devuelve a la pista casi parado: cortar camino no paga.</p>
+    <p><b>En iPhone</b> abrila en Safari desde el link (dentro de otras apps el sensor viene bloqueado). El permiso lo pide Safari al tocar “Activar volante”: tocá Permitir. Si lo rechazaste sin querer, cerrá Safari del todo y abrí el link de nuevo.</p>
+    <p><b>Pantalla completa:</b> en Android se pone sola al largar. En iPhone, Compartir → “Agregar a inicio” y abrila desde el ícono.</p>
+    <p class="tiny">Juego sin fines de lucro hecho entre amigos. Las escuderías son inventadas. Trazados de las pistas basados en el repositorio abierto f1-circuits, © 2019-2025 Tomislav Bacinger, licencia MIT.</p>
+  </details>
+ </div>
+</section>
+
+<!-- ================= CARRERA ================= -->
+<section id="carrera" class="pantalla hide">
+  <canvas id="cv"></canvas>
+  <div id="pedFreno" class="pedal"><div>FRENO</div></div>
+  <div id="pedAcel" class="pedal"><div>ACEL.</div></div>
+  <div id="toque"></div>
+  <div id="hudIzq" class="hud"><div class="v" id="hVuelta">VUELTA 1/3</div><div class="t" id="hTiempo">0:00.0</div><div class="k"><b id="hVel">0</b> km/h</div><div class="m" id="hMejor"></div></div>
+  <div id="hudMsg" class="hud hide"></div>
+  <div id="hudVuelta" class="hud hide"></div>
+  <div class="botonesC">
+    <button id="btnCentrarC" title="Centrar volante">🎯</button>
+    <button id="btnPausa" title="Pausa">⏸</button>
+  </div>
+  <div id="luces" class="hide"><i></i><i></i><i></i><i></i><i></i></div>
+  <div id="ayudaLuz" class="hide"></div>
+  <div id="capaPausa" class="capa hide">
+    <div class="card">
+      <h3>Pausa</h3>
+      <button class="btn pri" id="btnSeguir">▶ Seguir</button>
+      <button class="btn" id="btnReiniciar">↺ Largar de nuevo</button>
+      <button class="btn gh" id="btnSalir">Salir al menú</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FINAL ================= -->
+<section id="final" class="pantalla hide">
+  <div class="wrap">
+    <div class="card">
+      <div class="tiny" style="text-align:center;letter-spacing:.12em;text-transform:uppercase" id="fPista"></div>
+      <div class="gran" id="fTiempo">0:00.0</div>
+      <div style="text-align:center;font-weight:700" id="fRecord"></div>
+      <ul class="vueltas" id="fVueltas"></ul>
+      <button class="btn pri" style="width:100%" id="btnOtra">↺ Otra vez</button>
+      <button class="btn gh" style="width:100%;margin-top:8px" id="btnMenu">Menú</button>
+    </div>
+  </div>
+</section>
+
+<div id="gira" class="hide">
+  <div style="font-size:54px">📱↻</div>
+  <b>Acostá el celular</b>
+  <div class="muted">Se maneja de costado, como un volante. Si no gira la pantalla, sacá el bloqueo de rotación.</div>
+  <button class="btn sm gh" id="btnGiraIgual">Jugar parado igual</button>
+</div>
+
+<script>
+/* El Gran Premio — app aparte de La Timba Tabernera. Un solo archivo, sin servidor.
+   v1: práctica de a uno, volante girando el celular (en el plano de la pantalla), pedales con los pulgares, vista de atrás en 3D. */
+'use strict';
+/* Trazados de las pistas: derivados de bacinger/f1-circuits (https://github.com/bacinger/f1-circuits).
+   MIT License — Copyright (c) 2019-2025 Tomislav Bacinger
+   Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software
+   is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+   LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+const PISTAS={"ar-1952":{"t":"Circuito de Buenos Aires","loc":"Buenos Aires","len":4322,"firstgp":1953,"p":[-135,-150,-131,-156,-126,-163,-122,-170,-118,-176,-113,-183,-109,-190,-104,-196,-100,-203,-95,-210,-91,-216,-87,-223,-82,-230,-78,-236,-73,-243,-69,-249,-64,-256,-60,-263,-55,-269,-51,-276,-46,-283,-42,-289,-37,-296,-33,-303,-28,-309,-24,-316,-20,-322,-15,-329,-10,-336,-6,-342,-1,-349,3,-355,8,-362,12,-368,17,-375,22,-382,26,-388,31,-394,36,-401,41,-407,46,-413,51,-419,57,-425,63,-430,71,-432,79,-433,86,-431,94,-428,100,-424,106,-418,112,-412,116,-406,120,-399,123,-392,125,-384,126,-376,126,-368,126,-360,127,-352,127,-344,127,-336,127,-328,127,-320,127,-312,127,-304,126,-296,126,-288,126,-280,125,-272,122,-264,119,-257,115,-250,110,-244,105,-238,100,-232,95,-226,89,-220,84,-214,78,-208,73,-202,67,-196,62,-190,57,-184,51,-179,46,-173,40,-167,35,-161,29,-155,24,-150,18,-144,13,-138,7,-132,2,-126,-3,-120,-9,-114,-14,-108,-19,-102,-24,-96,-29,-89,-31,-82,-32,-74,-31,-66,-29,-58,-25,-51,-19,-46,-12,-41,-5,-38,3,-36,11,-36,18,-38,26,-41,33,-44,40,-48,47,-51,54,-55,61,-58,69,-62,76,-66,83,-69,90,-73,97,-77,104,-80,111,-84,118,-88,125,-92,132,-95,139,-99,147,-103,154,-107,161,-111,168,-114,174,-118,181,-122,188,-127,195,-131,200,-137,205,-144,208,-151,210,-158,212,-166,213,-174,213,-182,212,-190,211,-198,209,-206,206,-213,202,-220,199,-228,196,-235,194,-243,192,-251,191,-259,191,-266,191,-274,191,-282,192,-290,193,-298,194,-306,194,-314,195,-322,196,-330,197,-338,199,-346,200,-354,202,-362,206,-369,210,-376,215,-382,220,-388,227,-393,233,-397,241,-400,248,-403,256,-404,264,-405,272,-405,280,-404,288,-402,295,-399,302,-396,309,-391,315,-386,321,-381,325,-374,329,-367,332,-360,335,-352,337,-344,337,-336,336,-328,335,-320,334,-312,333,-304,332,-297,332,-289,331,-281,330,-273,329,-265,328,-257,327,-249,326,-241,326,-233,325,-225,324,-217,323,-209,322,-201,321,-193,320,-185,320,-177,319,-169,318,-161,317,-153,316,-145,315,-137,314,-130,313,-122,313,-114,312,-106,311,-98,310,-90,309,-82,308,-74,307,-66,306,-58,306,-50,305,-42,304,-34,303,-26,302,-18,301,-10,300,-2,299,6,298,14,297,21,296,29,295,37,294,45,293,53,292,61,291,69,290,77,289,85,288,93,287,101,285,109,284,116,281,124,277,131,274,138,270,145,266,152,261,159,256,165,251,171,246,177,240,183,234,188,228,193,221,198,215,202,208,206,201,210,193,213,186,216,178,218,170,219,162,221,155,223,147,224,139,226,131,227,123,228,115,230,107,231,99,232,92,233,84,234,76,236,68,237,60,238,52,239,44,240,36,241,28,242,20,243,12,244,4,245,-4,246,-12,246,-20,247,-28,246,-35,244,-42,240,-47,234,-51,227,-52,219,-51,211,-49,203,-45,196,-39,191,-32,187,-25,185,-17,183,-9,182,-1,181,7,180,15,179,23,178,31,176,39,175,46,173,54,170,60,165,66,159,71,154,77,149,84,144,92,142,100,140,108,140,116,139,124,138,132,137,139,137,147,135,155,134,163,131,169,126,175,121,180,114,184,107,187,100,188,92,189,84,190,76,190,68,191,60,192,52,192,44,192,36,193,28,193,20,193,12,191,4,189,-3,184,-10,179,-16,173,-21,165,-24,158,-26,150,-27,142,-26,135,-23,127,-20,120,-16,113,-13,106,-9,99,-6,91,-2,84,2,77,5,70,9,63,13,56,16,49,20,42,24,35,28,28,31,20,35,13,39,6,43,-1,46,-8,50,-15,54,-22,58,-29,61,-36,65,-43,69,-50,73,-57,76,-64,80,-71,84,-78,88,-85,92,-92,95,-99,99,-106,103,-113,107,-120,111,-127,115,-134,119,-141,123,-148,127,-152,134,-154,142,-154,149,-150,156,-145,163,-139,168,-133,173,-126,177,-120,183,-116,190,-116,197,-119,205,-124,212,-128,218,-133,224,-139,230,-144,236,-149,242,-155,248,-160,254,-166,259,-172,264,-180,268,-187,270,-195,272,-203,273,-211,274,-219,276,-227,277,-234,278,-242,279,-250,281,-258,282,-266,283,-274,284,-282,285,-290,286,-298,287,-306,288,-314,289,-322,291,-329,292,-337,293,-345,294,-353,295,-361,296,-369,297,-377,298,-385,299,-393,300,-401,301,-409,302,-417,303,-425,304,-433,305,-441,306,-448,307,-456,308,-464,309,-472,310,-480,311,-488,311,-495,307,-501,302,-504,294,-506,287,-507,279,-505,271,-502,264,-497,257,-492,252,-485,247,-478,243,-471,239,-464,236,-456,235,-448,237,-442,242,-435,245,-427,246,-419,244,-411,241,-405,237,-398,232,-392,227,-387,221,-382,215,-377,208,-372,202,-367,196,-362,189,-358,183,-353,176,-348,170,-344,163,-339,157,-335,150,-330,143,-326,137,-321,130,-317,123,-312,117,-308,110,-303,104,-299,97,-295,90,-290,84,-286,77,-281,70,-277,64,-272,57,-268,50,-264,44,-259,37,-255,30,-250,24,-246,17,-241,10,-237,4,-233,-3,-228,-10,-224,-16,-219,-23,-215,-30,-211,-36,-206,-43,-202,-50,-197,-56,-193,-63,-188,-70,-184,-76,-180,-83,-175,-90,-171,-96,-166,-103,-162,-110,-158,-116,-153,-123,-149,-130,-144,-136,-140,-143]},"br-1940":{"t":"Circuito de San Pablo","loc":"San Pablo","len":4309,"firstgp":1973,"p":[-190,307,-189,314,-187,322,-185,330,-183,338,-181,345,-179,353,-177,361,-175,369,-173,376,-171,384,-169,392,-167,400,-165,407,-163,415,-161,423,-159,431,-157,438,-155,446,-153,454,-151,462,-149,469,-147,477,-145,485,-143,493,-141,500,-139,508,-137,516,-135,524,-133,532,-131,539,-129,547,-126,555,-124,562,-121,570,-117,577,-113,584,-108,590,-103,596,-97,601,-90,605,-82,606,-74,605,-66,604,-59,600,-53,595,-47,589,-42,584,-36,578,-31,572,-25,566,-19,561,-12,557,-4,555,4,556,11,558,19,562,26,565,32,570,39,574,46,577,54,581,61,584,69,586,76,589,84,590,92,592,100,592,108,593,116,593,124,592,132,591,140,589,148,588,155,585,163,582,170,579,177,575,184,571,191,567,197,562,203,557,209,551,215,546,220,540,225,533,229,527,233,520,237,513,241,506,244,498,247,491,249,483,251,475,254,468,256,460,259,452,261,445,263,437,265,429,268,422,270,414,272,406,274,399,277,391,279,383,281,376,283,368,285,360,287,352,289,345,291,337,293,329,295,321,297,313,299,306,301,298,303,290,305,282,306,275,308,267,310,259,312,251,314,244,316,236,318,228,320,220,322,213,324,205,326,197,328,189,330,181,332,174,334,166,336,158,338,150,340,143,342,135,344,127,346,119,348,112,350,104,352,96,354,88,356,81,358,73,360,65,362,58,364,50,366,42,368,34,370,27,372,19,374,11,376,3,378,-4,380,-12,382,-20,384,-28,386,-35,388,-43,391,-51,393,-59,395,-66,397,-74,399,-82,401,-90,403,-97,405,-105,407,-113,408,-121,408,-129,406,-137,403,-144,398,-150,392,-155,385,-159,377,-163,370,-165,362,-167,354,-168,346,-170,338,-171,331,-173,323,-175,315,-176,307,-178,299,-179,291,-180,283,-181,275,-181,267,-181,259,-180,251,-179,244,-178,236,-175,228,-172,221,-169,215,-164,208,-160,201,-156,195,-151,189,-145,183,-140,178,-134,173,-127,168,-121,163,-115,158,-108,154,-102,149,-96,144,-89,139,-83,134,-76,130,-70,125,-63,120,-57,115,-51,111,-44,106,-38,101,-31,97,-25,92,-18,87,-12,83,-5,78,1,73,8,69,15,64,21,60,28,55,34,50,41,46,47,41,54,36,60,31,67,27,73,22,79,17,86,12,92,7,99,3,105,-2,112,-7,118,-12,124,-16,131,-21,137,-27,143,-33,148,-40,152,-47,155,-55,157,-63,158,-71,159,-79,159,-87,159,-95,158,-103,157,-111,155,-118,152,-126,149,-133,146,-140,142,-147,138,-153,133,-159,128,-164,121,-168,115,-171,107,-173,100,-175,92,-177,84,-179,76,-181,68,-183,61,-184,53,-186,45,-187,37,-189,29,-190,21,-191,13,-192,5,-193,-3,-193,-11,-193,-19,-193,-27,-191,-34,-187,-41,-181,-47,-174,-50,-166,-51,-158,-49,-150,-46,-144,-42,-137,-37,-131,-32,-124,-28,-118,-24,-110,-20,-102,-19,-94,-18,-87,-19,-79,-22,-72,-26,-66,-31,-61,-37,-57,-44,-54,-52,-53,-60,-53,-68,-54,-76,-57,-83,-62,-90,-66,-96,-71,-102,-77,-108,-83,-114,-88,-119,-94,-125,-100,-131,-105,-136,-111,-142,-116,-148,-121,-154,-126,-161,-131,-167,-135,-174,-138,-181,-141,-189,-143,-197,-145,-204,-147,-212,-149,-220,-150,-228,-152,-236,-153,-244,-154,-252,-154,-260,-152,-267,-148,-274,-143,-280,-135,-283,-128,-283,-120,-280,-114,-275,-109,-269,-103,-263,-98,-257,-93,-251,-87,-245,-82,-239,-77,-233,-71,-227,-66,-221,-61,-215,-55,-209,-50,-203,-44,-197,-38,-193,-31,-188,-24,-184,-17,-181,-9,-179,-1,-177,7,-176,14,-175,22,-175,30,-176,38,-177,46,-178,54,-180,61,-183,69,-187,75,-191,82,-196,88,-201,94,-207,99,-213,103,-219,108,-226,113,-233,117,-239,121,-246,126,-253,130,-260,134,-266,138,-273,142,-280,147,-287,151,-294,155,-301,159,-307,163,-314,167,-321,171,-328,176,-335,180,-342,184,-348,188,-355,192,-362,196,-369,198,-377,197,-385,194,-392,189,-398,183,-403,176,-407,168,-410,161,-413,153,-416,146,-419,138,-422,131,-424,123,-427,116,-430,108,-433,101,-436,93,-438,86,-440,78,-441,70,-441,62,-441,54,-440,46,-439,38,-437,30,-436,22,-434,14,-433,6,-431,-1,-429,-9,-428,-17,-426,-25,-424,-32,-421,-40,-418,-47,-415,-55,-412,-62,-409,-69,-406,-77,-403,-84,-399,-91,-395,-98,-392,-105,-388,-112,-384,-119,-380,-126,-376,-132,-371,-138,-366,-144,-360,-150,-355,-156,-349,-161,-344,-167,-337,-171,-331,-175,-324,-179,-317,-183,-310,-186,-302,-189,-295,-191,-287,-193,-280,-196,-272,-198,-264,-200,-257,-202,-249,-204,-241,-206,-233,-207,-225,-209,-218,-211,-210,-213,-202,-214,-194,-216,-186,-217,-178,-218,-171,-220,-163,-221,-155,-223,-147,-225,-139,-227,-131,-229,-124,-231,-116,-233,-108,-234,-100,-236,-93,-238,-85,-240,-77,-242,-69,-244,-61,-246,-54,-248,-46,-250,-38,-251,-30,-253,-22,-253,-14,-254,-6,-254,2,-254,10,-254,18,-253,26,-253,34,-252,42,-251,50,-250,57,-249,65,-247,73,-245,81,-244,89,-242,97,-240,104,-238,112,-236,120,-234,128,-232,135,-230,143,-228,151,-226,159,-224,167,-223,174,-221,182,-219,190,-217,198,-215,206,-213,213,-211,221,-210,229,-208,237,-206,244,-204,252,-202,260,-200,268,-198,276,-196,283,-194,291,-192,299]},"it-1922":{"t":"Circuito de Monza","loc":"Monza","len":5793,"firstgp":1950,"p":[-415,492,-414,484,-413,476,-413,468,-412,460,-411,452,-410,444,-410,436,-409,428,-408,420,-407,412,-407,404,-406,396,-405,388,-405,380,-404,373,-403,365,-403,357,-402,349,-401,341,-400,333,-400,325,-399,317,-398,309,-398,301,-397,293,-396,285,-396,277,-395,269,-394,261,-394,253,-393,245,-392,237,-392,229,-391,221,-390,213,-390,205,-389,197,-388,189,-388,181,-387,173,-386,165,-385,157,-385,149,-384,141,-383,133,-383,125,-382,118,-381,110,-381,102,-380,94,-379,86,-379,78,-378,70,-377,62,-376,54,-376,46,-375,38,-374,30,-374,22,-373,14,-372,6,-372,-2,-371,-10,-370,-18,-369,-26,-369,-34,-368,-42,-367,-50,-366,-58,-366,-66,-365,-74,-364,-82,-363,-90,-363,-98,-362,-106,-361,-113,-360,-121,-356,-128,-349,-131,-341,-130,-333,-129,-325,-131,-319,-136,-316,-143,-317,-151,-319,-159,-321,-167,-323,-175,-325,-182,-327,-190,-329,-198,-331,-206,-333,-213,-335,-221,-337,-229,-339,-237,-341,-244,-342,-252,-344,-260,-345,-268,-346,-276,-346,-284,-347,-292,-347,-300,-346,-308,-346,-316,-345,-324,-345,-332,-344,-340,-343,-348,-343,-356,-342,-364,-342,-372,-341,-380,-340,-388,-340,-396,-339,-404,-339,-412,-338,-420,-337,-428,-337,-436,-336,-443,-335,-451,-334,-459,-333,-467,-331,-475,-329,-483,-327,-491,-325,-498,-323,-506,-320,-513,-317,-521,-314,-528,-311,-536,-308,-543,-304,-550,-300,-557,-296,-564,-292,-571,-288,-578,-283,-584,-278,-591,-273,-597,-268,-603,-263,-609,-257,-615,-252,-620,-246,-626,-240,-632,-234,-637,-228,-642,-222,-647,-216,-652,-209,-657,-203,-661,-196,-665,-189,-670,-182,-674,-175,-678,-168,-682,-161,-685,-154,-689,-147,-692,-139,-696,-132,-699,-125,-701,-117,-704,-109,-707,-102,-709,-94,-711,-86,-713,-79,-715,-71,-717,-63,-719,-55,-721,-47,-722,-39,-723,-32,-724,-24,-725,-16,-726,-8,-727,0,-728,8,-728,16,-729,24,-730,32,-730,40,-731,48,-732,56,-732,64,-733,72,-734,80,-735,88,-735,96,-736,104,-737,112,-737,120,-738,128,-738,136,-739,144,-740,152,-740,160,-741,168,-741,176,-742,184,-743,192,-743,200,-744,208,-744,216,-745,224,-745,231,-746,239,-746,247,-747,255,-747,263,-748,271,-748,279,-749,287,-749,295,-750,303,-750,311,-751,319,-751,327,-752,335,-752,343,-753,351,-753,359,-754,367,-754,375,-756,381,-761,384,-768,387,-776,389,-784,392,-791,398,-796,406,-799,413,-800,421,-802,429,-803,437,-805,445,-806,453,-808,460,-810,468,-813,476,-815,483,-817,491,-820,498,-822,506,-825,514,-827,521,-830,529,-832,536,-835,544,-838,552,-840,559,-843,567,-845,574,-848,582,-850,589,-853,597,-855,605,-858,612,-860,620,-863,627,-866,635,-868,643,-871,650,-873,658,-876,665,-878,673,-881,681,-883,688,-885,696,-887,704,-887,712,-887,720,-886,728,-884,735,-880,742,-877,749,-872,755,-867,761,-862,766,-855,770,-849,774,-842,777,-834,778,-826,779,-818,780,-810,781,-802,782,-795,782,-787,783,-779,784,-771,785,-763,785,-755,786,-747,787,-739,788,-731,788,-723,789,-715,790,-707,791,-699,791,-691,792,-683,793,-675,794,-667,795,-659,795,-651,796,-643,797,-635,798,-627,799,-619,799,-611,800,-603,801,-595,801,-588,802,-580,801,-572,798,-564,794,-557,788,-552,781,-548,774,-544,767,-540,760,-536,753,-532,746,-528,739,-525,732,-521,725,-517,718,-513,711,-509,704,-506,697,-502,690,-498,683,-494,676,-490,669,-486,662,-483,655,-479,648,-475,641,-471,634,-467,627,-463,620,-459,613,-455,606,-452,599,-448,592,-444,585,-440,578,-436,571,-432,564,-428,557,-424,550,-420,543,-417,536,-413,529,-409,522,-405,515,-401,508,-397,501,-393,494,-389,487,-385,480,-381,473,-377,467,-372,460,-368,454,-363,447,-359,441,-354,434,-349,428,-344,422,-339,415,-334,409,-329,403,-324,397,-319,391,-313,385,-308,379,-303,373,-298,367,-292,361,-287,355,-282,349,-277,343,-272,337,-266,331,-261,325,-256,319,-251,313,-245,307,-240,301,-235,294,-230,288,-224,283,-219,277,-214,271,-208,265,-203,259,-198,253,-192,247,-187,241,-182,235,-176,229,-171,223,-166,217,-160,211,-155,205,-150,199,-144,193,-139,187,-134,181,-128,175,-123,169,-118,163,-113,157,-107,151,-102,145,-97,139,-91,133,-86,127,-81,121,-76,115,-70,109,-65,103,-60,97,-54,91,-49,85,-44,79,-39,73,-33,67,-28,61,-23,55,-18,49,-12,43,-7,37,-2,31,4,25,9,19,14,13,19,7,25,1,30,-5,35,-11,41,-17,46,-23,51,-29,57,-35,62,-41,68,-46,74,-50,80,-52,88,-52,96,-51,104,-50,112,-49,120,-48,128,-48,136,-48,144,-48,152,-49,160,-51,167,-54,175,-57,182,-60,190,-65,196,-69,203,-74,209,-80,215,-86,220,-92,225,-98,231,-104,236,-110,241,-114,248,-117,256,-119,263,-120,271,-121,279,-123,287,-124,295,-125,303,-126,311,-127,319,-127,327,-128,335,-129,343,-130,350,-131,358,-132,366,-133,374,-134,382,-135,390,-136,398,-137,406,-138,414,-139,422,-140,430,-140,438,-141,446,-142,454,-143,462,-144,470,-145,478,-145,486,-146,494,-147,501,-148,509,-149,517,-150,525,-151,533,-151,541,-152,549,-153,557,-154,565,-155,573,-156,581,-156,589,-157,597,-158,605,-159,613,-160,621,-160,629,-161,637,-162,645,-163,653,-164,661,-165,669,-165,676,-166,684,-167,692,-168,700,-169,708,-170,716,-170,724,-171,732,-172,740,-173,748,-174,756,-175,764,-175,772,-176,780,-177,788,-178,796,-179,804,-179,812,-180,820,-181,828,-182,836,-183,844,-184,852,-184,859,-185,867,-186,875,-187,883,-188,891,-188,899,-189,907,-190,915,-191,923,-192,931,-193,939,-193,947,-194,955,-195,963,-196,971,-197,979,-198,987,-198,995,-199,1003,-200,1011,-201,1019,-202,1027,-202,1034,-203,1042,-204,1050,-205,1058,-206,1066,-207,1074,-207,1082,-208,1090,-209,1098,-210,1106,-211,1114,-212,1122,-212,1130,-213,1138,-214,1146,-215,1154,-216,1162,-217,1170,-217,1178,-218,1186,-219,1194,-220,1202,-221,1209,-222,1217,-224,1225,-226,1233,-230,1240,-234,1247,-239,1253,-245,1258,-251,1264,-258,1268,-265,1272,-272,1275,-280,1278,-287,1280,-295,1281,-303,1281,-311,1281,-319,1279,-327,1277,-334,1275,-342,1272,-349,1269,-356,1266,-363,1262,-370,1257,-376,1252,-383,1247,-389,1242,-394,1236,-400,1230,-405,1224,-409,1218,-414,1211,-418,1204,-422,1197,-425,1190,-428,1183,-431,1175,-434,1168,-437,1160,-439,1153,-442,1145,-444,1137,-445,1129,-447,1122,-448,1114,-449,1106,-450,1098,-451,1090,-451,1082,-452,1074,-452,1066,-452,1058,-452,1050,-452,1042,-452,1034,-452,1026,-453,1018,-453,1010,-453,1002,-453,994,-453,986,-454,978,-454,970,-454,962,-454,954,-454,946,-454,938,-455,930,-455,922,-455,914,-454,906,-454,898,-454,890,-454,882,-454,874,-453,866,-453,858,-452,850,-451,842,-451,834,-450,826,-449,818,-449,810,-448,802,-447,794,-446,786,-445,778,-445,770,-444,762,-443,754,-442,746,-441,738,-441,731,-440,723,-439,715,-438,707,-437,699,-436,691,-436,683,-435,675,-434,667,-433,659,-432,651,-431,643,-431,635,-430,627,-429,619,-428,611,-427,603,-426,595,-425,587,-425,579,-424,571,-423,564,-422,556,-421,548,-420,540,-419,532,-418,524,-417,516,-416,508,-416,500]}};
+
+const D2R=Math.PI/180,R2D=180/Math.PI;
+const $=id=>document.getElementById(id);
+const wrapDeg=a=>{a=((a+180)%360+360)%360-180;return a;};
+const clamp=(x,a,b)=>x<a?a:x>b?b:x;
+const fmt=ms=>{if(ms==null||!isFinite(ms))return '—';const t=Math.max(0,ms)/1000,m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.toFixed(1);};
+/* escuderías inventadas (nombres propios del juego, sin marcas reales) */
+const ESC=[
+  {id:'mcl',n:'Bardas Racing',c:'#ff8000'},{id:'fer',n:'Manzana Roja',c:'#e8002d'},{id:'rbr',n:'Toro del Valle',c:'#3671c6'},
+  {id:'mer',n:'Plata Neuquina',c:'#27f4d2'},{id:'ast',n:'Chacra Verde',c:'#229971'},{id:'alp',n:'Rosa Mosqueta',c:'#ff87bc'},
+  {id:'wil',n:'Cielo Patagón',c:'#64c4ff'},{id:'rb',n:'Viento Sur',c:'#6692ff'},{id:'haa',n:'Acero Gris',c:'#b6babd'},
+  {id:'aud',n:'Malbec Motor',c:'#bb0a30'},{id:'cad',n:'Oro del Limay',c:'#c9a646'}];
+
+/* ---------- ajustes de este celular ---------- */
+/* dentro de un visor ajeno (por ejemplo, la vista previa de un archivo en otra app) el sensor viene bloqueado */
+let ENMARCADA=false;try{ENMARCADA=window.self!==window.top;}catch(e){ENMARCADA=true;}
+const AJ_KEY='gp-app-ajustes';
+const AJ={modo:'incl',sens:30,centro:0,ayuda:1,auto:false,sonido:true,nombre:'',esc:'fer',pista:'ar-1952',vueltas:3};
+try{const r=localStorage.getItem(AJ_KEY);if(r)Object.assign(AJ,JSON.parse(r));}catch(e){}
+function guardar(){try{localStorage.setItem(AJ_KEY,JSON.stringify(AJ));}catch(e){}}
+function leerJSON(k){try{const r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch(e){return null;}}
+function grabarJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
+
+/* ================= MOTOR (sin DOM) ================= */
+const GPM=(function(){
+  const CFG={w:15,vmax:110,kmax:0.08,vu:55,acc:26,dec:20,fre:52,suelto:7,pasto:0.5,filtro:0.07};
+  function construir(def){
+    const P=def.p,n=P.length/2,x=new Float64Array(n),y=new Float64Array(n),s=new Float64Array(n+1);
+    for(let i=0;i<n;i++){x[i]=P[2*i];y[i]=P[2*i+1];}
+    const tx=new Float64Array(n),ty=new Float64Array(n);
+    for(let i=0;i<n;i++){const a=(i-1+n)%n,b=(i+1)%n;const dx=x[b]-x[a],dy=y[b]-y[a];const l=Math.hypot(dx,dy)||1;tx[i]=dx/l;ty[i]=dy/l;}
+    let L=0;s[0]=0;for(let i=0;i<n;i++){const b=(i+1)%n;L+=Math.hypot(x[b]-x[i],y[b]-y[i]);s[i+1]=L;}
+    let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+    for(let i=0;i<n;i++){x0=Math.min(x0,x[i]);y0=Math.min(y0,y[i]);x1=Math.max(x1,x[i]);y1=Math.max(y1,y[i]);}
+    return{n,x,y,tx,ty,s,L,w:CFG.w,box:[x0,y0,x1,y1],z:def.z};
+  }
+  function proy(T,i,px,py){
+    const n=T.n,j=(i+1)%n,ax=T.x[i],ay=T.y[i],dx=T.x[j]-ax,dy=T.y[j]-ay,l2=dx*dx+dy*dy||1;
+    let t=((px-ax)*dx+(py-ay)*dy)/l2;if(t<0)t=0;else if(t>1)t=1;
+    const qx=ax+dx*t,qy=ay+dy*t,ex=px-qx,ey=py-qy,l=Math.sqrt(l2);
+    return{d2:ex*ex+ey*ey,t,lat:(dx*(py-ay)-dy*(px-ax))/l};
+  }
+  /* auto en el puesto de la grilla (0 = primero): detrás de la línea, alternando lado */
+  function nuevoAuto(T,puesto){
+    puesto=puesto||0;
+    const atras=8+11*puesto,lat=(puesto%2?1:-1)*5;
+    let i=T.n-1,acc=0;while(acc<atras&&i>0){acc+=T.s[i+1]-T.s[i];i--;}
+    const nx=-T.ty[i],ny=T.tx[i];
+    return{x:T.x[i]+nx*lat,y:T.y[i]+ny*lat,th:Math.atan2(T.ty[i],T.tx[i]),v:0,st:0,i,iOk:i,iSal:i,dPasto:0,dist:0,f:0,lat:0,
+      vuelta:-1,cp:7,afuera:0,contra:0,reset:0,fin:false,pasto:false,aviso:'',avisoT:0,lapNueva:false};
+  }
+  function avance(T,c){return c.vuelta+(T.s[c.i]+c.f*(T.s[c.i+1]-T.s[c.i]))/T.L;}
+  function localizar(T,c){
+    const n=T.n;let ade=24;
+    if(c.pasto){const lim=c.iSal+2+Math.ceil(c.dPasto*1.2/8);ade=Math.max(0,Math.min(24,lim-c.i));}
+    let best=null,bi=c.i;
+    for(let k=-12;k<=ade;k++){const i=((c.i+k)%n+n)%n,r=proy(T,i,c.x,c.y);if(!best||r.d2<best.d2){best=r;bi=i;}}
+    return{i:bi,r:best};
+  }
+  function volverAPista(T,c,msg){
+    const i=c.iOk;c.i=i;c.x=T.x[i];c.y=T.y[i];c.th=Math.atan2(T.ty[i],T.tx[i]);c.v=CFG.vmax*0.12;c.st=0;c.f=0;c.lat=0;
+    c.pasto=false;c.dPasto=0;c.dist=0;c.afuera=0;c.contra=0;c.reset++;c.aviso=msg;c.avisoT=1.6;
+  }
+  /* volante que haría falta para seguir el medio de la pista (persecución pura): lo usa la ayuda de manejo */
+  function volanteIdeal(T,c){
+    const n=T.n,ade=Math.round((10+c.v*0.32)/8),j=(c.i+Math.max(2,ade))%n;
+    const dx=T.x[j]-c.x,dy=T.y[j]-c.y,L=Math.hypot(dx,dy)||1;
+    let e=Math.atan2(dy,dx)-c.th;e=Math.atan2(Math.sin(e),Math.cos(e));
+    const kq=2*Math.sin(e)/L,kmax=CFG.kmax/(1+Math.pow(c.v/CFG.vu,2));
+    return clamp(kq/kmax,-1,1);
+  }
+  /* inp = {s: volante -1..1 (positivo = derecha), gas: 0..1, fr: frena} */
+  function paso(T,c,inp,dt){
+    if(c.fin)return;
+    if(dt>0.05)dt=0.05;
+    const s=clamp(inp.s||0,-1,1);
+    c.st+=(s-c.st)*Math.min(1,dt/CFG.filtro);
+    const a=Math.abs(c.st);
+    let vt=CFG.vmax*(1-0.5*Math.pow(a,1.5));
+    if(c.pasto)vt=Math.min(vt,CFG.vmax*CFG.pasto);
+    const dec=c.pasto?40:CFG.dec;
+    if(inp.fr){c.v=Math.max(0,c.v-CFG.fre*dt);if(c.v>vt)c.v=Math.max(vt,c.v-dec*dt);}
+    else if(inp.gas>0){
+      if(c.v<vt)c.v=Math.min(vt,c.v+CFG.acc*inp.gas*(1-0.45*c.v/CFG.vmax)*dt);
+      else c.v=Math.max(vt,c.v-dec*dt);
+    }else{c.v=Math.max(0,c.v-CFG.suelto*dt);if(c.v>vt)c.v=Math.max(vt,c.v-dec*dt);}
+    const k=c.st*CFG.kmax/(1+Math.pow(c.v/CFG.vu,2));
+    c.th+=c.v*k*dt;
+    c.x+=c.v*Math.cos(c.th)*dt;c.y+=c.v*Math.sin(c.th)*dt;
+    if(c.pasto)c.dPasto+=c.v*dt;
+    const prev=c.i,loc=localizar(T,c);
+    c.i=loc.i;c.f=loc.r.t;c.lat=loc.r.lat;c.dist=Math.sqrt(loc.r.d2);
+    const n=T.n,q=c.i/n;
+    if(q>0.22&&q<0.3)c.cp|=1;else if(q>0.47&&q<0.55)c.cp|=2;else if(q>0.72&&q<0.8)c.cp|=4;
+    if(prev>n*0.85&&c.i<n*0.15&&c.cp===7){c.vuelta++;c.cp=0;c.lapNueva=true;}
+    const eraPasto=c.pasto;
+    c.pasto=c.dist>T.w;
+    if(c.pasto&&!eraPasto){c.iSal=c.i;c.dPasto=0;}
+    if(!c.pasto){c.iOk=c.i;c.dPasto=0;}
+    const tg=Math.cos(c.th)*T.tx[c.i]+Math.sin(c.th)*T.ty[c.i];
+    if(tg<-0.35&&c.v>8)c.contra+=dt;else c.contra=Math.max(0,c.contra-dt*2);
+    if(c.dist>T.w*2.4)c.afuera+=dt;else c.afuera=0;
+    if(c.dist>T.w*3.2||c.afuera>0.7)volverAPista(T,c,'¡Al pasto! Volvés a la pista');
+    else if(c.contra>2.2)volverAPista(T,c,'¡Contramano! Te dimos vuelta');
+    if(c.avisoT>0)c.avisoT-=dt;
+  }
+  function puntoEn(T,prog,lat){
+    let fr=prog-Math.floor(prog);if(fr<0)fr+=1;
+    const sd=fr*T.L;let lo=0,hi=T.n-1;
+    while(lo<hi){const m=(lo+hi+1)>>1;if(T.s[m]<=sd)lo=m;else hi=m-1;}
+    const i=lo,j=(i+1)%T.n,seg=T.s[i+1]-T.s[i]||1,t=(sd-T.s[i])/seg;
+    const dx=T.x[j]-T.x[i],dy=T.y[j]-T.y[i],l=Math.hypot(dx,dy)||1,nx=-dy/l,ny=dx/l,L=lat||0;
+    return{x:T.x[i]+dx*t+nx*L,y:T.y[i]+dy*t+ny*L,th:Math.atan2(dy,dx)};
+  }
+  return{CFG,construir,nuevoAuto,paso,avance,puntoEn,volanteIdeal};
+})();
+const TRACKS={};
+function pista(z){if(!TRACKS[z])TRACKS[z]=GPM.construir({z,p:PISTAS[z].p});return TRACKS[z];}
+
+/* ================= VOLANTE: girar el celular ================= */
+/* Se mide el ángulo de la gravedad dentro del plano de la pantalla: es el giro de un volante.
+   No depende de cuánto lo inclines hacia atrás ni de si la pantalla rota o está bloqueada (se centra al largar). */
+const VOL={estado:'apagado',ang:0,tiene:false,ultimo:0,ultOri:0,llegan:0,mag:1,plano:false,gx:0,gy:0,sonda:null,escucha:false};
+function entrada(ux,uy,mag3){
+  const mag=Math.hypot(ux,uy)/(mag3||1);
+  VOL.mag=mag;VOL.ultimo=performance.now();VOL.llegan++;
+  if(mag<0.2){VOL.plano=true;return;}   /* celular casi plano: el ángulo no es confiable, queda el último */
+  VOL.plano=false;
+  const a=Math.atan2(-ux,uy)*R2D;
+  VOL.ang=VOL.tiene?VOL.ang+wrapDeg(a-VOL.ang):a;VOL.tiene=true;
+  if(VOL.estado!=='ok'){VOL.estado='ok';pintarVolante();}
+}
+function onOri(e){
+  if(e.beta==null||e.gamma==null)return;
+  const b=e.beta*D2R,g=e.gamma*D2R;
+  VOL.ultOri=performance.now();
+  entrada(-Math.sin(g)*Math.cos(b),Math.sin(b),1);
+}
+function onMot(e){
+  /* respaldo si no llegan ángulos: la gravedad del acelerómetro, suavizada (el signo distinto de iPhone y Android no importa: se centra) */
+  if(performance.now()-VOL.ultOri<600)return;
+  const a=e.accelerationIncludingGravity;if(!a||a.x==null||a.y==null)return;
+  VOL.gx+=(a.x-VOL.gx)*0.25;VOL.gy+=(a.y-VOL.gy)*0.25;
+  const m=Math.hypot(a.x,a.y,a.z||0)||9.8;
+  entrada(VOL.gx,VOL.gy,m);
+}
+function escuchar(){
+  if(!VOL.escucha){window.addEventListener('deviceorientation',onOri);window.addEventListener('devicemotion',onMot);VOL.escucha=true;}
+  clearTimeout(VOL.sonda);
+  if(VOL.estado!=='ok'){VOL.estado='probando';pintarVolante();}
+  VOL.sonda=setTimeout(()=>{if(!VOL.llegan){VOL.estado='sindatos';pintarVolante();}},2000);
+}
+function necesitaPermiso(){
+  const DOE=window.DeviceOrientationEvent,DME=window.DeviceMotionEvent;
+  return !!((DOE&&typeof DOE.requestPermission==='function')||(DME&&typeof DME.requestPermission==='function'));
+}
+function activarVolante(){
+  if(!window.isSecureContext&&location.protocol!=='file:'){VOL.estado='inseguro';pintarVolante();return;}
+  const DOE=window.DeviceOrientationEvent,DME=window.DeviceMotionEvent;
+  if(!DOE&&!DME){VOL.estado='sindatos';pintarVolante();return;}
+  if(necesitaPermiso()){
+    /* iPhone: los dos pedidos salen en el mismo toque, sin esperar nada antes */
+    const ps=[];
+    try{if(DOE&&typeof DOE.requestPermission==='function')ps.push(DOE.requestPermission());}catch(e){ps.push(Promise.resolve('error'));}
+    try{if(DME&&typeof DME.requestPermission==='function')ps.push(DME.requestPermission());}catch(e){}
+    /* se escucha igual: algunos navegadores (Chrome nuevo) tienen el pedido pero mandan los datos sin preguntar */
+    if(!VOL.escucha){window.addEventListener('deviceorientation',onOri);window.addEventListener('devicemotion',onMot);VOL.escucha=true;}
+    if(VOL.estado!=='ok'){VOL.estado='pidiendo';pintarVolante();}
+    Promise.allSettled(ps).then(rs=>{
+      const ok=rs.some(r=>r.status==='fulfilled'&&r.value==='granted');
+      const neg=rs.some(r=>r.status==='fulfilled'&&r.value==='denied');
+      if(ok)escuchar();
+      else setTimeout(()=>{if(!VOL.llegan){VOL.estado=neg?'negado':'sindatos';pintarVolante();}},1500);
+    });
+  }else escuchar();
+}
+function volanteVivo(){return VOL.estado==='ok'&&performance.now()-VOL.ultimo<1500;}
+function giroGrados(){return wrapDeg(VOL.ang-AJ.centro);}
+function centrar(){if(VOL.tiene){AJ.centro=VOL.ang;guardar();}}
+/* -1 a 1 con zona muerta chica y curva suave en el medio */
+function giro(){
+  if(!VOL.tiene)return 0;
+  const d=giroGrados(),muerta=1.5;
+  if(Math.abs(d)<muerta)return 0;
+  const x=Math.min(1,(Math.abs(d)-muerta)/Math.max(6,AJ.sens-muerta));
+  return Math.sign(d)*Math.pow(x,1.2);
+}
+
+/* ================= MENÚ ================= */
+function pintarVolante(){
+  const tit=$('volTit'),txt=$('volTxt'),btn=$('btnActivar');
+  const est=VOL.estado;
+  btn.classList.toggle('hide',est==='ok'||est==='probando');
+  $('btnCentrar').classList.toggle('hide',est!=='ok');
+  if(est==='ok'){tit.textContent='¡Volante andando!';txt.textContent=VOL.plano?'Levantá un poco el celular, como un volante.':'Girá el celular y mirá la rueda. Si no queda derecha, tocá Centrar.';}
+  else if(est==='probando'){tit.textContent='Buscando el sensor…';txt.textContent='Mové un poco el celular.';}
+  else if(est==='pidiendo'){tit.textContent='Pidiendo permiso…';txt.textContent='Aceptá el acceso al movimiento.';}
+  else if(est==='negado'){tit.textContent='Sin permiso de movimiento';txt.textContent=ENMARCADA?'Esta vista no deja usar el sensor. Abrí el link en Safari o Chrome.':'Rechazado. Cerrá Safari del todo (deslizalo hacia arriba), abrí el link de nuevo y tocá Permitir.';btn.textContent='Probar de nuevo';}
+  else if(est==='sindatos'){tit.textContent='Este aparato no manda el giro';txt.textContent='No llegan datos del sensor (en la compu es normal). Usá “Con el dedo” o las flechas del teclado.';btn.textContent='Probar de nuevo';}
+  else if(est==='inseguro'){tit.textContent='Hace falta abrirla con https';txt.textContent='El celular solo pasa el sensor a páginas seguras (https).';}
+  else{tit.textContent='Volante apagado';txt.textContent=necesitaPermiso()?'Tocá “Activar volante” y aceptá el permiso.':'Tocá “Activar volante” y girá el celular.';btn.textContent='Activar volante';}
+}
+let rafMenu=0;
+function animarMenu(){
+  rafMenu=0;
+  if($('menu').classList.contains('hide'))return;
+  rafMenu=requestAnimationFrame(animarMenu);
+  const g=VOL.tiene?giroGrados():0,s=giro();
+  document.querySelector('#volRueda .giro').style.transform='rotate('+clamp(g,-120,120).toFixed(1)+'deg)';
+  const b=$('volBarra');b.style.left=(s<0?50+50*s:50)+'%';b.style.width=Math.abs(50*s)+'%';
+  if(VOL.estado==='ok'){const t=$('volTxt'),q=VOL.plano?'Levantá un poco el celular, como un volante.':'Girá el celular y mirá la rueda. Si no queda derecha, tocá Centrar.';if(t.textContent!==q)t.textContent=q;}
+}
+function dibujarMini(cv,z,col){
+  const T=pista(z),c=cv.getContext('2d'),S=cv.width=cv.height=160;
+  const [a,b,cc,d]=T.box,k=(S-20)/Math.max(cc-a,d-b);
+  c.clearRect(0,0,S,S);c.save();c.translate(S/2-(a+cc)/2*k,S/2-(b+d)/2*k);c.scale(k,k);
+  c.beginPath();c.moveTo(T.x[0],T.y[0]);for(let i=1;i<T.n;i++)c.lineTo(T.x[i],T.y[i]);c.closePath();
+  c.strokeStyle=col;c.lineWidth=7/k;c.lineJoin='round';c.stroke();
+  c.fillStyle='#ffd23f';c.beginPath();c.arc(T.x[0],T.y[0],7/k,0,Math.PI*2);c.fill();c.restore();
+}
+const recKey=(z,v)=>'gp-app-rec-'+z+'-'+v;
+function pintarMenu(){
+  document.querySelectorAll('#segModo button').forEach(b=>b.classList.toggle('on',b.dataset.m===AJ.modo));
+  document.querySelectorAll('#segAyuda button').forEach(b=>b.classList.toggle('on',+b.dataset.a===AJ.ayuda));
+  $('bloqueIncl').classList.toggle('hide',AJ.modo!=='incl');
+  $('bloqueDedo').classList.toggle('hide',AJ.modo!=='dedo');
+  $('sens').value=AJ.sens;$('sensTxt').textContent=AJ.sens+'°';
+  $('chkAuto').checked=AJ.auto;$('chkSonido').checked=AJ.sonido;
+  document.querySelectorAll('.pista').forEach(p=>p.classList.toggle('on',p.dataset.z===AJ.pista));
+  document.querySelectorAll('#chipsVueltas .chip').forEach(p=>p.classList.toggle('on',+p.dataset.v===AJ.vueltas));
+  document.querySelectorAll('#chipsEsc .chip').forEach(p=>p.classList.toggle('on',p.dataset.e===AJ.esc));
+  const r=leerJSON(recKey(AJ.pista,AJ.vueltas)),ml=leerJSON('gp-app-mv-'+AJ.pista);
+  $('recordTxt').innerHTML='Récord en '+PISTAS[AJ.pista].loc+' a '+AJ.vueltas+(AJ.vueltas>1?' vueltas':' vuelta')+': <b>'+(r?fmt(r.t)+(r.n?' ('+esc(r.n)+')':''):'—')+'</b>'+
+    (ml?' · mejor vuelta <b>'+fmt(ml.t)+'</b>':'')+(r&&r.m?' · el fantasma del récord corre con vos':'');
+}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function armarMenu(){
+  const pb=$('pistas');
+  Object.keys(PISTAS).forEach(z=>{
+    const d=PISTAS[z],b=document.createElement('button');b.className='pista';b.dataset.z=z;
+    const cv=document.createElement('canvas');b.appendChild(cv);
+    b.insertAdjacentHTML('beforeend','<b>'+esc(d.loc)+'</b><small>'+(d.len/1000).toFixed(1).replace('.',',')+' km</small>');
+    b.onclick=()=>{AJ.pista=z;guardar();pintarMenu();};
+    pb.appendChild(b);dibujarMini(cv,z,'#e9eef5');
+  });
+  [1,2,3,5].forEach(v=>{const b=document.createElement('button');b.className='chip';b.dataset.v=v;b.textContent=v;b.onclick=()=>{AJ.vueltas=v;guardar();pintarMenu();};$('chipsVueltas').appendChild(b);});
+  ESC.forEach(e=>{const b=document.createElement('button');b.className='chip esc';b.dataset.e=e.id;b.innerHTML='<i style="background:'+e.c+'"></i>'+esc(e.n);b.onclick=()=>{AJ.esc=e.id;guardar();pintarMenu();};$('chipsEsc').appendChild(b);});
+  document.querySelectorAll('#segModo button').forEach(b=>b.onclick=()=>{AJ.modo=b.dataset.m;guardar();pintarMenu();});
+  document.querySelectorAll('#segAyuda button').forEach(b=>b.onclick=()=>{AJ.ayuda=+b.dataset.a;guardar();pintarMenu();});
+  $('sens').oninput=e=>{AJ.sens=+e.target.value;$('sensTxt').textContent=AJ.sens+'°';guardar();};
+  $('chkAuto').onchange=e=>{AJ.auto=e.target.checked;guardar();};
+  $('chkSonido').onchange=e=>{AJ.sonido=e.target.checked;guardar();};
+  $('nombre').value=AJ.nombre||'';
+  $('nombre').oninput=e=>{AJ.nombre=e.target.value.trim().slice(0,16);guardar();};
+  $('btnActivar').onclick=activarVolante;
+  $('btnCentrar').onclick=centrar;
+  $('btnLargar').onclick=()=>largar();
+  if(ENMARCADA){
+    $('avisoSeguro').textContent='Estás viendo la página dentro de otra app: así el celular no le pasa el giro. Abrí el link en Safari (o Chrome).';
+    $('avisoSeguro').classList.remove('hide');
+  }else if(!window.isSecureContext&&location.protocol!=='file:'){
+    $('avisoSeguro').textContent='Esta página no está en https: el celular no le va a pasar el giro. Abrila desde el link https.';
+    $('avisoSeguro').classList.remove('hide');
+  }
+  /* en Android no hace falta permiso: se escucha de entrada */
+  /* se escucha de entrada: en Android llega sin pedir nada; en iPhone no llega nada hasta aceptar el permiso */
+  if(window.isSecureContext||location.protocol==='file:'){window.addEventListener('deviceorientation',onOri);window.addEventListener('devicemotion',onMot);VOL.escucha=true;}
+  pintarMenu();pintarVolante();
+}
+
+/* ================= SONIDO ================= */
+const SON={ctx:null,osc:null,osc2:null,g:null,f:null,ruido:null,gr:null};
+function sonidoIniciar(){
+  if(!AJ.sonido)return;
+  try{
+    if(!SON.ctx){
+      const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+      const ctx=new C();SON.ctx=ctx;
+      const g=ctx.createGain();g.gain.value=0;g.connect(ctx.destination);
+      const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=900;f.Q.value=4;f.connect(g);
+      const o=ctx.createOscillator();o.type='sawtooth';o.frequency.value=60;o.connect(f);o.start();
+      const o2=ctx.createOscillator();o2.type='square';o2.frequency.value=30;const g2=ctx.createGain();g2.gain.value=0.35;o2.connect(g2);g2.connect(f);o2.start();
+      /* ruido para el pasto */
+      const buf=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+      const rn=ctx.createBufferSource();rn.buffer=buf;rn.loop=true;const fr=ctx.createBiquadFilter();fr.type='lowpass';fr.frequency.value=500;
+      const gr=ctx.createGain();gr.gain.value=0;rn.connect(fr);fr.connect(gr);gr.connect(ctx.destination);rn.start();
+      Object.assign(SON,{osc:o,osc2:o2,g,f,gr});
+    }
+    if(SON.ctx.state==='suspended')SON.ctx.resume();
+  }catch(e){}
+}
+function sonidoCuadro(v,gas,pasto){
+  if(!SON.ctx)return;
+  const t=SON.ctx.currentTime,on=AJ.sonido&&R&&R.activo&&!R.pausa;
+  /* 6 marchas: el tono sube y cae en cada cambio */
+  const vr=v/GPM.CFG.vmax,mar=Math.min(5,Math.floor(vr*6)),dentro=vr*6-mar;
+  const rpm=0.35+0.65*dentro;
+  SON.osc.frequency.setTargetAtTime(55+rpm*170+mar*12,t,0.03);
+  SON.osc2.frequency.setTargetAtTime((55+rpm*170+mar*12)/2,t,0.03);
+  SON.f.frequency.setTargetAtTime(500+gas*1400+rpm*600,t,0.05);
+  SON.g.gain.setTargetAtTime(on?0.05+0.06*gas+0.03*rpm:0,t,0.06);
+  SON.gr.gain.setTargetAtTime(on&&pasto&&v>4?Math.min(0.12,v/300):0,t,0.05);
+}
+function sonidoCallar(){if(SON.ctx){const t=SON.ctx.currentTime;SON.g.gain.setTargetAtTime(0,t,0.05);SON.gr.gain.setTargetAtTime(0,t,0.05);}}
+
+/* ================= CARRERA ================= */
+let R=null;          /* carrera en curso */
+const IN={gas:0,fr:false,sDedo:0,kIzq:false,kDer:false,kAr:false,kAb:false};
+const PUNT=new Map();   /* dedos apoyados: id → {zona, x0} */
+let WL=null;
+function zonaPedales(){const W=innerWidth;return AJ.modo==='incl'?Math.max(110,W*0.3):Math.min(110,Math.max(78,W*0.14));}
+function largar(){
+  sonidoIniciar();
+  /* pantalla completa y acostado (Android); en iPhone no hay, se usa desde el ícono */
+  try{const d=document.documentElement;if(!document.fullscreenElement&&d.requestFullscreen){d.requestFullscreen({navigationUI:'hide'}).then(()=>{try{screen.orientation.lock('landscape').catch(()=>{});}catch(e){}}).catch(()=>{});}}catch(e){}
+  try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(w=>WL=w).catch(()=>{});}catch(e){}
+  if(AJ.modo==='incl'&&VOL.estado!=='ok'&&VOL.estado!=='probando')activarVolante();
+  const T=pista(AJ.pista);
+  const rec=leerJSON(recKey(AJ.pista,AJ.vueltas));
+  R={activo:true,T,car:GPM.nuevoAuto(T,0),z:AJ.pista,vueltas:AJ.vueltas,t0:performance.now(),tLuces:0,verde:0,verdeYa:false,tCarrera:0,
+     pausa:false,fin:false,laps:[],tLapIni:0,mejor:null,fantasma:rec&&rec.m?{m:rec.m,t:rec.t}:null,graba:[],tGraba:-1,
+     color:(ESC.find(e=>e.id===AJ.esc)||ESC[1]).c,piloto:AJ.nombre||'Vos',msgT:0,lapT:0,s:0,tactilForzado:false,centrado:false};
+  R.verde=4.2+0.3+Math.random()*0.9;   /* cinco luces cada 0,8 s y se apagan al azar */
+  IN.gas=0;IN.fr=false;IN.sDedo=0;PUNT.clear();
+  $('menu').classList.add('hide');$('final').classList.add('hide');$('carrera').classList.remove('hide');
+  $('capaPausa').classList.add('hide');$('hudVuelta').classList.add('hide');$('hudMsg').classList.add('hide');
+  $('luces').classList.remove('hide','verde');$('luces').querySelectorAll('i').forEach(i=>i.classList.remove('on'));
+  $('ayudaLuz').classList.remove('hide');
+  const ay=[];
+  if(AJ.modo==='incl')ay.push('📱 Sostené el celular derecho: se centra solo','Girá como un volante para doblar');
+  else ay.push('👆 Deslizá el dedo en el medio para doblar');
+  ay.push(AJ.auto?'Pulgar izquierdo frena · acelera solo':'Pulgar izquierdo frena · derecho acelera');
+  $('ayudaLuz').innerHTML=ay.map(t=>'<div>'+esc(t)+'</div>').join('<br>');
+  medirPedales();revisarGiro();
+  REN.reset();
+  tPrev=0;if(!raf)raf=requestAnimationFrame(cuadro);
+}
+function medirPedales(){
+  const z=zonaPedales();
+  $('pedFreno').style.width=z+'px';$('pedAcel').style.width=z+'px';
+  $('pedAcel').classList.toggle('hide',AJ.auto);
+}
+function salirCarrera(){
+  if(R)R.activo=false;sonidoCallar();
+  try{if(WL){WL.release();WL=null;}}catch(e){}
+  try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});}catch(e){}
+  $('carrera').classList.add('hide');$('gira').classList.add('hide');
+}
+function aMenu(){salirCarrera();$('final').classList.add('hide');$('menu').classList.remove('hide');pintarMenu();pintarVolante();if(!rafMenu)rafMenu=requestAnimationFrame(animarMenu);}
+function pausar(si){
+  if(!R||R.fin)return;R.pausa=si;
+  $('capaPausa').classList.toggle('hide',!si);
+  if(si)sonidoCallar();else{sonidoIniciar();tPrev=0;}
+}
+/* ---------- toques: pedales a los costados, volante con el dedo en el medio ---------- */
+function clasificar(x){const W=innerWidth,z=zonaPedales();if(x<z)return'fr';if(x>W-z)return AJ.auto?(AJ.modo==='dedo'?'vol':'nada'):'gas';return AJ.modo==='dedo'?'vol':'nada';}
+function recalcToques(){
+  let gas=0,fr=false,s=0,haySteer=false;
+  PUNT.forEach(p=>{if(p.z==='gas')gas=1;else if(p.z==='fr')fr=true;else if(p.z==='vol'){const R0=Math.min(75,Math.max(45,innerWidth*0.09));s=clamp((p.x-p.x0)/R0,-1,1);haySteer=true;}});
+  IN.gas=gas;IN.fr=fr;IN.sDedo=haySteer?Math.sign(s)*Math.pow(Math.abs(s),1.15):0;
+  $('pedFreno').classList.toggle('on',fr);$('pedAcel').classList.toggle('on',gas>0);
+}
+function armarToques(){
+  const t=$('toque');
+  t.addEventListener('pointerdown',e=>{e.preventDefault();try{t.setPointerCapture(e.pointerId);}catch(x){}PUNT.set(e.pointerId,{z:clasificar(e.clientX),x0:e.clientX,x:e.clientX});recalcToques();},{passive:false});
+  t.addEventListener('pointermove',e=>{const p=PUNT.get(e.pointerId);if(p){p.x=e.clientX;recalcToques();}},{passive:true});
+  const fin=e=>{if(PUNT.delete(e.pointerId))recalcToques();};
+  t.addEventListener('pointerup',fin);t.addEventListener('pointercancel',fin);t.addEventListener('lostpointercapture',fin);
+  t.addEventListener('contextmenu',e=>e.preventDefault());
+  /* teclado para probar en la compu */
+  const K={ArrowLeft:'kIzq',ArrowRight:'kDer',ArrowUp:'kAr',ArrowDown:'kAb'};
+  addEventListener('keydown',e=>{if(K[e.key]){IN[K[e.key]]=true;e.preventDefault();}if(e.key==='Escape'&&R&&R.activo)pausar(!R.pausa);});
+  addEventListener('keyup',e=>{if(K[e.key])IN[K[e.key]]=false;});
+  $('btnPausa').onclick=()=>pausar(true);
+  $('btnSeguir').onclick=()=>pausar(false);
+  $('btnReiniciar').onclick=()=>{salirCarrera();largar();};
+  $('btnSalir').onclick=aMenu;
+  $('btnCentrarC').onclick=()=>{centrar();aviso('🎯 Volante centrado',1);};
+  $('btnOtra').onclick=()=>largar();
+  $('btnMenu').onclick=aMenu;
+  $('btnGiraIgual').onclick=()=>{GIRA_IGUAL=true;revisarGiro();};
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&R&&R.activo&&!R.fin&&R.verdeYa)pausar(true);});
+  addEventListener('resize',()=>{if(R&&R.activo){medirPedales();revisarGiro();}});
+}
+let GIRA_IGUAL=false;
+function revisarGiro(){
+  const ver=!!(R&&R.activo&&!R.fin&&innerHeight>innerWidth*1.1&&!GIRA_IGUAL);
+  $('gira').classList.toggle('hide',!ver);
+}
+function aviso(t,seg){if(!R)return;const m=$('hudMsg');m.textContent=t;m.classList.remove('hide');R.msgT=seg||1.6;}
+
+/* ---------- cuadro ---------- */
+let raf=0,tPrev=0,hudT=0;
+function cuadro(ts){
+  if(!R||!R.activo){raf=0;return;}
+  raf=requestAnimationFrame(cuadro);
+  let dt=tPrev?(ts-tPrev)/1000:0.016;tPrev=ts;if(!(dt>0))dt=0.016;if(dt>0.1)dt=0.1;
+  if(!R.pausa&&!R.fin)paso(dt);
+  REN.dibujar(R,dt);
+  hudT-=dt;if(hudT<=0){hudT=0.08;hud();}
+}
+function volanteAhora(){
+  /* teclado > dedo > celular */
+  if(IN.kIzq||IN.kDer)return(IN.kDer?1:0)-(IN.kIzq?1:0);
+  if(AJ.modo==='dedo'||R.tactilForzado)return IN.sDedo;
+  return giro();
+}
+function paso(dt){
+  const c=R.car,T=R.T;
+  R.tLuces+=dt;
+  if(!R.verdeYa){
+    const n=Math.min(5,Math.floor(R.tLuces/0.8));
+    $('luces').querySelectorAll('i').forEach((i,k)=>i.classList.toggle('on',k<n));
+    /* durante las luces rojas, la posición en que lo tenés es "derecho" */
+    if(AJ.modo==='incl'&&VOL.tiene&&R.tLuces>0.6)centrar();
+    if(AJ.modo==='incl'&&R.tLuces>3&&!volanteVivo()&&!R.tactilForzado){R.tactilForzado=true;aviso('No llega el giro del celular: manejá con el dedo',3);medirPedales();}
+    R.s=volanteAhora();
+    if(R.tLuces>=R.verde){
+      R.verdeYa=true;R.tVerde=performance.now();
+      $('luces').classList.add('verde');setTimeout(()=>{$('luces').classList.add('hide');},900);
+      $('ayudaLuz').classList.add('hide');
+      vibrar(60);
+    }
+    sonidoCuadro(0,IN.gas||IN.kAr?1:0,false);
+    return;
+  }
+  R.tCarrera+=dt;
+  let s=volanteAhora();
+  if(AJ.ayuda){const k=AJ.ayuda===2?0.6:0.3;s=clamp(s+k*GPM.volanteIdeal(T,c)*(1-Math.min(1,Math.abs(s))*0.5),-1,1);}
+  R.s=s;
+  const gas=(AJ.auto||IN.kAr||IN.gas>0)?1:0,fr=IN.fr||IN.kAb;
+  const eraPasto=c.pasto,resets=c.reset;
+  GPM.paso(T,c,{s,gas:fr?0:gas,fr},dt);
+  if(c.pasto&&!eraPasto)vibrar(25);
+  if(c.reset!==resets){vibrar([40,40,40]);aviso(c.aviso,1.6);}
+  sonidoCuadro(c.v,fr?0:gas,c.pasto);
+  /* fantasma: una muestra cada 0,1 s */
+  if(R.tCarrera-R.tGraba>=0.1||R.tGraba<0){R.tGraba=R.tCarrera;R.graba.push([+R.tCarrera.toFixed(2),Math.round(c.x*10)/10,Math.round(c.y*10)/10,Math.round(c.th*1000)/1000]);}
+  if(c.lapNueva){
+    c.lapNueva=false;
+    if(c.vuelta>=1){
+      const tl=R.tCarrera-R.tLapIni;R.tLapIni=R.tCarrera;R.laps.push(tl);
+      const mej=R.mejor==null||tl<R.mejor;if(mej)R.mejor=tl;
+      if(c.vuelta>=R.vueltas){terminar();return;}
+      const h=$('hudVuelta');h.innerHTML=(c.vuelta+1===R.vueltas?'🏁 ÚLTIMA VUELTA':'VUELTA '+(c.vuelta+1)+'/'+R.vueltas)+'<small>'+fmt(tl*1000)+(mej&&R.laps.length>1?' · ¡mejor vuelta!':'')+'</small>';
+      h.classList.remove('hide');R.lapT=2.2;
+    }
+  }
+  if(R.lapT>0){R.lapT-=dt;if(R.lapT<=0)$('hudVuelta').classList.add('hide');}
+  if(R.msgT>0){R.msgT-=dt;if(R.msgT<=0)$('hudMsg').classList.add('hide');}
+}
+function vibrar(p){try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
+function hud(){
+  if(!R)return;const c=R.car;
+  const v=Math.max(0,c.vuelta+1);
+  $('hVuelta').textContent='VUELTA '+Math.min(R.vueltas,Math.max(1,v))+'/'+R.vueltas;
+  $('hTiempo').textContent=fmt(R.tCarrera*1000);
+  const ml=leerMV();
+  $('hMejor').textContent=(R.mejor!=null?'Mejor vuelta '+fmt(R.mejor*1000):'')+(R.mejor==null&&ml?'Récord de vuelta '+fmt(ml.t):'');
+  $('hVel').textContent=Math.round(c.v*3);
+}
+let MV=null,MVz='';
+function leerMV(){if(MVz!==R.z){MVz=R.z;MV=leerJSON('gp-app-mv-'+R.z);}return MV;}
+function terminar(){
+  const c=R.car;c.fin=true;R.fin=true;sonidoCallar();
+  const total=R.tCarrera*1000;
+  const k=recKey(R.z,R.vueltas),rec=leerJSON(k);
+  let txt='';
+  if(!rec||total<rec.t){
+    const nuevo={t:total,n:AJ.nombre||'',f:Date.now(),m:R.graba};
+    if(!grabarJSON(k,nuevo)){nuevo.m=null;grabarJSON(k,nuevo);}
+    txt=rec?'🏆 ¡Nuevo récord! Bajaste '+((rec.t-total)/1000).toFixed(1).replace('.',',')+' s':'🏆 Primer récord en esta pista';
+  }else txt='Récord: '+fmt(rec.t)+(rec.n?' ('+esc(rec.n)+')':'')+' · te faltaron '+((total-rec.t)/1000).toFixed(1).replace('.',',')+' s';
+  const mvk='gp-app-mv-'+R.z,mv=leerJSON(mvk);
+  if(R.mejor!=null&&(!mv||R.mejor*1000<mv.t)){grabarJSON(mvk,{t:R.mejor*1000,n:AJ.nombre||''});MVz='';}
+  setTimeout(()=>{
+    salirCarrera();
+    $('fPista').textContent=PISTAS[R.z].t+' · '+R.vueltas+(R.vueltas>1?' vueltas':' vuelta');
+    $('fTiempo').textContent=fmt(total);
+    $('fRecord').innerHTML=txt;
+    const mi=R.laps.indexOf(Math.min(...R.laps));
+    $('fVueltas').innerHTML=R.laps.map((t,i)=>'<li class="'+(i===mi&&R.laps.length>1?'mej':'')+'"><span>Vuelta '+(i+1)+'</span><span>'+fmt(t*1000)+'</span></li>').join('');
+    $('final').classList.remove('hide');
+  },1200);
+  aviso('🏁 ¡Bandera a cuadros!',2);
+}
+
+/* ================= DIBUJO: vista de atrás en 3D (de la capa G115 de la timba) ================= */
+const REN=(function(){
+  const cv=$('cv');let ctx=null;try{ctx=cv.getContext('2d');}catch(e){}
+  const DATOS=new Map();
+  function hash(i,k){let h=(i*374761393+k*668265263)>>>0;h=(h^(h>>>13))*1274126177>>>0;return (h^(h>>>16))>>>0;}
+  function datos(T){
+    let d=DATOS.get(T);if(d)return d;
+    const n=T.n,w=T.w,k=new Float32Array(n);
+    const hd=i=>{i=((i%n)+n)%n;return Math.atan2(T.ty[i],T.tx[i]);};
+    for(let i=0;i<n;i++){
+      let a=hd(i+3)-hd(i-3);a=Math.atan2(Math.sin(a),Math.cos(a));
+      const lo=(i-3+n)%n;let L=0;for(let q=0;q<6;q++){const p=(lo+q)%n,p2=(p+1)%n;L+=Math.hypot(T.x[p2]-T.x[p],T.y[p2]-T.y[p]);}
+      k[i]=a/(L||48);
+    }
+    const libre=(x,y,m)=>{const m2=m*m;for(let j=0;j<n;j++){const dx=T.x[j]-x,dy=T.y[j]-y;if(dx*dx+dy*dy<m2)return false;}return true;};
+    const pt=(i,L)=>[T.x[i]-T.ty[i]*L,T.y[i]+T.tx[i]*L];
+    const piano=new Uint8Array(n),barI=new Uint8Array(n),barD=new Uint8Array(n);
+    for(let i=0;i<n;i++){const ka=Math.max(Math.abs(k[i]),Math.abs(k[(i+1)%n]));if(ka>0.0105)piano[i]=1;}
+    const LB=w+16;
+    const okB=[];for(let i=0;i<n;i++){const a=pt(i,-LB),b=pt(i,LB);okB.push([libre(a[0],a[1],w+9),libre(b[0],b[1],w+9)]);}
+    for(let i=0;i<n;i++){const j=(i+1)%n;barI[i]=(okB[i][0]&&okB[j][0])?1:0;barD[i]=(okB[i][1]&&okB[j][1])?1:0;}
+    const arboles=[];
+    for(let i=0;i<n;i+=2)for(const sg of[-1,1]){
+      const hh=hash(i,sg+5);if(hh%7===0)continue;
+      const L=sg*(w+30+hh%22);const p=pt(i,L);
+      if(libre(p[0],p[1],w+22))arboles.push({x:p[0],y:p[1],h:13+(hh>>>4)%9,c:(hh>>>8)%3});
+    }
+    const flechas=[];
+    for(let i=0;i<n;i++){
+      const a=Math.abs(k[i]),b=Math.abs(k[(i-2+n)%n]);
+      if(a>0.02&&b<=0.02){const sg=k[i]>0?1:-1;
+        for(let q=-2;q<=1;q++){const ii=(i+q+n)%n,L=-sg*(w+7),p=pt(ii,L);if(libre(p[0],p[1],w+5))flechas.push({i:ii,L,dir:sg});}}
+    }
+    const carteles=[];const TX=['LA TIMBA','TABERNERA','ALTO VALLE','CIPOLLETTI','NEUQUÉN','🏁 GRAN PREMIO'];
+    for(let i=6,c=0;i<n-6;i+=14,c++){
+      const sg=(c&1)?1:-1,L=sg*(w+10),a=pt(i,L),b=pt(i+2,L);
+      if(libre(a[0],a[1],w+8)&&libre(b[0],b[1],w+8))carteles.push({i,L,t:TX[c%TX.length],c:c%4});
+    }
+    d={k,piano,barI,barD,LB,arboles,flechas,carteles};DATOS.set(T,d);return d;
+  }
+  let W=390,H=700,DPR=1,W2=195,HY=200,F=300,HC=6;const NEAR=0.6;
+  let dprMax=1.5,lentoT=0,fpsAcum=0,fpsN=0;
+  function medir(){
+    W=innerWidth||390;H=innerHeight||700;DPR=Math.min(dprMax,window.devicePixelRatio||1);
+    const w=Math.round(W*DPR),h=Math.round(H*DPR);
+    if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;cv.style.width=W+'px';cv.style.height=H+'px';}
+  }
+  const pR=new Float64Array(24),pZ=new Float64Array(24),pU=new Float64Array(24);let pN=0;
+  function pIni(){pN=0;}
+  function pAdd(r,z,u){pR[pN]=r;pZ[pN]=z;pU[pN]=u;pN++;}
+  const sx=(r,z)=>W2+F*r/z, sy=(z,u)=>HY+F*(HC-u)/z;
+  function pTraza(c){
+    let alguno=false;for(let q=0;q<pN;q++)if(pZ[q]>=NEAR){alguno=true;break;}
+    if(!alguno)return false;
+    c.beginPath();let pri=true;
+    for(let q=0;q<pN;q++){
+      const q2=(q+1)%pN,za=pZ[q],zb=pZ[q2];
+      if(za>=NEAR){const x=sx(pR[q],za),y=sy(za,pU[q]);if(pri){c.moveTo(x,y);pri=false;}else c.lineTo(x,y);}
+      if((za>=NEAR)!==(zb>=NEAR)){const t=(NEAR-za)/(zb-za),r=pR[q]+(pR[q2]-pR[q])*t,u=pU[q]+(pU[q2]-pU[q])*t;
+        const x=sx(r,NEAR),y=sy(NEAR,u);if(pri){c.moveTo(x,y);pri=false;}else c.lineTo(x,y);}
+    }
+    c.closePath();return true;
+  }
+  function pLlenar(c,col,borde){if(!pTraza(c))return false;c.fillStyle=col;c.fill();if(borde){c.strokeStyle=col;c.lineWidth=1;c.stroke();}return true;}
+  let A=null;
+  function transformar(T,cx,cy,co,si){
+    const n=T.n;
+    if(!A||A.n!==n)A={n,cr:new Float32Array(n),cz:new Float32Array(n),nr:new Float32Array(n),nz:new Float32Array(n),key:new Float32Array(n)};
+    for(let i=0;i<n;i++){
+      const dx=T.x[i]-cx,dy=T.y[i]-cy;A.cr[i]=-dx*si+dy*co;A.cz[i]=dx*co+dy*si;
+      const nx=-T.ty[i],ny=T.tx[i];A.nr[i]=-nx*si+ny*co;A.nz[i]=nx*co+ny*si;
+    }
+  }
+  function quad(i,j,a,b,u0,u1){
+    pIni();
+    pAdd(A.cr[i]+a*A.nr[i],A.cz[i]+a*A.nz[i],u0);pAdd(A.cr[i]+b*A.nr[i],A.cz[i]+b*A.nz[i],u0);
+    pAdd(A.cr[j]+b*A.nr[j],A.cz[j]+b*A.nz[j],u1);pAdd(A.cr[j]+a*A.nr[j],A.cz[j]+a*A.nz[j],u1);
+  }
+  function pared(i,j,L,h0,h1){
+    pIni();
+    const ra=A.cr[i]+L*A.nr[i],za=A.cz[i]+L*A.nz[i],rb=A.cr[j]+L*A.nr[j],zb=A.cz[j]+L*A.nz[j];
+    pAdd(ra,za,h0);pAdd(rb,zb,h0);pAdd(rb,zb,h1);pAdd(ra,za,h1);
+  }
+  function frente(i,a,b,h0,h1){
+    pIni();
+    const ra=A.cr[i]+a*A.nr[i],za=A.cz[i]+a*A.nz[i],rb=A.cr[i]+b*A.nr[i],zb=A.cz[i]+b*A.nz[i];
+    pAdd(ra,za,h0);pAdd(rb,zb,h0);pAdd(rb,zb,h1);pAdd(ra,za,h1);
+  }
+  const RGB={};
+  function rgb(h){if(RGB[h])return RGB[h];let s=String(h).replace('#','');if(s.length===3)s=s.split('').map(x=>x+x).join('');
+    const v=parseInt(s,16);return RGB[h]=isNaN(v)?[255,210,63]:[(v>>16)&255,(v>>8)&255,v&255];}
+  const TONOS={};
+  function tono(h,k){const key=h+k;if(TONOS[key])return TONOS[key];const c=rgb(h);return TONOS[key]='rgb('+c.map(x=>Math.max(0,Math.min(255,Math.round(x*k)))).join(',')+')';}
+  const CAJAS=[
+    {x:[-4.2,-2.6],y:[1.95,3.0],u:[0,1.25],c:'#151515'},{x:[-4.2,-2.6],y:[-3.0,-1.95],u:[0,1.25],c:'#151515'},
+    {x:[2.6,3.8],y:[1.9,2.8],u:[0,1.0],c:'#151515'},{x:[2.6,3.8],y:[-2.8,-1.9],u:[0,1.0],c:'#151515'},
+    {x:[-2.6,1.4],y:[-1.9,1.9],u:[0.25,0.85],c:'E',k:0.82},
+    {x:[-4.6,3.6],y:[-0.9,0.9],u:[0.25,1.15],c:'E'},
+    {x:[3.6,6.2],y:[-0.45,0.45],u:[0.25,0.7],c:'E'},
+    {x:[5.6,6.6],y:[-2.1,2.1],u:[0.08,0.3],c:'#1d1d1d'},
+    {x:[-0.8,0.6],y:[-0.5,0.5],u:[1.15,1.5],c:'#0c0c0c'},
+    {x:[-2.2,-0.6],y:[-0.35,0.35],u:[1.15,1.9],c:'E'},
+    {x:[-5.2,-4.6],y:[-2.0,2.0],u:[1.5,2.1],c:'#1a1a1a'},
+    {x:[-5.2,-4.6],y:[-2.05,-1.8],u:[0.6,2.1],c:'E',k:0.7},{x:[-5.2,-4.6],y:[1.8,2.05],u:[0.6,2.1],c:'E',k:0.7}
+  ];
+  const CARAS=[[[4,5,7,6],[0,0,1],1.15],[[0,2,6,4],[-1,0,0],0.78],[[1,5,7,3],[1,0,0],0.9],[[0,4,5,1],[0,-1,0],0.95],[[2,3,7,6],[0,1,0],0.95]];
+  const eR=new Float64Array(8),eZ=new Float64Array(8),eU=new Float64Array(8);
+  function dibujarAuto(c,x,y,th,col,alfa,ccx,ccy,co,si,inclina){
+    const dx=x-ccx,dy=y-ccy,r0=-dx*si+dy*co,z0=dx*co+dy*si;
+    if(z0<2||z0>700)return null;
+    if(Math.abs(r0)>z0*(W2/F)+12)return null;
+    const a=Math.atan2(Math.sin(th),Math.cos(th))-Math.atan2(si,co);
+    const fr=Math.sin(a),fz=Math.cos(a),dr=Math.cos(a),dz=-Math.sin(a);
+    c.save();c.globalAlpha=alfa;
+    pIni();[[-5.4,-3.2],[6.8,-3.2],[6.8,3.2],[-5.4,3.2]].forEach(p=>pAdd(r0+fr*p[0]+dr*p[1],z0+fz*p[0]+dz*p[1],0.02));
+    pLlenar(c,'rgba(0,0,0,.32)');
+    const orden=CAJAS.map(b=>{const mx=(b.x[0]+b.x[1])/2,my=(b.y[0]+b.y[1])/2;return{b,z:z0+fz*mx+dz*my};}).sort((p,q)=>q.z-p.z);
+    for(const o of orden){
+      const b=o.b;
+      for(let q=0;q<8;q++){const bx=b.x[q&1],by=b.y[(q>>1)&1];eR[q]=r0+fr*bx+dr*by;eZ[q]=z0+fz*bx+dz*by;eU[q]=b.u[(q>>2)&1];}
+      const base=b.c==='E'?col:b.c,kk=b.k||1;
+      for(const cara of CARAS){
+        const nn=cara[1];
+        const nr=fr*nn[0]+dr*nn[1],nz=fz*nn[0]+dz*nn[1],nu=nn[2];
+        let cr=0,cz=0,cu=0;cara[0].forEach(q=>{cr+=eR[q];cz+=eZ[q];cu+=eU[q];});cr/=4;cz/=4;cu/=4;
+        if(nr*cr+nz*cz+nu*(cu-HC)>=0)continue;
+        pIni();cara[0].forEach(q=>pAdd(eR[q],eZ[q],eU[q]));
+        pLlenar(c,tono(base,cara[2]*kk));
+      }
+    }
+    c.restore();
+    return{r:r0,z:z0};
+  }
+  const ALAMOS=['#2f6b34','#3c7d3a','#4b8a3b'];
+  function alamo(c,r,z,h,ci){
+    const x=sx(r,z),y0=sy(z,0),k=F/z,alto=h*k,ancho=Math.max(1.5,h*0.24*k);
+    c.fillStyle='#5a4128';c.fillRect(x-Math.max(0.6,0.5*k)/2,y0-alto*0.2,Math.max(0.6,0.5*k),alto*0.2);
+    c.fillStyle=ALAMOS[ci];c.beginPath();c.ellipse(x,y0-alto*0.58,ancho/2,alto*0.42,0,0,Math.PI*2);c.fill();
+  }
+  function cielo(c,camTh){
+    const g=c.createLinearGradient(0,0,0,HY);g.addColorStop(0,'#3f7fcf');g.addColorStop(1,'#c4e0f2');
+    c.fillStyle=g;c.fillRect(-W,-H,W*3,HY+H+1);
+    const capa=(alto,col,f1,f2,ph)=>{
+      c.fillStyle=col;c.beginPath();c.moveTo(-W*0.5,HY+1);
+      for(let x=-W*0.5;x<=W*1.5+6;x+=8){
+        const an=camTh+Math.atan((x-W2)/F);
+        let p=0.5+0.32*Math.sin(an*f1+ph)+0.2*Math.sin(an*f2+ph*2.3)+0.08*Math.sin(an*13+ph);
+        p=Math.max(0,Math.min(1,(p-0.42)*2.4));
+        c.lineTo(x,HY-alto*p);
+      }
+      c.lineTo(W*1.5+6,HY+1);c.closePath();c.fill();
+    };
+    capa(H*0.075,'#c9a173',3,7,0.7);
+    capa(H*0.045,'#a87a4c',5,11,2.1);
+  }
+  let cam=null,roll=0;
+  function reset(){cam=null;roll=0;}
+  const vis=[],objs=[];
+  function dibujar(R,dt){
+    medir();if(!ctx)return;
+    /* calidad automática: si el celular no llega a ~40 cuadros, baja la resolución */
+    fpsAcum+=dt;fpsN++;if(fpsAcum>=2){const fps=fpsN/fpsAcum;if(fps<40&&dprMax>1){lentoT++;if(lentoT>=2){dprMax=1;lentoT=0;}}else lentoT=0;fpsAcum=0;fpsN=0;}
+    const c=ctx,T=R.T,car=R.car,land=W>H,w=T.w,n=T.n,DD=datos(T);
+    const v=Math.max(0,car.v||0);
+    if(!cam)cam={th:car.th,d:0};
+    let dd=car.th-cam.th;dd=Math.atan2(Math.sin(dd),Math.cos(dd));cam.th+=dd*Math.min(1,dt*4.5);
+    HC=land?7.5:12;
+    const dObj=(land?12:16)+0.05*v;cam.d=cam.d?cam.d+(dObj-cam.d)*Math.min(1,dt*2):dObj;
+    const cyAuto=land?0.78*H:0.74*H;
+    HY=land?0.33*H:0.40*H;
+    if(car.pasto&&v>6)HY+=(Math.random()-0.5)*Math.min(5,v*0.08);
+    F=(cyAuto-HY)*cam.d/HC;W2=W/2;
+    const co=Math.cos(cam.th),si=Math.sin(cam.th);
+    const ccx=car.x-co*cam.d,ccy=car.y-si*cam.d;
+    /* el horizonte se inclina un poco con el volante: se siente que doblás */
+    const rollObj=-(R.s||0)*Math.min(1,v/40)*4*D2R;roll+=(rollObj-roll)*Math.min(1,dt*5);
+    c.setTransform(DPR,0,0,DPR,0,0);
+    c.save();c.translate(W2,H*0.6);c.rotate(roll);c.translate(-W2,-H*0.6);
+    cielo(c,cam.th);
+    c.fillStyle='#3e8a3c';c.fillRect(-W,HY,W*3,H*2);
+    transformar(T,ccx,ccy,co,si);
+    const far=land?760:640,kx=W2/F;
+    vis.length=0;
+    for(let i=0;i<n;i++){
+      const j=(i+1)%n,za=A.cz[i],zb=A.cz[j];
+      if(za<-3&&zb<-3)continue;
+      if(za>far&&zb>far)continue;
+      const lim=Math.max(za,zb,1)*kx+w+90;
+      if((A.cr[i]>lim&&A.cr[j]>lim)||(A.cr[i]<-lim&&A.cr[j]<-lim))continue;
+      A.key[i]=(za+zb)/2;vis.push(i);
+    }
+    vis.sort((a,b)=>A.key[b]-A.key[a]);
+    for(const i of vis){if((Math.floor(T.s[i]/16)&1)===0||A.key[i]>380)continue;const j=(i+1)%n;quad(i,j,-(w+50),w+50,0,0);pLlenar(c,'#4a9a45');}
+    for(const i of vis){
+      const j=(i+1)%n,kz=A.key[i],banda=Math.floor(T.s[i]/24)&1;
+      if(DD.piano[i]){const col=(i&1)?'#d8343c':'#f2f2f2';quad(i,j,-(w+2.8),-w,0,0);pLlenar(c,col);quad(i,j,w,w+2.8,0,0);pLlenar(c,col);}
+      quad(i,j,-w,w,0,0);pLlenar(c,banda?'#4e535b':'#4a4f57',kz<260);
+      if(kz<320){
+        if(!DD.piano[i]){quad(i,j,-w+0.4,-w+1.1,0,0);pLlenar(c,'#e9e9e9');quad(i,j,w-1.1,w-0.4,0,0);pLlenar(c,'#e9e9e9');}
+        if(i%3===0){quad(i,j,-0.3,0.3,0,0);pLlenar(c,'rgba(235,235,235,.75)');}
+      }
+      if(i===0){
+        const cols=12,paso=2*w/cols;
+        for(let fila=0;fila<2;fila++)for(let q=0;q<cols;q++){
+          const a=-w+q*paso,b=a+paso,f0=fila*1.6,f1=f0+1.6;
+          pIni();
+          const P=(L,s)=>{const tt=s/Math.max(1,T.s[1]-T.s[0]);pAdd(A.cr[0]+(A.cr[1]-A.cr[0])*tt+L*A.nr[0],A.cz[0]+(A.cz[1]-A.cz[0])*tt+L*A.nz[0],0.01);};
+          P(a,f0);P(b,f0);P(b,f1);P(a,f1);
+          pLlenar(c,((q+fila)&1)?'#f5f5f5':'#141414');
+        }
+      }
+    }
+    const bg=c.createLinearGradient(0,HY,0,HY+H*0.09);bg.addColorStop(0,'rgba(196,224,242,.9)');bg.addColorStop(1,'rgba(196,224,242,0)');
+    c.fillStyle=bg;c.fillRect(-W,HY,W*3,H*0.09);
+    objs.length=0;
+    for(const i of vis){
+      const j=(i+1)%n,L=DD.LB;
+      if(DD.barI[i]){const z=(A.cz[i]-L*A.nz[i]+A.cz[j]-L*A.nz[j])/2;objs.push({z,t:0,i,j,L:-L});}
+      if(DD.barD[i]){const z=(A.cz[i]+L*A.nz[i]+A.cz[j]+L*A.nz[j])/2;objs.push({z,t:0,i,j,L});}
+    }
+    const lejosArb=dprMax<1.5?420:far;
+    for(const a of DD.arboles){
+      const dx=a.x-ccx,dy=a.y-ccy,r=-dx*si+dy*co,z=dx*co+dy*si;
+      if(z<3||z>lejosArb)continue;if(Math.abs(r)>z*kx+30)continue;objs.push({z,t:1,r,a});
+    }
+    for(const fl of DD.flechas){const z=A.cz[fl.i]+fl.L*A.nz[fl.i];if(z<2||z>420)continue;objs.push({z,t:2,fl});}
+    for(const ct of DD.carteles){const j=(ct.i+2)%n,z=(A.cz[ct.i]+A.cz[j])/2+ct.L*A.nz[ct.i];if(z<2||z>500)continue;objs.push({z,t:3,ct});}
+    {const z=A.cz[0];if(z>22&&z<far)objs.push({z,t:4});}
+    const autos=[];
+    if(R.fantasma&&R.fantasma.m&&R.fantasma.m.length&&R.verdeYa){
+      const m=R.fantasma.m,t=R.tCarrera;
+      let i=Math.min(m.length-1,Math.max(0,Math.floor(t/0.1)));
+      while(i>0&&m[i][0]>t)i--;while(i<m.length-2&&m[i+1][0]<=t)i++;
+      const a=m[i],b=m[Math.min(m.length-1,i+1)],f=Math.max(0,Math.min(1,(t-a[0])/Math.max(0.01,b[0]-a[0])));
+      let dth=b[3]-a[3];dth=Math.atan2(Math.sin(dth),Math.cos(dth));
+      if(t<=m[m.length-1][0]+2)autos.push({x:a[1]+(b[1]-a[1])*f,y:a[2]+(b[2]-a[2])*f,th:a[3]+dth*f,col:'#ffffff',al:0.4,n:'Récord'});
+    }
+    autos.push({x:car.x,y:car.y,th:car.th,col:R.color,al:1,n:'',yo:1});
+    autos.forEach(a=>{const dx=a.x-ccx,dy=a.y-ccy;objs.push({z:dx*co+dy*si-(a.yo?0.01:0),t:5,a});});
+    objs.sort((p,q)=>q.z-p.z);
+    const etq=[];
+    for(const o of objs){
+      if(o.t===0){pared(o.i,o.j,o.L,0,1.3);pLlenar(c,(o.i&1)?'#eeeeee':'#c62f3a');pared(o.i,o.j,o.L,1.3,1.6);pLlenar(c,'#8d949e');}
+      else if(o.t===1){alamo(c,o.r,o.z,o.a.h,o.a.c);}
+      else if(o.t===2){
+        const fl=o.fl;frente(fl.i,fl.L-2.2,fl.L+2.2,0.6,3.4);
+        if(pLlenar(c,'#c8102e')&&o.z<260){
+          const r=A.cr[fl.i]+fl.L*A.nr[fl.i],z=o.z,k=F/z;
+          if(k*2.6>7){c.fillStyle='#fff';c.font='900 '+Math.round(k*2.6)+'px Archivo,system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';
+            c.fillText(fl.dir>0?'›››':'‹‹‹',sx(r,z),sy(z,2.0));}
+        }
+      }
+      else if(o.t===3){
+        const ct=o.ct,j=(ct.i+2)%n;pared(ct.i,j,ct.L,1.0,4.2);
+        const fondo=['#ffd23f','#1b212b','#f5f5f5','#0f8a4d'][ct.c],letra=['#14181f','#ffd23f','#c8102e','#ffffff'][ct.c];
+        if(pLlenar(c,fondo)&&o.z<200){
+          const ra=A.cr[ct.i]+ct.L*A.nr[ct.i],za=A.cz[ct.i]+ct.L*A.nz[ct.i],rb=A.cr[j]+ct.L*A.nr[j],zb=A.cz[j]+ct.L*A.nz[j];
+          if(za>NEAR&&zb>NEAR){
+            const x1=sx(ra,za),x2=sx(rb,zb),y1=sy(za,2.6),y2=sy(zb,2.6),anch=Math.abs(x2-x1),alto=Math.min(F*2.2/za,F*2.2/zb);
+            if(anch>40&&alto>8){c.save();c.fillStyle=letra;c.font='900 '+Math.round(alto*0.75)+'px Archivo,system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';
+              c.translate((x1+x2)/2,(y1+y2)/2);const sk=(y2-y1)/(x2-x1||1);c.transform(1,sk,0,1,0,0);
+              const tw=c.measureText(ct.t).width;const e2=Math.min(1,anch*0.9/Math.max(1,tw));c.scale(e2,1);c.fillText(ct.t,0,0);c.restore();}
+          }
+        }
+      }
+      else if(o.t===4){
+        frente(0,-(w+3),-(w+1.8),0,8.5);pLlenar(c,'#2a2f37');frente(0,w+1.8,w+3,0,8.5);pLlenar(c,'#2a2f37');
+        frente(0,-(w+3),w+3,6.2,8.5);
+        if(pLlenar(c,'#14181f')){
+          const z=A.cz[0];if(z>NEAR){const k=F/z,x=sx(A.cr[0],z),y=sy(z,7.35);
+            if(k*1.6>6){c.save();c.fillStyle='#ffd23f';c.font='900 '+Math.round(k*1.6)+'px Archivo,system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';
+              const xa=sx(A.cr[0]-(w+1.8)*A.nr[0],A.cz[0]-(w+1.8)*A.nz[0]),xb=sx(A.cr[0]+(w+1.8)*A.nr[0],A.cz[0]+(w+1.8)*A.nz[0]);
+              const tw=c.measureText('LA TIMBA TABERNERA').width,e2=Math.min(1,Math.abs(xb-xa)*0.85/Math.max(1,tw));
+              c.translate(x,y);c.scale(e2,e2);c.fillText('LA TIMBA TABERNERA',0,0);c.restore();}}
+        }
+      }
+      else if(o.t===5){
+        const a=o.a;const p=dibujarAuto(c,a.x,a.y,a.th,a.col,a.al,ccx,ccy,co,si);
+        if(p&&a.n&&p.z<260)etq.push({x:sx(p.r,p.z),y:sy(p.z,3.4),n:a.n});
+      }
+    }
+    c.font='700 11px Archivo,system-ui,sans-serif';c.textAlign='center';c.textBaseline='alphabetic';
+    etq.forEach(e=>{if(e.x<-40||e.x>W+40||e.y<-20||e.y>H)return;const tw=c.measureText(e.n).width+8;
+      c.fillStyle='rgba(0,0,0,.55)';c.fillRect(e.x-tw/2,e.y-12,tw,15);c.fillStyle='#fff';c.fillText(e.n,e.x,e.y);});
+    c.restore();
+    minimapa(c,R,land);
+    /* volante en pantalla: muestra lo que está leyendo */
+    const xr=W2,yr=land?H-74:H-110;
+    rueda(c,xr+(land?-110:-90),land?H-34:H-46,16,R.s||0,0.85);
+    if((AJ.modo==='dedo'||R.tactilForzado)&&R){
+      PUNT.forEach(p=>{if(p.z!=='vol')return;const R0=Math.min(75,Math.max(45,innerWidth*0.09));c.save();c.globalAlpha=0.35;c.fillStyle='#000';c.beginPath();c.arc(p.x0,innerHeight*0.62,R0,0,Math.PI*2);c.fill();
+        c.globalAlpha=0.85;c.fillStyle='#ffd23f';c.beginPath();c.arc(p.x0+clamp(p.x-p.x0,-R0,R0),innerHeight*0.62,R0*0.38,0,Math.PI*2);c.fill();c.restore();});
+    }
+    if(AJ.modo==='incl'&&!R.tactilForzado&&VOL.plano&&R.verdeYa){texto(c,'📱 Levantá un poco el celular',W2,H*0.5,15);}
+    void yr;
+  }
+  function rueda(c,x,y,r,s,alfa){
+    c.save();c.translate(x,y);c.rotate(s*100*D2R);c.globalAlpha=alfa;
+    c.strokeStyle='#fff';c.lineWidth=Math.max(3,r*0.2);c.lineCap='round';
+    c.beginPath();c.arc(0,0,r,0,Math.PI*2);c.stroke();
+    c.beginPath();c.moveTo(-r,0);c.lineTo(r,0);c.moveTo(0,0);c.lineTo(0,r);c.stroke();
+    c.fillStyle='#ffd23f';c.beginPath();c.arc(0,-r,Math.max(2.5,r*0.18),0,Math.PI*2);c.fill();
+    c.restore();
+  }
+  function texto(c,t,x,y,tam){
+    c.font='800 '+tam+'px Archivo,system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';
+    const tw=c.measureText(t).width+22;c.fillStyle='rgba(0,0,0,.62)';
+    const h=tam+16;if(c.roundRect){c.beginPath();c.roundRect(x-tw/2,y-h/2,tw,h,10);c.fill();}else c.fillRect(x-tw/2,y-h/2,tw,h);
+    c.fillStyle='#fff';c.fillText(t,x,y+1);
+  }
+  let pathZ=null,pathP=null;
+  function camino(T){
+    if(pathZ===T&&pathP)return pathP;
+    const p=new Path2D();p.moveTo(T.x[0],T.y[0]);for(let i=1;i<T.n;i++)p.lineTo(T.x[i],T.y[i]);p.closePath();
+    pathZ=T;pathP=p;return p;
+  }
+  function minimapa(c,R,land){
+    const T=R.T,S2=land?Math.min(84,H*0.24):Math.min(92,W*0.25);
+    const x0=W-S2-12-(land?0:0),y0=(land?12:62)+0;
+    const [a,b,cc,d]=T.box,k=S2/Math.max(cc-a,d-b);
+    c.save();c.fillStyle='rgba(0,0,0,.42)';
+    if(c.roundRect){c.beginPath();c.roundRect(x0-5,y0-5,S2+10,S2+10,8);c.fill();}else c.fillRect(x0-5,y0-5,S2+10,S2+10);
+    c.translate(x0+(S2-(cc-a)*k)/2,y0+(S2-(d-b)*k)/2);c.scale(k,k);c.translate(-a,-b);
+    c.strokeStyle='rgba(255,255,255,.85)';c.lineWidth=1.8/k;c.lineJoin='round';c.stroke(camino(T));
+    const pto=(x,y,col,r)=>{c.fillStyle=col;c.beginPath();c.arc(x,y,r/k,0,Math.PI*2);c.fill();};
+    pto(R.car.x,R.car.y,R.color,3.8);
+    c.restore();
+  }
+  return{dibujar,reset};
+})();
+
+/* ---------- arranque ---------- */
+armarMenu();armarToques();
+rafMenu=requestAnimationFrame(animarMenu);
+window.__GP={GPM,VOL,AJ,IN,carrera:()=>R,giro,entrada,centrar,largar,pausar,aMenu,pista,PISTAS};
+</script>
+</body>
+</html>
