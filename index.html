@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0e1116">
+<meta name="theme-color" content="#16181c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -12,7 +12,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%8E%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wdth,wght@0,50..125,100..900;1,50..125,100..900&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0e1116;--bg2:#151a22;--card:#1b212b;--card2:#222a36;--line:#2c3644;
@@ -230,6 +230,160 @@ details p{margin:8px 0;font-size:13.5px;color:var(--dim)}
 .proxF{display:flex;align-items:center;gap:12px;margin:12px 0 4px}
 .proxF canvas{width:64px;height:64px;flex:none;background:var(--bg2);border-radius:10px}
 .proxF small{display:block;color:var(--dim2);font-size:11px;text-transform:uppercase;letter-spacing:.08em}.proxF b{display:block}
+/* ================= v4: identidad propia (asfalto, tiza, pianito rojo), menú más prolijo ================= */
+:root{
+  --bg:#16181c;--bg2:#1e2126;--card:#1e2126;--card2:#272b31;--line:#30343b;--line2:#3c4149;
+  --txt:#eeece6;--dim:#a4a8af;--dim2:#767b84;--acc:#f2c230;--rojo:#e0262e;--rojo2:#b81c23;
+  --disp:'Saira','Archivo',system-ui,sans-serif;
+}
+body{font:16px/1.45 var(--disp);font-stretch:100%;letter-spacing:0;background:var(--bg)}
+h1,h2,h3,.negra{font-family:var(--disp);font-weight:800;font-style:italic;font-stretch:78%;letter-spacing:0}
+button,input,select{font-family:var(--disp)}
+.btn{border-radius:8px;font-weight:650;font-size:15px;border-color:var(--line2);background:var(--card2)}
+.btn.pri{background:var(--rojo);border-color:var(--rojo);color:#fff}
+.btn.pri:disabled{opacity:.45}
+.btn.gh{background:transparent;border-color:var(--line)}
+.card{background:var(--bg2);border-color:var(--line);border-radius:12px}
+.tiny{color:var(--dim2);font-size:12.5px}
+.muted{color:var(--dim)}
+.aviso{border-radius:8px}
+input[type=text],.sel{border-radius:8px;background:var(--bg);border-color:var(--line2);font-family:var(--disp)}
+input[type=text]:focus,.sel:focus{outline:2px solid var(--txt);outline-offset:1px}
+button:focus-visible,summary:focus-visible{outline:2px solid var(--txt);outline-offset:2px}
+
+/* ---------- marca ---------- */
+#menu .wrap{max-width:900px;padding-top:calc(env(safe-area-inset-top) + 18px)}
+.marca{margin:0 0 16px}
+.marca .mk{margin:0;font-size:34px;line-height:.95;font-weight:900;font-stretch:72%;font-style:italic;text-transform:uppercase;letter-spacing:.005em}
+.marca .mk::after{content:'';display:block;width:56px;height:5px;margin-top:8px;transform:skewX(-20deg);transform-origin:left;
+  background:repeating-linear-gradient(90deg,var(--rojo) 0 14px,#fff 14px 28px)}
+.marca .mk-s{margin:6px 0 0;color:var(--dim2);font-size:13px}
+
+/* ---------- pantalla principal: la pista arriba, opciones y largar ---------- */
+#menu .prin{display:grid;gap:14px;padding:0;background:none;border:0}
+.colA,.colB{display:grid;gap:14px;align-content:start;min-width:0}
+#btnPista{display:grid;grid-template-columns:120px 1fr;align-items:center;gap:16px;width:100%;padding:14px 16px 14px 10px;
+  background:var(--bg2);border:1px solid var(--line);border-radius:12px;text-align:left;color:var(--txt)}
+#btnPista canvas{width:120px;height:120px}
+#btnPista .ps-t{display:grid;gap:4px;min-width:0}
+#pistaNom{font:italic 800 30px/1 var(--disp);font-stretch:74%;letter-spacing:.005em;overflow-wrap:anywhere}
+#btnPista .ps-r{font-size:13px;color:var(--dim);margin:0;line-height:1.35}
+#btnPista .ps-r b{font-size:13px;color:var(--acc);font-variant-numeric:tabular-nums;font-weight:700}
+#btnPista .ps-c{justify-self:start;margin-top:6px;font-size:13px;font-weight:650;color:var(--txt);border-bottom:1px solid var(--dim2);padding-bottom:1px;white-space:nowrap}
+#btnPista[aria-expanded=true]{border-color:var(--line2)}
+#btnPista[aria-expanded=true] .ps-c{border-color:var(--txt)}
+#panelPistas{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px}
+#panelPistas .pistas{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:4px;max-height:min(50vh,360px)}
+.pista{background:transparent;border:1px solid transparent;border-radius:8px;padding:8px 4px 7px;color:var(--txt)}
+.pista canvas{max-width:60px}
+.pista b{font-size:12.5px;font-weight:650;margin-top:5px}
+.pista small{font-size:11px;color:var(--dim2)}
+.pista em{color:var(--acc);font-variant-numeric:tabular-nums}
+.pista.on{background:var(--card2);border-color:var(--line2)}
+
+/* tiras de opciones: una sola fila, celdas iguales */
+.opciones{gap:12px}
+.op{display:grid;gap:6px;align-items:stretch}
+.op-l{width:auto;font-size:13px;font-weight:600;color:var(--dim)}
+.op .chips{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:0;flex-wrap:nowrap;border:1px solid var(--line2);border-radius:8px;overflow:hidden;background:var(--bg)}
+.op .chip,.op .chip.on{border:0;border-radius:0;padding:11px 0;margin:0;min-width:0;background:transparent;color:var(--dim);
+  font:italic 750 16px/1 var(--disp);font-stretch:82%;font-variant-numeric:tabular-nums;text-align:center;box-shadow:inset 1px 0 0 var(--line)}
+.op .chip:first-child{box-shadow:none}
+.op .chip.on{background:var(--txt);color:var(--bg);box-shadow:none}
+.op .chip.on+.chip{box-shadow:none}
+#chipsNivel .chip,#salaNivel .chip,#salaCampN .chip,#salaIA .chip{font-size:15px}
+.op .sel{width:100%}
+
+/* chips sueltos (escuderías) */
+.chips{gap:6px}
+.chip{border-radius:8px;border-color:var(--line2);background:var(--bg);color:var(--dim);font-weight:650;font-size:13.5px}
+.chip.on{background:var(--txt);border-color:var(--txt);color:var(--bg)}
+.seg{border-radius:9px;background:var(--bg);border-color:var(--line2)}
+.seg button{border-radius:6px;font-weight:650;font-family:var(--disp)}
+.seg button.on{background:var(--txt);color:var(--bg)}
+input[type=range]{accent-color:var(--rojo)}
+.chk input{accent-color:var(--rojo)}
+
+/* largar: el único botón rojo de la pantalla, con la bandera a cuadros en la punta */
+.largar,#menu .prin .largar{border:0;position:relative;overflow:hidden;width:100%;margin:2px 0 0;padding:0 64px 0 20px;height:60px;border-radius:10px;
+  font:italic 850 27px/60px var(--disp);font-stretch:74%;letter-spacing:.01em;text-transform:uppercase;text-align:left}
+.largar::after{content:'';position:absolute;top:0;bottom:0;right:0;width:52px;
+  background:conic-gradient(#fff 25%,#16181c 0 50%,#fff 0 75%,#16181c 0) 0 0/15px 15px;
+  clip-path:polygon(14px 0,100% 0,100% 100%,0 100%)}
+.largar:active{background:var(--rojo2)}
+#largarTxt{text-align:left;margin-top:-4px}
+.volMini{background:var(--bg2);border-color:var(--line);border-radius:10px}
+
+/* lista de abajo: filas planas en vez de tarjetas */
+#menu .acord{display:block;margin-top:22px;border-top:1px solid var(--line)}
+#menu .acord>details,#menu .acord>.fila-m{background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;margin:0}
+#menu .acord>details>summary{padding:16px 2px;font-size:16px;font-weight:650}
+#menu .acord>details>summary em{color:var(--dim2);font-size:13px;font-weight:500}
+#menu .acord>details[open]>summary{color:var(--txt)}
+#menu .acord .cuerpo{padding:0 2px 18px}
+.fila-m{display:flex;align-items:center;gap:10px;width:100%;padding:15px 2px;color:var(--txt);text-align:left;cursor:pointer}
+.fila-m .ps-t{flex:1;min-width:0}
+.fila-m b{display:block;font-size:16px;font-weight:650}
+.fila-m .ps-r{display:block;font-size:13px;color:var(--dim2);margin-top:1px}
+.fila-m .ps-c{flex:none;font-size:13px;color:var(--dim);font-style:italic;font-weight:600;white-space:nowrap}
+.fila-m .ps-c::after{content:'›';font-style:normal;color:var(--dim2);font-size:20px}
+.acord>details>summary::after{color:var(--dim2)}
+.rec-p summary em{color:var(--acc);font-variant-numeric:tabular-nums}
+.rec-t .t{font-variant-numeric:tabular-nums}
+
+@media (min-width:700px){
+  #menu .prin{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:20px;align-items:start}
+  #menu .prin>*{grid-column:auto}
+  #btnPista{grid-template-columns:1fr;justify-items:start;padding:14px 18px 18px}
+  #btnPista canvas{width:150px;height:150px;justify-self:center}
+  #pistaNom{font-size:34px}
+  #menu .acord{columns:2;column-gap:28px;border-top:0}
+  #menu .acord>details,#menu .acord>.fila-m{break-inside:avoid;border-top:1px solid var(--line);border-bottom:0}
+}
+@media (orientation:portrait){#hudMsg,#hudVuelta{top:calc(env(safe-area-inset-top) + 232px)}#hudVuelta:not(.hide)~#hudMsg{top:calc(env(safe-area-inset-top) + 280px)}}
+@media (min-width:700px) and (max-height:520px){
+  #menu .wrap{padding-top:calc(env(safe-area-inset-top) + 10px)}
+  .marca{display:flex;align-items:baseline;gap:12px;margin-bottom:10px}
+  .marca .mk{font-size:26px}.marca .mk::after{display:none}.marca .mk-s{margin:0}
+  #btnPista{grid-template-columns:110px 1fr;justify-items:stretch;align-items:center;padding:10px 14px 10px 8px}
+  #btnPista canvas{width:110px;height:110px}
+  #pistaNom{font-size:28px}
+  .opciones{gap:8px}.op .chip,.op .chip.on{padding:9px 0}
+  .largar,#menu .prin .largar{height:54px;line-height:54px}
+}
+
+/* ---------- otras pantallas con la misma mano ---------- */
+.tope{display:block;margin:0 0 16px}
+.tope .logo{display:none}
+.tope h1{font-size:32px;line-height:.98;font-stretch:72%;font-weight:900;text-transform:uppercase}
+.tope h1 span{color:inherit}
+.tope small{font-style:normal;font-weight:400;font-stretch:100%;text-transform:none;color:var(--dim2);font-size:13px;margin-top:6px}
+.tope small b{color:var(--txt)}
+#sala .prin,#camp .prin{padding:16px}
+.salaCarrera small,.proxF small,.ps-t small{text-transform:none;letter-spacing:0;font-size:12.5px}
+.oferta{border-radius:10px}
+.gran{font:italic 850 56px/1 var(--disp);font-stretch:74%;color:var(--acc);font-variant-numeric:tabular-nums}
+.vueltas li{font-variant-numeric:tabular-nums}
+.capa .card{border-radius:12px}
+.capa h3{font-size:30px;text-transform:uppercase;font-stretch:72%}
+
+/* ---------- en carrera: avisos chicos arriba, que no tapen la pista ---------- */
+#hudMsg{top:calc(env(safe-area-inset-top) + 60px);transform:translateX(-50%);font:italic 750 14px/1.2 var(--disp);font-stretch:88%;
+  background:rgba(22,24,28,.86);padding:7px 12px 7px 11px;border-radius:6px;border-left:3px solid var(--rojo);text-shadow:none;max-width:70vw;white-space:normal}
+#hudVuelta{top:calc(env(safe-area-inset-top) + 60px);transform:translateX(-50%);font:italic 850 18px/1.1 var(--disp);font-stretch:80%;
+  background:rgba(22,24,28,.86);padding:7px 14px;border-radius:6px;text-shadow:none}
+#hudVuelta small{font:600 12px/1.2 var(--disp);font-stretch:100%;font-style:normal;color:#c9ccd2;margin-top:2px}
+#hudVuelta:not(.hide)~#hudMsg,#hudMsg:has(~#hudVuelta:not(.hide)){top:calc(env(safe-area-inset-top) + 108px)}
+#hudT .t{font:italic 850 21px var(--disp);font-stretch:80%;font-variant-numeric:tabular-nums}
+#hudT .m{font:600 11px var(--disp)}
+#hudT .pen{font:italic 750 12px var(--disp);color:#ff8a93}
+#ayudaLuz{top:calc(16% + 64px)}
+#ayudaLuz div{font:italic 700 13.5px/1.25 var(--disp);font-stretch:90%;border-radius:6px;padding:6px 11px;margin:2px 0;background:rgba(22,24,28,.8)}
+.botonesC button{border-radius:8px;background:rgba(22,24,28,.55)}
+#camp .wrap{max-width:620px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 18px) max(16px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 28px) max(16px,env(safe-area-inset-left))}
+.tope small{font-family:var(--disp)}
+.oferta b{font-weight:700}
+.capa .card h3{margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -237,37 +391,40 @@ details p{margin:8px 0;font-size:13.5px;color:var(--dim)}
 <!-- ================= MENÚ ================= -->
 <section id="menu" class="pantalla">
  <div class="wrap">
-  <div class="tope">
-    <div class="logo">🏎️</div>
-    <h1>EL GRAN <span>PREMIO</span><small>La Timba Tabernera · en tu celular</small></h1>
-  </div>
+  <header class="marca">
+    <h1 class="mk">El Gran Premio</h1>
+    <p class="mk-s">de La Timba Tabernera</p>
+  </header>
   <div id="avisoSeguro" class="aviso hide"></div>
-  <div class="card prin">
+  <div class="prin">
+   <div class="colA">
     <button class="pistaSel" id="btnPista" aria-expanded="false">
       <canvas id="miniSel" width="120" height="120"></canvas>
-      <span class="ps-t"><small>Pista</small><b id="pistaNom"></b><span id="recordTxt" class="ps-r"></span></span>
-      <span class="ps-c">Cambiar <i>▾</i></span>
+      <span class="ps-t"><b id="pistaNom"></b><span id="recordTxt" class="ps-r"></span><span class="ps-c">Cambiar pista</span></span>
     </button>
     <div id="panelPistas" class="hide"><div class="pistas" id="pistas"></div></div>
+   </div>
+   <div class="colB">
     <div class="opciones">
       <div class="op"><span class="op-l">Vueltas</span><div class="chips" id="chipsVueltas"></div></div>
       <div class="op"><span class="op-l">Rivales</span><div class="chips" id="chipsIA"></div></div>
-      <div class="op" id="opNivel"><span class="op-l">Nivel</span><div class="chips" id="chipsNivel"></div></div>
+      <div class="op" id="opNivel"><span class="op-l">Nivel de la máquina</span><div class="chips" id="chipsNivel"></div></div>
     </div>
     <div class="volMini hide" id="volMini"><span id="volMiniTxt"></span><button class="btn sm" id="btnActivar2">Activar volante</button></div>
-    <button class="btn pri largar" id="btnLargar">🏁 LARGAR</button>
-    <div class="tiny cen" id="largarTxt"></div>
-    <button class="pistaSel carreraBtn" id="btnCarrera"><span class="cb-i">🏆</span><span class="ps-t"><small>Modo carrera</small><b>De las chacras a la F1</b><span class="ps-r" id="sumCarrera"></span></span><span class="ps-c">Entrar <i>›</i></span></button>
+    <button class="btn pri largar" id="btnLargar"><span>Largar</span></button>
+    <div class="tiny" id="largarTxt"></div>
+   </div>
   </div>
   <div class="acord">
-   <details id="dPiloto"><summary><span>🧑 Piloto y escudería</span><em id="sumPiloto"></em></summary><div class="cuerpo">
+   <button class="fila-m" id="btnCarrera"><span class="ps-t"><b>Modo carrera</b><span class="ps-r" id="sumCarrera"></span></span><span class="ps-c"></span></button>
+   <details id="dPiloto"><summary><span>Piloto y escudería</span><em id="sumPiloto"></em></summary><div class="cuerpo">
      <div class="ctl"><label>Tu nombre</label><input type="text" id="nombre" maxlength="16" placeholder="Ej.: John" autocomplete="off"></div>
      <div class="ctl"><label>Escudería</label><div class="chips" id="chipsEsc"></div></div>
    </div></details>
-   <details id="dManejo"><summary><span>🎮 Volante y ayudas</span><em id="sumManejo"></em></summary><div class="cuerpo">
+   <details id="dManejo"><summary><span>Volante y ayudas</span><em id="sumManejo"></em></summary><div class="cuerpo">
      <div class="seg" id="segModo">
-       <button data-m="incl">📱 Girando el celular</button>
-       <button data-m="dedo">👆 Con el dedo</button>
+       <button data-m="incl">Girando el celular</button>
+       <button data-m="dedo">Con el dedo</button>
      </div>
      <div id="bloqueIncl">
        <div class="volbox">
@@ -312,26 +469,26 @@ details p{margin:8px 0;font-size:13.5px;color:var(--dim)}
        <div class="tiny" style="margin-top:6px">“Un poco” te acomoda hacia la trazada (o al medio de la pista si la apagaste). “Mucha” además frena solo donde la trazada se pone roja.</div>
      </div>
    </div></details>
-   <details id="dRec"><summary><span>🏆 Mejores tiempos</span><em id="sumRec"></em></summary><div class="cuerpo" id="tablaRec"></div></details>
-   <details id="cardAmigos"><summary><span>👥 Carrera con amigos</span><em>cada uno con su celu</em></summary><div class="cuerpo">
+   <details id="dRec"><summary><span>Mejores tiempos</span><em id="sumRec"></em></summary><div class="cuerpo" id="tablaRec"></div></details>
+   <details id="cardAmigos"><summary><span>Carrera con amigos</span><em>cada uno con su celu</em></summary><div class="cuerpo">
      <p class="muted" style="margin:0 0 10px">Todos en la misma carrera, con choques y la tablita en vivo. Uno arma la sala, manda el link y largan juntos.</p>
-     <button class="btn pri" id="btnArmarSala" style="width:100%">🏁 Armar sala</button>
+     <button class="btn pri" id="btnArmarSala" style="width:100%">Armar sala</button>
      <div class="fila" style="margin-top:10px"><input type="text" id="codigoSala" placeholder="¿Te pasaron un código? Ej.: K7MPQ" maxlength="6" autocomplete="off" style="flex:1;min-width:0;text-transform:uppercase"><button class="btn" id="btnUnirme">Entrar</button></div>
    </div></details>
-   <details id="dComo"><summary><span>❓ Cómo se maneja</span></summary><div class="cuerpo">
+   <details id="dComo"><summary><span>Cómo se maneja</span></summary><div class="cuerpo">
     <p><b>Girando el celular:</b> agarralo acostado con las dos manos, como un volante, con la pantalla mirándote. Girarlo hacia la derecha dobla a la derecha. No hace falta tenerlo parado del todo: inclinado hacia atrás también anda.</p>
     <p><b>Pedales:</b> con los pulgares. Lado izquierdo de la pantalla frena, lado derecho acelera. Si te cansa, prendé “Acelera solo”.</p>
     <p><b>La trazada:</b> la línea del piso marca por dónde ir. Verde: a fondo. Amarilla: levantá o tocá el freno. Roja: frená fuerte. Antes de las frenadas grandes hay carteles de 150, 100 y 50 metros hasta la curva. La trazada se apaga en “Volante y ayudas” o desde la pausa.</p>
-    <p><b>Contra la máquina:</b> elegí cuántos rivales y el nivel. Tranqui es para aprender la pista, Picante pelea, Bravo es para los que ya la conocen.</p>
-    <p><b>Choques:</b> los autos se chocan entre sí, también con los amigos en línea. Contra la defensa rebotás y perdés velocidad según cómo pegues. Si te vas lejos o de contramano, volvés a la pista casi parado y por un segundo no chocás con nadie.</p>
+    <p><b>Contra la máquina:</b> elegí cuántos rivales y el nivel. Tranqui es para aprender la pista, Picante pelea pero se le puede ganar, Bravo es para los que ya la conocen.</p>
+    <p><b>Choques:</b> los autos se chocan entre sí, también con los amigos en línea. La máquina maneja bien, pero cada tanto se equivoca: se pasa en una curva, le tiembla la mano o te cierra la puerta. Contra la defensa rebotás y perdés velocidad según cómo pegues. Si te vas lejos o de contramano, volvés a la pista casi parado y por un segundo no chocás con nadie.</p>
     <p><b>Límites de pista:</b> el pasto frena fuerte y ahí casi no doblás, así que cortar no sirve. Irse afuera no se penaliza.</p>
-    <p><b>Toques con culpa:</b> si le pegás a otro de atrás o te le tirás encima de costado, es toque con culpa. El primero y el segundo son aviso; al tercero te cobran <b>+5 s</b> y se cuenta de nuevo. Si te pegan a vos, no te cobran nada. Corre igual para la máquina.</p>
+    <p><b>Toques con culpa:</b> si le pegás a otro de atrás o te le tirás encima de costado, es toque con culpa. El primero y el segundo son aviso; al tercero te cobran <b>+5 s</b> y se cuenta de nuevo. Si te pegan a vos, no te cobran nada. Corre igual para la máquina. Los toques y la penalización se ven abajo del tiempo, sin carteles.</p>
     <p><b>En iPhone</b> abrila en Safari desde el link (dentro de otras apps el sensor viene bloqueado). El permiso lo pide Safari al tocar “Activar volante”: tocá Permitir. Si lo rechazaste sin querer, cerrá Safari del todo y abrí el link de nuevo.</p>
     <p><b>Pantalla completa:</b> en Android se pone sola al largar. En iPhone, Compartir → “Agregar a inicio” y abrila desde el ícono.</p>
     <p><b>Carrera con amigos:</b> uno toca “Armar sala” y manda el link (o muestra el código QR). Los demás entran, eligen nombre y escudería y tocan “Estoy listo”. El que armó la sala elige pista (o al azar), vueltas, cuántos autos de la máquina y si es una carrera suelta o un campeonato, y larga: las luces se apagan juntas en todos los celulares.</p>
     <p><b>Modo carrera:</b> arrancás en el Zonal del Alto Valle con un auto chico y vas subiendo: Nacional, F3, F2 y la F1. Cada temporada son 4 a 6 fechas cortas con puntos como en la F1. Si terminás entre los tres primeros te llaman de arriba; si no, te ofrecen otra escudería. Las estrellas del auto suman o restan un poco de motor. Si salís a mitad de una fecha, no cuenta y la volvés a correr.</p>
     <p><b>Campeonato con amigos:</b> en la sala, el que la armó elige cuántas fechas y si suma autos de la máquina. Los puntos del campeonato son como en la F1 para todos; los de la timba (4, 2 y 1) son solo para las personas.</p>
-    <p><b>Pistas de la zona:</b> el Callejero de Cipolletti y Los Puentes Neuquén–Cipolletti están dibujados a mano, inspirados en las calles y los puentes de verdad (no están a escala). En las dos sopla viento de costado: cuando ves el aviso 💨, corregí un poco con el volante.</p>
+    <p><b>Pistas de la zona:</b> el Callejero de Cipolletti y Los Puentes Neuquén–Cipolletti están dibujados a mano, inspirados en las calles y los puentes de verdad (no están a escala). En las dos sopla viento de costado cada tanto: si el auto se te va de lado, corregí un poco con el volante.</p>
     <p><b>Mejores tiempos:</b> se guardan en cada celular, por pista: las cinco mejores vueltas y las cinco mejores carreras de cada cantidad de vueltas.</p>
     <p class="tiny">Juego sin fines de lucro hecho entre amigos. Las escuderías son parodias inventadas, sin relación con ningún equipo real. Trazados de las pistas basados en el repositorio abierto f1-circuits, © 2019-2025 Tomislav Bacinger, licencia MIT.</p>
    </div></details>
@@ -341,13 +498,13 @@ details p{margin:8px 0;font-size:13.5px;color:var(--dim)}
 
 <!-- ================= MODO CARRERA ================= -->
 <section id="camp" class="pantalla hide"><div class="wrap">
-  <div class="tope"><div class="logo">🏆</div><h1>MODO <span>CARRERA</span><small>De las chacras a la F1</small></h1></div>
+  <div class="tope"><h1>Modo carrera<small>De las chacras a la F1</small></h1></div>
   <div id="campCuerpo"></div>
 </div></section>
 
 <!-- ================= SALA ================= -->
 <section id="sala" class="pantalla hide"><div class="wrap">
-  <div class="tope"><div class="logo">🏁</div><h1>CARRERA <span>CON AMIGOS</span><small>Sala <b id="salaCodigo">…</b> · <span id="salaEstado"></span></small></h1></div>
+  <div class="tope"><h1>Carrera con amigos<small>Sala <b id="salaCodigo">…</b> · <span id="salaEstado"></span></small></h1></div>
   <div id="salaError" class="aviso hide"></div>
   <div class="card prin">
     <div class="salaCarrera"><small>Carrera</small><b id="salaPistaTxt"></b></div>
@@ -355,16 +512,16 @@ details p{margin:8px 0;font-size:13.5px;color:var(--dim)}
     <div id="salaLista"></div>
     <div id="salaCamp" class="hide"></div>
     <div class="tiny cen" id="salaFaltan"></div>
-    <button class="btn pri largar" id="btnSalaLargar">🏁 LARGAR</button>
-    <button class="btn pri largar hide" id="btnSalaListo">Estoy listo</button>
+    <button class="btn pri largar" id="btnSalaLargar"><span>Largar</span></button>
+    <button class="btn pri largar hide" id="btnSalaListo"><span>Estoy listo</span></button>
   </div>
   <div class="acord">
-    <details id="dInvita"><summary><span>📲 Invitá</span><em>link, QR o WhatsApp</em></summary><div class="cuerpo">
+    <details id="dInvita"><summary><span>Invitá</span><em>link, QR o WhatsApp</em></summary><div class="cuerpo">
       <div class="invita"><div id="salaQR" class="qr"></div>
         <div style="min-width:0"><div class="tiny">Que escaneen el código con la cámara o entren al link:</div><div id="salaLink" class="link"></div>
           <div class="fila" style="margin-top:8px"><button class="btn sm pri" id="btnSalaWA">📲 WhatsApp</button><button class="btn sm" id="btnSalaCopiar">📋 Copiar link</button></div></div></div>
     </div></details>
-    <details id="dTuAuto"><summary><span>🏎️ Tu auto</span><em id="sumTuAuto"></em></summary><div class="cuerpo">
+    <details id="dTuAuto"><summary><span>Tu auto</span><em id="sumTuAuto"></em></summary><div class="cuerpo">
       <div class="ctl" style="margin-top:0"><label>Tu nombre</label><input type="text" id="salaNombre" maxlength="16" placeholder="Ej.: John" autocomplete="off"></div>
       <div class="ctl"><label>Escudería</label><div class="chips" id="salaEsc"></div></div>
       <div class="ctl fila"><span id="salaVol" class="muted" style="flex:1"></span><button class="btn sm" id="btnSalaVol">Activar volante</button></div>
@@ -2752,7 +2909,9 @@ var qrcode = function() {
        choques (con la máquina, la defensa y los amigos en línea) y mejores tiempos por pista.
    v3: pistas de la zona (Callejero de Cipolletti y Los Puentes Neuquén–Cipolletti, con viento), trazada sin rojos falsos,
        penalización por toques con culpa (al tercero, +5 s), máquina más rápida, pista al azar, 1 a 20 vueltas, 0 a 21 rivales,
-       modo carrera (Zonal → Nacional → F3 → F2 → F1) y campeonato con amigos, con autos de la máquina en línea. */
+       modo carrera (Zonal → Nacional → F3 → F2 → F1) y campeonato con amigos, con autos de la máquina en línea.
+   v4: sin carteles de toques ni de viento (los toques se ven abajo del tiempo), avisos chicos arriba, Picante más
+       ganable y máquina que se equivoca (se pasa en las curvas, le tiembla la mano, cierra la puerta), menú nuevo. */
 'use strict';
 /* Trazados de las pistas: derivados de bacinger/f1-circuits (https://github.com/bacinger/f1-circuits).
    MIT License — Copyright (c) 2019-2025 Tomislav Bacinger
@@ -3023,10 +3182,21 @@ const LINEA=(function(){
    Siguen la trazada ideal con un carril propio, frenan según el perfil de velocidades y, si tienen a alguien
    adelante, se abren para pasarlo o levantan para no comérselo. */
 const IA=(function(){
+  const ERRORES={on:true};
   const NOMBRES=['Pocho','Cacho','Tito','Lalo','Toto','Chueco','Flaco','Pájaro','Ruso','Tano','Gringo','Colo','Turco','Mono','Pipo','Nene',
     'Bocha','Pato','Cholo','Chino','Lucho','Beto','Pepe','Coco','Fito','Quique'];
   /* k = qué parte de la velocidad de la trazada usan. Con 1 van como la trazada; arriba de 1,3 ya no se puede ir más rápido */
-  const NIVELES={1:{n:'Tranqui',k:0.82},2:{n:'Picante',k:1.0},3:{n:'Bravo',k:1.22}};
+  const NIVELES={1:{n:'Tranqui',k:0.82},2:{n:'Picante',k:0.94},3:{n:'Bravo',k:1.22}};
+  /* v4: errores de la máquina. Cada tanto uno se equivoca: frena tarde y se pasa en la curva, le tiembla el volante
+     o cierra la puerta y se tira encima del otro. Cuanto más rápido el nivel, menos seguido (Tranqui ~30 s, Bravo ~80 s). */
+  function cadaErr(k){return 30+50*clamp((k-0.8)/0.42,0,1);}
+  function sortearErr(a){
+    const r=a.rnd(),x=a.rnd();
+    if(r<0.45)a.err={tipo:'tarde',m:1.12+x*0.1,g:0.32+a.rnd()*0.2,dentro:false,t:0,max:9};
+    else if(r<0.75)a.err={tipo:'mano',amp:(0.18+x*0.17)*(a.rnd()<0.5?-1:1),t:0,max:0.6+a.rnd()*0.7,fq:1.1+a.rnd()*0.6};
+    else a.err={tipo:'tapa',t:0,max:5+x*4};
+    a.nErr=(a.nErr||0)+1;
+  }
   function azar(sem){let s=sem>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
   /* arma los rivales: puestos de la grilla que no son el tuyo, escuderías distintas a la tuya */
   function crear(T,cant,nivel,escYo,puestoYo,sem,op){
@@ -3061,6 +3231,14 @@ const IA=(function(){
     /* ruido: cada tanto cambia un poquito el ritmo, como cualquiera */
     a.tRuido-=h||0.016;if(a.tRuido<=0){a.tRuido=1+a.rnd()*2;a.ruido=(a.rnd()-0.5)*0.025;}
     let k=a.k*(1+a.ruido);if(honor)k=0.55;
+    const hh=h||0.016;
+    if(honor||!ERRORES.on){a.err=null;}
+    else{
+      if(a.tErr==null)a.tErr=cadaErr(a.k)*(0.5+a.rnd());
+      if(a.err){a.err.t+=hh;if(a.err.t>a.err.max)a.err=null;}
+      else if(tVerde>6&&!c.pasto){a.tErr-=hh;if(a.tErr<=0){sortearErr(a);a.tErr=cadaErr(a.k)*(0.6+a.rnd()*0.8);}}
+    }
+    const E=a.err,tapa=E&&E.tipo==='tapa',marg=tapa?4.6:8.2;
     const lim=T.w-3.2;
     const mira=Math.max(2,Math.round((11+v*0.36)/8)),j=(c.i+mira)%n;
     const base=clamp(L.o[j]+a.carril,-lim,lim);
@@ -3073,13 +3251,13 @@ const IA=(function(){
       const dl=o.lat-latAqui,ov=Math.max(0,o.v);
       if(ds<13.5&&ds>-20){
         /* al lado (o recién pasado, todavía pegado): cada uno respeta su costado; no se cierra encima del otro */
-        if(Math.abs(dl)>2.5||Math.abs(ds)<13.5){if(dl>0)hi=Math.min(hi,o.lat-8.2);else lo=Math.max(lo,o.lat+8.2);}
+        if(Math.abs(dl)>2.5||Math.abs(ds)<13.5){if(dl>0)hi=Math.min(hi,o.lat-marg);else lo=Math.max(lo,o.lat+marg);}
       }
       if(ds>0&&ds<26+v*0.45&&Math.abs(dl)<7.5&&v>ov-1){
         const izq=o.lat-8.5,der=o.lat+8.5;
         const pIzq=izq>-lim?Math.abs(izq-latAqui):1e9,pDer=der<lim?Math.abs(der-latAqui):1e9;
         if(Math.min(pIzq,pDer)<1e8&&(!pasar||ds<pasar.ds))pasar={lat:pIzq<pDer?izq:der,ds};
-        if(ds<18+v*0.4&&Math.abs(dl)<6.5){
+        if(ds<(tapa?9+v*0.18:18+v*0.4)&&Math.abs(dl)<6.5){
           vTope=Math.min(vTope,ov-1.5-(ds<12?3:0));
           /* si me lo como en menos de un segundo, freno ya */
           const cv=v-ov;if(cv>0&&(ds-6)/cv<0.9)vTope=Math.min(vTope,ov-4);
@@ -3101,17 +3279,22 @@ const IA=(function(){
     const dx=px-c.x,dy=py-c.y,Ld=Math.hypot(dx,dy)||1;
     let e=Math.atan2(dy,dx)-c.th;e=Math.atan2(Math.sin(e),Math.cos(e));
     const kq=2*Math.sin(e)/Ld,kcap=CF.kmax/(1+Math.pow(v/CF.vu,2));
-    const s=clamp(kq/kcap,-1,1);
+    let s=clamp(kq/kcap,-1,1);
+    if(E&&E.tipo==='mano')s=clamp(s+E.amp*Math.sin(2*Math.PI*E.fq*E.t),-1,1);
+    /* se pasó: entra fuerte y no le alcanza el volante, se abre */
+    if(E&&E.tipo==='tarde'&&E.dentro)s*=E.g;
     /* velocidad: el perfil un poco más adelante (los que frenan tarde, un poco más) */
     const ade=(c.i+2+Math.round(v*0.08))%n;
     let vObj=L.v[ade]*k*(1+a.frenaTarde*(L.col[ade]>0?1:0));
+    /* frenó tarde: llega pasado a la curva y se abre (a veces hasta el pasto) */
+    if(E&&E.tipo==='tarde'){if(L.col[ade]>0){E.dentro=true;vObj*=E.m;}else if(E.dentro){if(E.sal==null)E.sal=E.t;if(E.t-E.sal<1.0)vObj*=E.m;else a.err=null;}}
     if(c.pasto)vObj=Math.min(vObj,CF.vmax*CF.pasto);
     vObj=Math.min(vObj,vTope);
     let gas=0,fr=false;
     if(v>vObj+2)fr=true;else if(v<vObj)gas=1;
     return{s,gas,fr};
   }
-  return{crear,control,NIVELES,NOMBRES};
+  return{crear,control,NIVELES,NOMBRES,ERRORES,cadaErr};
 })();
 
 /* ================= CHOQUES =================
@@ -3282,22 +3465,24 @@ function animarMenu(){
   if(VOL.estado==='ok'){const t=$('volTxt'),q=VOL.plano?'Levantá un poco el celular, como un volante.':'Girá el celular y mirá la rueda. Si no queda derecha, tocá Centrar.';if(t.textContent!==q)t.textContent=q;}
 }
 function dibujarMini(cv,z,col){
-  const T=pista(z),c=cv.getContext('2d'),S=cv.width=cv.height=160;
-  const [a,b,cc,d]=T.box,k=(S-20)/Math.max(cc-a,d-b);
+  const T=pista(z),c=cv.getContext('2d'),S=cv.width=cv.height=240;
+  const [a,b,cc,d]=T.box,k=(S-30)/Math.max(cc-a,d-b);
   c.clearRect(0,0,S,S);c.save();c.translate(S/2-(a+cc)/2*k,S/2-(b+d)/2*k);c.scale(k,k);
   c.beginPath();c.moveTo(T.x[0],T.y[0]);for(let i=1;i<T.n;i++)c.lineTo(T.x[i],T.y[i]);c.closePath();
-  c.strokeStyle=col;c.lineWidth=7/k;c.lineJoin='round';c.stroke();
-  c.fillStyle='#ffd23f';c.beginPath();c.arc(T.x[0],T.y[0],7/k,0,Math.PI*2);c.fill();c.restore();
+  c.strokeStyle=col;c.lineWidth=9/k;c.lineJoin='round';c.stroke();
+  /* la largada: una rayita roja cruzada a la pista */
+  const nx=-T.ty[0],ny=T.tx[0],r=13/k;c.strokeStyle='#e0262e';c.lineWidth=6/k;c.lineCap='butt';
+  c.beginPath();c.moveTo(T.x[0]-nx*r,T.y[0]-ny*r);c.lineTo(T.x[0]+nx*r,T.y[0]+ny*r);c.stroke();c.restore();
 }
 const recKey=(z,v)=>'gp-app-rec-'+z+'-'+v;
 /* pista al azar: nunca repite la anterior */
 const AZAR={prox:null};
 function pistaAzar(no){const L=Object.keys(PISTAS).filter(z=>z!==no);return L[(Math.random()*L.length)|0];}
 function dibujarDado(cv){
-  const c=cv.getContext('2d'),S=cv.width=cv.height=160;c.clearRect(0,0,S,S);
-  c.save();c.translate(S/2,S/2);c.rotate(-0.18);
-  c.fillStyle='#e9eef5';const r=46;c.beginPath();if(c.roundRect)c.roundRect(-r,-r,2*r,2*r,16);else c.rect(-r,-r,2*r,2*r);c.fill();
-  c.fillStyle='#151a22';[[-22,-22],[22,22],[0,0],[22,-22],[-22,22]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,8,0,7);c.fill();});c.restore();
+  const c=cv.getContext('2d'),S=cv.width=cv.height=240;c.clearRect(0,0,S,S);
+  c.save();c.translate(S/2,S/2);c.scale(1.25,1.25);c.rotate(-0.18);
+  c.fillStyle='#eeece6';const r=46;c.beginPath();if(c.roundRect)c.roundRect(-r,-r,2*r,2*r,16);else c.rect(-r,-r,2*r,2*r);c.fill();
+  c.fillStyle='#202328';[[-22,-22],[22,22],[0,0],[22,-22],[-22,22]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,8,0,7);c.fill();});c.restore();
 }
 /* ---------- mejores tiempos: las cinco mejores vueltas y carreras de cada pista, guardadas en este celular ---------- */
 const topKey=z=>'gp-app-top-'+z;
@@ -3346,9 +3531,9 @@ function pintarVolMini(){
   const vm=$('volMini');if(!vm)return;
   const est=VOL.estado,ver=AJ.modo==='incl'&&est!=='ok';
   vm.classList.toggle('hide',!ver);if(!ver)return;
-  $('volMiniTxt').textContent=est==='probando'?'📱 Buscando el sensor…':est==='pidiendo'?'📱 Aceptá el permiso de movimiento':est==='negado'?'📱 Sin permiso de movimiento':est==='sindatos'?'📱 Este aparato no manda el giro':est==='inseguro'?'📱 Hace falta abrirla con https':'📱 Volante apagado';
+  $('volMiniTxt').textContent=est==='probando'?'Buscando el sensor…':est==='pidiendo'?'Aceptá el permiso de movimiento':est==='negado'?'Sin permiso de movimiento':est==='sindatos'?'Este aparato no manda el giro':est==='inseguro'?'Hace falta abrirla con https':'Volante apagado';
   const b=$('btnActivar2');b.classList.toggle('hide',est==='probando'||est==='pidiendo'||est==='inseguro');
-  b.textContent=est==='sindatos'?'👆 Usar el dedo':est==='negado'?'Probar de nuevo':'Activar volante';
+  b.textContent=est==='sindatos'?'Usar el dedo':est==='negado'?'Probar de nuevo':'Activar volante';
 }
 function pintarMenu(){
   document.querySelectorAll('#segModo button').forEach(b=>b.classList.toggle('on',b.dataset.m===AJ.modo));
@@ -3363,7 +3548,7 @@ function pintarMenu(){
   document.querySelectorAll('#chipsNivel .chip').forEach(p=>p.classList.toggle('on',+p.dataset.l===AJ.nivel));
   $('opNivel').classList.toggle('hide',!AJ.ia);
   document.querySelectorAll('#chipsEsc .chip').forEach(p=>p.classList.toggle('on',p.dataset.e===AJ.esc));
-  $('pistaNom').textContent=AJ.azar?'🎲 Al azar':PISTAS[AJ.pista].loc;
+  $('pistaNom').textContent=AJ.azar?'Al azar':PISTAS[AJ.pista].loc;
   if(AJ.azar){
     /* la próxima pista al azar se elige ya, así su trazada también se calcula antes de largar */
     if(!AZAR.prox)AZAR.prox=pistaAzar(AJ.pista);
@@ -3371,7 +3556,7 @@ function pintarMenu(){
     const z=AZAR.prox;setTimeout(()=>{try{LINEA.calcular(pista(z));}catch(e){}},60);
     $('recordTxt').textContent='Cada largada, una pista distinta';
   }else{
-    if(miniSelZ!==AJ.pista){miniSelZ=AJ.pista;dibujarMini($('miniSel'),AJ.pista,'#e9eef5');
+    if(miniSelZ!==AJ.pista){miniSelZ=AJ.pista;dibujarMini($('miniSel'),AJ.pista,'#eeece6');
       /* la trazada de esta pista se calcula de antemano, así largar no se traba */
       const z=AJ.pista;setTimeout(()=>{try{LINEA.calcular(pista(z));}catch(e){}},60);}
     const top=leerTop(AJ.pista),rc=(top.c[AJ.vueltas]||[])[0],rv=top.v[0];
@@ -3396,7 +3581,7 @@ function armarMenu(){
   {
     const b=document.createElement('button');b.className='pista';b.dataset.z='azar';
     const cv=document.createElement('canvas');b.appendChild(cv);
-    b.insertAdjacentHTML('beforeend','<b>🎲 Al azar</b><small>una distinta cada vez</small><em></em>');
+    b.insertAdjacentHTML('beforeend','<b>Al azar</b><small>una distinta cada vez</small><em></em>');
     b.onclick=()=>{AJ.azar=true;AZAR.prox=null;guardar();abrirPistas(false);pintarMenu();};
     pb.appendChild(b);dibujarDado(cv);
   }
@@ -3405,12 +3590,12 @@ function armarMenu(){
     const cv=document.createElement('canvas');b.appendChild(cv);
     b.insertAdjacentHTML('beforeend','<b>'+esc(d.loc)+'</b><small>'+(d.len/1000).toFixed(1).replace('.',',')+' km</small><em></em>');
     b.onclick=()=>{AJ.pista=z;AJ.azar=false;guardar();abrirPistas(false);pintarMenu();};
-    pb.appendChild(b);dibujarMini(cv,z,'#e9eef5');
+    pb.appendChild(b);dibujarMini(cv,z,'#eeece6');
   });
   $('btnPista').onclick=()=>abrirPistas($('panelPistas').classList.contains('hide'));
   const chip=(caja,dato,val,txt,fn)=>{const b=document.createElement('button');b.className='chip';b.dataset[dato]=val;b.textContent=txt;b.onclick=fn;$(caja).appendChild(b);};
   VUELTAS.forEach(v=>chip('chipsVueltas','v',v,v,()=>{AJ.vueltas=v;guardar();pintarMenu();}));
-  RIVALES.forEach(n=>chip('chipsIA','n',n,n?String(n):'Ninguno',()=>{AJ.ia=n;guardar();pintarMenu();}));
+  RIVALES.forEach(n=>chip('chipsIA','n',n,String(n),()=>{AJ.ia=n;guardar();pintarMenu();}));
   [1,2,3].forEach(l=>chip('chipsNivel','l',l,IA.NIVELES[l].n,()=>{AJ.nivel=l;guardar();pintarMenu();}));
   ESC.forEach(e=>{const b=document.createElement('button');b.className='chip esc';b.dataset.e=e.id;b.innerHTML='<i style="background:'+e.c+'"></i>'+esc(e.n);b.onclick=()=>{AJ.esc=e.id;guardar();pintarMenu();};$('chipsEsc').appendChild(b);});
   document.querySelectorAll('#segModo button').forEach(b=>b.onclick=()=>{AJ.modo=b.dataset.m;guardar();pintarMenu();});
@@ -3685,7 +3870,7 @@ function soplar(T,c,g,dir,h){
 function pasoMundo(h){
   const T=R.T,DD=REN.datos(T),c=R.car;let muro=0,toque=0;
   if(R.verdeYa){const g=rafaga(R.z,R.tCarrera);
-    if(g>0){const dir=VIENTO_DIR[R.z];for(const b of R.cuerpos)if(b!==c||!R.fin){const lat=soplar(T,b,g,dir,h);if(b===c&&!R.rafaga&&Math.abs(lat)>0.45&&c.v>25){R.rafaga=true;R.msgCulpa=R.msgCulpa||'💨 ¡Ráfaga de viento!';}}}
+    if(g>0){const dir=VIENTO_DIR[R.z];for(const b of R.cuerpos)if(b!==c||!R.fin){const lat=soplar(T,b,g,dir,h);if(b===c&&!R.rafaga&&Math.abs(lat)>0.45&&c.v>25)R.rafaga=true;}}
     else R.rafaga=false;}
   for(const a of R.ia){
     const ac=a.car;
@@ -3728,8 +3913,8 @@ function culpaDe(car){
   const t=R.tCarrera;if(t<3||t-car.tCulpa<2)return;
   car.tCulpa=t;car.culpas++;
   if(car.culpas>=CULPAS_MAX){car.culpas=0;car.penal+=PEN_CULPA;
-    if(yo){R.pen+=PEN_CULPA;R.msgCulpa='🚩 Tercer toque con culpa: +'+PEN_CULPA+' s';}}
-  else if(yo)R.msgCulpa='⚠️ Toque con culpa '+car.culpas+'/'+CULPAS_MAX+(car.culpas===CULPAS_MAX-1?' · al próximo, +'+PEN_CULPA+' s':'');
+    if(yo){R.pen+=PEN_CULPA;vibrar([80,40,80,40,80]);}}
+  /* v4: sin carteles: los toques se ven en el recuadro del tiempo */
 }
 /* después de la bandera: tu auto da la vuelta de honor solo y la máquina sigue corriendo */
 function pasoDespues(dt){
@@ -3759,12 +3944,11 @@ function efectosGolpe(m,t){
   if(m>2.5&&ahora-R.tGolpe>260){
     R.tGolpe=ahora;const k=clamp(m/30,0.2,1);
     vibrar(m>15?[90,50,120]:40);sacudir(0.35+k);sonidoGolpe(k);R.exc=null;
-    if(m>15){R.golpes=(R.golpes||0)+1;aviso('💥 ¡Contra el muro!',1.4);}
+    if(m>15)R.golpes=(R.golpes||0)+1;
   }
   if(t>1.5&&ahora-R.tToque>220){
     R.tToque=ahora;const k=clamp(t/20,0.15,0.9);
     vibrar(t>8?[50,30,60]:25);sacudir(0.2+k);sonidoGolpe(k*0.75);R.exc=null;
-    if(t>10)aviso('💥 ¡Toque!',1);
   }
 }
 /* la ayuda de manejo endereza hacia la trazada ideal (o al medio de la pista si la trazada está apagada) */
@@ -3932,7 +4116,7 @@ function hud(){
   $('hTiempo').textContent=fmt((R.fin&&R.totalFin!=null?R.totalFin:R.tCarrera+R.pen)*1000);
   const ml=leerMV();
   $('hMejor').textContent=R.mejor!=null?'Mejor vuelta '+fmt(R.mejor*1000):(ml?'Récord de vuelta '+fmt(ml.t):'');
-  const hp=$('hPen');if(R.pen>0){hp.textContent='+'+R.pen+' s de penalización';hp.classList.remove('hide');}else hp.classList.add('hide');
+  const hp=$('hPen'),cu=R.car.culpas||0;if(R.pen>0||cu>0){hp.textContent=(R.pen>0?'+'+R.pen+' s':'')+(R.pen>0&&cu?' · ':'')+(cu?'toques '+cu+'/'+CULPAS_MAX:'');hp.classList.remove('hide');}else hp.classList.add('hide');
 }
 let MV=null,MVz='';
 function leerMV(){if(MVz!==R.z){MVz=R.z;MV=leerJSON('gp-app-mv-'+R.z);}return MV;}
@@ -5505,7 +5689,7 @@ const CAMP=(function(){
       }else{
         const f=t.fechas[t.fecha],P=PISTAS[f.z];
         h+='<div class="proxF"><canvas id="campMini" width="120" height="120"></canvas><span><small>Fecha '+(t.fecha+1)+' de '+C.fechas+'</small><b>'+esc(P.t)+'</b><span class="tiny">'+C.vueltas+' vueltas · '+(t.riv.length+1)+' autos</span></span></div>'+
-          '<button class="btn pri largar" id="btnCampCorrer">🏁 CORRER LA FECHA '+(t.fecha+1)+'</button>';
+          '<button class="btn pri largar" id="btnCampCorrer"><span>Correr la fecha '+(t.fecha+1)+'</span></button>';
       }
       h+='</div>';
       const vis=L.map((x,k)=>({x,k})).filter(({k})=>k<8||k===yo);
@@ -5522,7 +5706,7 @@ const CAMP=(function(){
     const bc=$('btnCampCorrer');if(bc)bc.onclick=()=>{$('camp').classList.add('hide');largar({camp:fechaActual()});};
     $('btnCampMenu').onclick=()=>{$('camp').classList.add('hide');aMenu();};
     $('btnCampBorrar').onclick=()=>{if(!borrarArmado){borrarArmado=true;pintar();setTimeout(()=>{borrarArmado=false;},4000);return;}borrarArmado=false;S=null;guardarS();pintar();};
-    const mc=$('campMini');if(mc&&S.t&&!S.ofertas)dibujarMini(mc,S.t.fechas[S.t.fecha].z,'#e9eef5');
+    const mc=$('campMini');if(mc&&S.t&&!S.ofertas)dibujarMini(mc,S.t.fechas[S.t.fecha].z,'#eeece6');
     pintarBoton();
   }
   function mostrar(){
