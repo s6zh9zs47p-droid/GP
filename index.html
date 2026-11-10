@@ -108,6 +108,10 @@ details p{margin:8px 0;font-size:13.5px;color:var(--dim)}
 #hudT .t{font:italic 900 20px 'Archivo',sans-serif}
 #hudT .m{font:700 11px 'Archivo',sans-serif;color:#c9d1dc}
 #hudT .pen{font:italic 900 12px 'Archivo',sans-serif;color:#ff5c72}
+#hudT .gom{font:700 11px 'Archivo',sans-serif;color:#c9d1dc;display:flex;gap:6px;justify-content:flex-end}
+#hudT .gom:empty{display:none}
+#hudT .gom .fria{color:#7cc4ff}#hudT .gom .med{color:#ffd24a}#hudT .gom .mal{color:#ff5c72}
+#hudT .gom .reb{color:#0d0f14;background:#5dffa0;border-radius:4px;padding:0 4px;font-weight:900}
 .pedal.tenue div{opacity:0}
 #hudMsg{left:50%;top:38%;transform:translate(-50%,-50%);font-size:22px;background:rgba(0,0,0,.6);padding:10px 18px;border-radius:12px;text-align:center;white-space:nowrap}
 #hudVuelta{left:50%;top:24%;transform:translate(-50%,-50%);text-align:center;background:rgba(0,0,0,.6);padding:10px 18px;border-radius:12px;font-size:20px}
@@ -462,6 +466,14 @@ input[type=range]{accent-color:var(--rojo)}
        <label class="chk"><input type="checkbox" id="chkSonido"><span>Sonido del motor</span></label>
      </div>
      <div class="ctl">
+       <label>Realismo</label>
+       <label class="chk"><input type="checkbox" id="chkRebufo"><span>Rebufo y aire sucio<small>Pegado atrás en una recta vas más rápido; pegado atrás en una curva agarrás menos.</small></span></label>
+       <label class="chk"><input type="checkbox" id="chkGomas"><span>Gomas que se gastan<small>Arrancan frías y se gastan vuelta a vuelta, más si doblás fuerte o frenás tarde. Se nota en carreras largas.</small></span></label>
+       <label class="chk"><input type="checkbox" id="chkPenal"><span>Penalizaciones por toques<small>Si chocás de atrás o te tirás encima, al tercer toque +5 s. Los roces de carrera no cuentan.</small></span></label>
+       <label class="chk"><input type="checkbox" id="chkDerrape"><span>Derrapes (más difícil)<small>Frenar doblando o acelerar a fondo en una curva lenta hace salir la cola. Se agarra contravolanteando.</small></span></label>
+       <div class="tiny">En la carrera con amigos valen el rebufo, las gomas y las penalizaciones que eligió el que arma la sala.</div>
+     </div>
+     <div class="ctl">
        <label>Ayuda de manejo</label>
        <div class="seg" id="segAyuda">
          <button data-a="0">Nada</button><button data-a="1">Un poco</button><button data-a="2">Mucha</button>
@@ -539,7 +551,7 @@ input[type=range]{accent-color:var(--rojo)}
   <div id="pedAcel" class="pedal"><div>ACEL.</div></div>
   <div id="toque"></div>
   <div id="torre" class="hud"><div class="th" id="hVuelta">VUELTA 1/3</div><div id="filas"></div></div>
-  <div id="hudT" class="hud"><div class="t" id="hTiempo">0:00.0</div><div class="m" id="hMejor"></div><div class="pen hide" id="hPen"></div></div>
+  <div id="hudT" class="hud"><div class="t" id="hTiempo">0:00.0</div><div class="m" id="hMejor"></div><div class="pen hide" id="hPen"></div><div class="gom" id="hGom"></div></div>
   <div id="hudMsg" class="hud hide"></div>
   <div id="hudVuelta" class="hud hide"></div>
   <div class="botonesC">
@@ -2944,11 +2956,11 @@ const ESC=[
 /* dentro de un visor ajeno (por ejemplo, la vista previa de un archivo en otra app) el sensor viene bloqueado */
 let ENMARCADA=false;try{ENMARCADA=window.self!==window.top;}catch(e){ENMARCADA=true;}
 const AJ_KEY='gp-app-ajustes';
-const AJ={modo:'incl',sens:30,centro:0,ayuda:1,auto:false,sonido:true,nombre:'',esc:'fer',pista:'ar-1952',vueltas:3,ia:3,nivel:1,trazada:true,azar:false};
+const AJ={modo:'incl',sens:30,centro:0,ayuda:1,auto:false,sonido:true,nombre:'',esc:'fer',pista:'ar-1952',vueltas:3,ia:3,nivel:1,trazada:true,azar:false,rebufo:true,gomas:true,derrape:false,penal:true};
 const VUELTAS=[1,2,3,5,8,10,15,20],RIVALES=[0,1,3,5,7,11,15,21];
 try{const r=localStorage.getItem(AJ_KEY);if(r)Object.assign(AJ,JSON.parse(r));}catch(e){}
 if(!ESC.some(e=>e.id===AJ.esc))AJ.esc='fer';
-if(!RIVALES.includes(AJ.ia))AJ.ia=3;if(![1,2,3].includes(AJ.nivel))AJ.nivel=1;AJ.trazada=AJ.trazada!==false;
+if(!RIVALES.includes(AJ.ia))AJ.ia=3;if(![1,2,3].includes(AJ.nivel))AJ.nivel=1;AJ.trazada=AJ.trazada!==false;AJ.rebufo=AJ.rebufo!==false;AJ.gomas=AJ.gomas!==false;AJ.penal=AJ.penal!==false;AJ.derrape=AJ.derrape===true;
 if(!VUELTAS.includes(AJ.vueltas))AJ.vueltas=3;AJ.azar=!!AJ.azar;
 function guardar(){try{localStorage.setItem(AJ_KEY,JSON.stringify(AJ));}catch(e){}}
 function leerJSON(k){try{const r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch(e){return null;}}
@@ -2981,7 +2993,7 @@ const GPM=(function(){
     const nx=-T.ty[i],ny=T.tx[i];
     return{x:T.x[i]+nx*lat,y:T.y[i]+ny*lat,th:Math.atan2(T.ty[i],T.tx[i]),v:0,st:0,i,iOk:i,iSal:i,dPasto:0,dist:0,f:0,lat:0,
       vuelta:-1,cp:7,afuera:0,contra:0,reset:0,fin:false,pasto:false,aviso:'',avisoT:0,lapNueva:false,ex:0,ey:0,sinChoque:0,
-      culpas:0,tCulpa:-9,penal:0};
+      culpas:0,tCulpa:-9,penal:0,reb:0,sucio:0,grip:1,gw:0,gt:0.35,beta:0};
   }
   function avance(T,c){return c.vuelta+(T.s[c.i]+c.f*(T.s[c.i+1]-T.s[c.i]))/T.L;}
   function localizar(T,c){
@@ -2993,7 +3005,7 @@ const GPM=(function(){
   }
   function volverAPista(T,c,msg){
     const i=c.iOk;c.i=i;c.x=T.x[i];c.y=T.y[i];c.th=Math.atan2(T.ty[i],T.tx[i]);c.v=CFG.vmax*0.12;c.st=0;c.f=0;c.lat=0;
-    c.pasto=false;c.dPasto=0;c.dist=0;c.afuera=0;c.contra=0;c.reset++;c.aviso=msg;c.avisoT=1.6;c.ex=0;c.ey=0;c.sinChoque=1.6;
+    c.pasto=false;c.dPasto=0;c.dist=0;c.afuera=0;c.contra=0;c.reset++;c.beta=0;c.aviso=msg;c.avisoT=1.6;c.ex=0;c.ey=0;c.sinChoque=1.6;
   }
   /* volante que haría falta para seguir el medio de la pista (persecución pura): lo usa la ayuda de manejo */
   function volanteIdeal(T,c){
@@ -3009,17 +3021,36 @@ const GPM=(function(){
     if(dt>0.05)dt=0.05;
     const s=clamp(inp.s||0,-1,1);
     c.st+=(s-c.st)*Math.min(1,dt/CFG.filtro);
-    const a=Math.abs(c.st),pot=c.pot||1,vmx=CFG.vmax*pot;
+    /* v5: reb = rebufo (0..1, va pegado atrás de otro en recta: menos aire, más punta); grip = agarre (gomas y aire sucio) */
+    const a=Math.abs(c.st),pot=c.pot||1,reb=c.reb||0,gr=c.grip||1,vmx=CFG.vmax*pot*(1+0.03*reb);
+    c.frU=!!inp.fr;c.gasU=inp.gas||0;
     let vt=vmx*(1-0.5*Math.pow(a,1.5));
     if(c.pasto)vt=Math.min(vt,CFG.vmax*CFG.pasto);
     const dec=c.pasto?CFG.frenoPasto:CFG.dec;
     if(inp.fr){c.v=Math.max(0,c.v-CFG.fre*dt);if(c.v>vt)c.v=Math.max(vt,c.v-dec*dt);}
     else if(inp.gas>0){
-      if(c.v<vt)c.v=Math.min(vt,c.v+CFG.acc*pot*inp.gas*(1-0.45*c.v/vmx)*dt);
+      if(c.v<vt)c.v=Math.min(vt,c.v+CFG.acc*pot*inp.gas*(1-0.45*(1-0.4*reb)*c.v/vmx)*dt);
       else c.v=Math.max(vt,c.v-dec*dt);
     }else{c.v=Math.max(0,c.v-CFG.suelto*dt);if(c.v>vt)c.v=Math.max(vt,c.v-dec*dt);}
     /* en el pasto se dobla menos: no hay agarre */
-    const k=c.st*CFG.kmax*(c.pasto?CFG.agarrePasto:1)/(1+Math.pow(c.v/CFG.vu,2));
+    let k=c.st*CFG.kmax*gr*(c.pasto?CFG.agarrePasto:1)/(1+Math.pow(c.v/CFG.vu,2));
+    /* v5: derrapes (opcional, solo tu auto). beta = cuánto apunta la trompa para adentro respecto de para dónde va el auto.
+       Frenar doblando fuerte o acelerar a fondo con mucho volante en una curva lenta hace salir la cola; contravolantear la junta.
+       Mientras patina dobla menos y pierde velocidad; pasado de cierto ángulo es trompo. */
+    if(c.derr){
+      const sg=c.st>0?1:c.st<0?-1:0;let kick=0;
+      if(inp.fr&&a>0.45&&c.v>26)kick+=sg*(a-0.45)*1.5*Math.min(1,c.v/60);
+      if(!inp.fr&&inp.gas>0&&c.v>5&&c.v<30&&a>0.6)kick+=sg*(a-0.6)*2.2*(1-c.v/30);
+      if(c.pasto&&c.v>12)kick*=1.5;
+      kick*=1+(1-gr)*4;
+      const b=c.beta||0,contra=b!==0&&sg!==0&&sg!==(b>0?1:-1);
+      const rec=2.6*gr+(contra?5*a:0)+(!inp.fr&&!(inp.gas>0)?1:0);
+      c.beta=b+(kick-b*rec)*dt;
+      const ab=Math.abs(c.beta);
+      if(ab>1.15){c.trompo=(c.trompo||0)+1;c.v=Math.max(0,c.v-c.v*2.5*dt);c.beta*=Math.exp(-dt*1.2);}
+      else{c.v=Math.max(0,c.v-c.v*ab*0.8*dt);k*=1-Math.min(0.6,ab*0.9);}
+      if(Math.abs(c.beta)<0.004&&!kick)c.beta=0;
+    }
     c.th+=c.v*k*dt;
     c.x+=c.v*Math.cos(c.th)*dt;c.y+=c.v*Math.sin(c.th)*dt;
     /* empujón de un choque: deslizamiento de costado que se apaga solo */
@@ -3288,6 +3319,8 @@ const IA=(function(){
     let vObj=L.v[ade]*k*(1+a.frenaTarde*(L.col[ade]>0?1:0));
     /* frenó tarde: llega pasado a la curva y se abre (a veces hasta el pasto) */
     if(E&&E.tipo==='tarde'){if(L.col[ade]>0){E.dentro=true;vObj*=E.m;}else if(E.dentro){if(E.sal==null)E.sal=E.t;if(E.t-E.sal<1.0)vObj*=E.m;else a.err=null;}}
+    /* v5: con menos agarre (gomas gastadas, aire sucio) entra más despacio; con rebufo estira en la recta */
+    if(L.v[ade]<CF.vmax*0.85)vObj*=Math.pow(c.grip||1,0.75);else vObj*=1+0.035*(c.reb||0);
     if(c.pasto)vObj=Math.min(vObj,CF.vmax*CF.pasto);
     vObj=Math.min(vObj,vTope);
     let gas=0,fr=false;
@@ -3357,7 +3390,8 @@ const CHOQUE=(function(){
        Si los dos se acercan parecido es un toque de carrera y no hay culpable */
     const ca=Math.max(0,vax*nx+vay*ny),cb=Math.max(0,-(vbx*nx+vby*ny));
     let culpa=null;
-    if(-vr>4){if(ca>2*cb+0.5)culpa='a';else if(cb>2*ca+0.5)culpa='b';}
+    /* v5: menos sensible: hace falta meterse fuerte (7 m/s) y claramente más que el otro */
+    if(-vr>7){if(ca>3*cb+1)culpa='a';else if(cb>3*ca+1)culpa='b';}
     const j=-(1+REST)*vr/2;
     /* giro: el golpe fuera del centro hace girar un poco */
     const cx=(mejor.ax+mejor.bx)/2,cy=(mejor.ay+mejor.by)/2;
@@ -3542,6 +3576,7 @@ function pintarMenu(){
   $('bloqueDedo').classList.toggle('hide',AJ.modo!=='dedo');
   $('sens').value=AJ.sens;$('sensTxt').textContent=AJ.sens+'°';
   $('chkAuto').checked=AJ.auto;$('chkSonido').checked=AJ.sonido;$('chkTrazada').checked=AJ.trazada;
+  [['chkRebufo','rebufo'],['chkGomas','gomas'],['chkDerrape','derrape'],['chkPenal','penal']].forEach(([id,k])=>{const el=$(id);if(el)el.checked=!!AJ[k];});
   document.querySelectorAll('.pista').forEach(p=>p.classList.toggle('on',AJ.azar?p.dataset.z==='azar':p.dataset.z===AJ.pista));
   document.querySelectorAll('#chipsVueltas .chip').forEach(p=>p.classList.toggle('on',+p.dataset.v===AJ.vueltas));
   document.querySelectorAll('#chipsIA .chip').forEach(p=>p.classList.toggle('on',+p.dataset.n===AJ.ia));
@@ -3564,7 +3599,7 @@ function pintarMenu(){
   }
   const e=ESC.find(x=>x.id===AJ.esc)||ESC[0];
   $('sumPiloto').textContent=(AJ.nombre||'sin nombre')+' · '+e.n;
-  $('sumManejo').textContent=(AJ.modo==='incl'?'girando el celu':'con el dedo')+(AJ.trazada?' · trazada':'')+(AJ.auto?' · acelera solo':'');
+  $('sumManejo').textContent=(AJ.modo==='incl'?'girando el celu':'con el dedo')+(AJ.trazada?' · trazada':'')+(AJ.auto?' · acelera solo':'')+(AJ.derrape?' · derrapes':'')+(AJ.penal?'':' · sin penalizaciones');
   $('largarTxt').textContent=AJ.ia?'Contra '+AJ.ia+' de la máquina, nivel '+IA.NIVELES[AJ.nivel].n.toLowerCase()+'. La grilla se sortea en cada largada.':'Práctica contra tu récord: el fantasma del mejor tiempo corre con vos.';
   pintarVolMini();pintarRecords();
 }
@@ -3604,6 +3639,7 @@ function armarMenu(){
   $('chkAuto').onchange=e=>{AJ.auto=e.target.checked;guardar();pintarMenu();};
   $('chkSonido').onchange=e=>{AJ.sonido=e.target.checked;guardar();};
   $('chkTrazada').onchange=e=>{AJ.trazada=e.target.checked;guardar();pintarMenu();};
+  [['chkRebufo','rebufo'],['chkGomas','gomas'],['chkDerrape','derrape'],['chkPenal','penal']].forEach(([id,k])=>{const el=$(id);if(el)el.onchange=e=>{AJ[k]=e.target.checked;guardar();pintarMenu();};});
   $('nombre').value=AJ.nombre||'';
   $('nombre').oninput=e=>{AJ.nombre=e.target.value.trim().slice(0,16);guardar();const es=ESC.find(x=>x.id===AJ.esc)||ESC[0];$('sumPiloto').textContent=(AJ.nombre||'sin nombre')+' · '+es.n;};
   $('btnActivar').onclick=activarVolante;
@@ -3706,6 +3742,20 @@ function sonidoCambio(){
   const t=SON.ctx.currentTime,g=SON.gMotor.gain;
   g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(g.value*0.35,t+0.03);g.linearRampToValueAtTime(g.value,t+0.11);
 }
+/* v5: rebaje: golpe de acelerador (sube de vueltas un instante) y a veces un petardo */
+function sonidoBajada(){
+  if(!SON.ctx||!SON.o1||!AJ.sonido)return;
+  const t=SON.ctx.currentTime,g=SON.gMotor.gain,f0=SON.o1.frequency.value,f1=Math.min(560,f0*1.32);
+  [SON.o1,SON.o2].forEach(o=>{o.frequency.cancelScheduledValues(t);o.frequency.setValueAtTime(f0,t);o.frequency.linearRampToValueAtTime(f1,t+0.05);o.frequency.setTargetAtTime(f0,t+0.06,0.06);});
+  g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(Math.min(0.32,g.value+0.12),t+0.04);g.setTargetAtTime(g.value,t+0.07,0.06);
+  if(Math.random()<0.45)petardos(t+0.04,1+Math.floor(Math.random()*2));
+}
+/* v5: corte de vueltas arriba de todo en la última marcha */
+function sonidoCorte(){
+  if(!SON.ctx||!SON.gMotor||!AJ.sonido)return;
+  const t=SON.ctx.currentTime,g=SON.gMotor.gain,v=g.value;
+  g.cancelScheduledValues(t);g.setValueAtTime(v,t);g.linearRampToValueAtTime(v*0.25,t+0.015);g.linearRampToValueAtTime(v,t+0.05);
+}
 function sonidoGolpe(k){
   if(!SON.ctx||!SON.nb||!AJ.sonido)return;
   k=k==null?1:clamp(k,0.12,1);
@@ -3752,6 +3802,9 @@ function largar(op){
   else if(CP)R.ia=IA.crear(T,nRiv,1,escYo,puesto,sem,{def:CP.def});
   else if(op.online&&op.iaDef&&op.iaDef.length)R.ia=IA.crear(T,op.iaDef.length,1,escYo,0,sem,{def:op.iaDef,puestos:op.iaPuestos});
   if(CP)R.car.pot=CP.pot||1;
+  /* v5: reglas de realismo. En línea manda lo que eligió el organizador; los derrapes son de cada uno */
+  R.reglas=op.online&&op.reglas?op.reglas:{reb:AJ.rebufo,gom:AJ.gomas,pen:AJ.penal};
+  R.car.derr=!!AJ.derrape;
   R.cuerpos=[R.car].concat(R.ia.map(a=>a.car));
   FIN_CAMP=false;
   if(R.ia.length)iaVista();
@@ -3901,6 +3954,48 @@ function pasoMundo(h){
   }
   return{muro,toque};
 }
+/* ================= v5: REALISMO =================
+   Rebufo: pegado atrás de otro en recta (5 a 45 m, casi en la misma línea) hay menos aire: acelera más y estira la punta.
+   Aire sucio: pegado atrás en curva (menos de 22 m) se pierde un poco de agarre.
+   Gomas: frías en la largada (calientan en la primera vuelta) y se gastan con los kilómetros, más al doblar fuerte,
+   frenar y pisar el pasto. Gastadas agarran hasta un 12 % menos. Vale igual para la máquina. */
+const REAL=(function(){
+  function cerca(c,otros,reb){
+    const hx=Math.cos(c.th),hy=Math.sin(c.th);let rb=0,su=0;
+    for(const o of otros){
+      if(o===c||o.fantasma||!(o.v>12))continue;
+      const dx=o.x-c.x,dy=o.y-c.y;if(dx*dx+dy*dy>2200)continue;
+      const al=dx*hx+dy*hy,la=Math.abs(dx*hy-dy*hx);
+      if(al<5||al>46||la>4.2)continue;
+      const f=(1-(al-5)/41)*(1-la/4.2*0.5);
+      if(f>rb)rb=f;
+      if(al<22){const g=(1-(al-5)/17)*(1-la/4.2);if(g>su)su=g;}
+    }
+    return reb?[rb,su]:[0,0];
+  }
+  function actualizar(h){
+    if(!R)return;const T=R.T,rg=R.reglas||{},todos=R.cuerpos.concat(R.remotos||[]);
+    for(const c of R.cuerpos){
+      const[rb,su]=cerca(c,todos,rg.reb);
+      /* el rebufo sirve en recta y con velocidad; el aire sucio molesta solo doblando */
+      const enRecta=Math.abs(c.st)<0.25&&c.v>30;
+      c.reb+=((enRecta?rb:0)-c.reb)*Math.min(1,h*3);
+      const doblando=Math.abs(c.st)>0.2;
+      c.sucio+=((doblando?su:0)-c.sucio)*Math.min(1,h*4);
+      let g=1;
+      if(rg.gom){
+        if(R.verdeYa&&c.v>1){
+          const st=Math.abs(c.st);
+          c.gt=Math.min(1,c.gt+h*(0.008+c.v*(0.00018+st*0.0006)+(c.frU?0.004:0)));
+          c.gw=Math.min(1,c.gw+h*c.v*(1+2.4*st*Math.min(1,c.v/50)+(c.frU?0.7:0)+(c.pasto?2:0))/(T.L*32));
+        }
+        g=(0.94+0.06*c.gt)*(1-0.12*Math.pow(c.gw,1.2));
+      }
+      c.grip=g*(1-0.12*c.sucio);
+    }
+  }
+  return{actualizar,cerca};
+})();
 /* toques con culpa: el primero y el segundo son aviso; al tercero, +5 s y se empieza a contar de nuevo.
    Un mismo choque cuenta una sola vez (dos segundos de margen). La defensa y el pasto no penalizan. */
 const PEN_CULPA=5,CULPAS_MAX=3;
@@ -3911,6 +4006,9 @@ function culpaDe(car){
   if(!yo){const a=R.ia.find(x=>x.car===car);if(!a||a.fin!=null)return;}
   /* en la largada (los primeros 3 segundos) los roces no cuentan */
   const t=R.tCarrera;if(t<3||t-car.tCulpa<2)return;
+  /* v5: las penalizaciones se pueden apagar; y si pasaste 45 s limpio, los toques anteriores se olvidan */
+  if(!(R.reglas&&R.reglas.pen))return;
+  if(t-car.tCulpa>45)car.culpas=0;
   car.tCulpa=t;car.culpas++;
   if(car.culpas>=CULPAS_MAX){car.culpas=0;car.penal+=PEN_CULPA;
     if(yo){R.pen+=PEN_CULPA;vibrar([80,40,80,40,80]);}}
@@ -3921,6 +4019,7 @@ function pasoDespues(dt){
   const T=R.T,nSub=Math.min(6,Math.ceil(dt/0.017)),h=dt/nSub;
   if(R.online&&R.verdeYa)R.tCarrera=Math.max(R.tCarrera,(ahoraHost()-R.inicio)/1000-R.verde);else R.tCarrera+=dt;
   for(let k=0;k<nSub;k++){
+    REAL.actualizar(h);
     if(R.honor)GPM.paso(T,R.car,IA.control(T,R.L,R.honor,R.cuerpos,99,true,h),h);
     pasoMundo(h);
   }
@@ -4002,6 +4101,7 @@ function paso(dt){
     /* en pasos chicos aunque el celular ande lento: la física (y los choques) dan igual en todos */
     const nSub=Math.min(6,Math.ceil(dt/0.017)),h=dt/nSub;let golpe=0,toque=0;
     for(let k=0;k<nSub;k++){
+      REAL.actualizar(h);
       GPM.paso(T,c,{s,gas:fr?0:gas,fr},h);
       const g=pasoMundo(h);if(g.muro>golpe)golpe=g.muro;if(g.toque>toque)toque=g.toque;
     }
@@ -4058,11 +4158,14 @@ const TOPE=[0,85,125,160,195,232,268,304,345];
 function marchas(dt,kmh,gas){
   let g=1;while(g<8&&kmh>TOPE[g])g++;
   if(g>R.marcha&&R.marcha>0)sonidoCambio();
+  /* v5: al rebajar, golpe de acelerador (de a una marcha, como la caja de verdad) */
+  if(g<R.marcha&&R.marcha>0){R.tBaja=(R.tBaja||0);if(performance.now()-R.tBaja>90){R.tBaja=performance.now();sonidoBajada();}}
   R.marcha=g;
   const lo=g===1?0:TOPE[g-1];
   let rpm=g===1?0.3+0.7*kmh/TOPE[1]:0.62+0.38*(kmh-lo)/(TOPE[g]-lo);
   if(kmh<6)rpm=0.26+0.5*gas;
   R.rpm+=(clamp(rpm,0.2,1)-R.rpm)*Math.min(1,dt*14);
+  if(g===8&&gas&&R.rpm>0.97){R.tCorte=(R.tCorte||0)-dt;if(R.tCorte<=0){R.tCorte=0.09;sonidoCorte();}}
 }
 function sacudir(k){REN.sacudir(k);if(REN3)REN3.sacudir(k);}
 function vibrar(p){try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
@@ -4116,6 +4219,12 @@ function hud(){
   $('hTiempo').textContent=fmt((R.fin&&R.totalFin!=null?R.totalFin:R.tCarrera+R.pen)*1000);
   const ml=leerMV();
   $('hMejor').textContent=R.mejor!=null?'Mejor vuelta '+fmt(R.mejor*1000):(ml?'Récord de vuelta '+fmt(ml.t):'');
+  {const c5=R.car,rg=R.reglas||{},hg=$('hGom');
+    if(hg){let t='';
+      if(rg.gom){const p=Math.round(100*(1-c5.gw)),fr=c5.gt<0.85;t+='<span class="'+(fr?'fria':p<45?'mal':p<70?'med':'')+'">🛞 '+(fr?'frías':p+'%')+'</span>';}
+      if(rg.reb&&c5.reb>0.3&&!R.fin)t+='<span class="reb">REBUFO</span>';
+      if(c5.derr&&Math.abs(c5.beta)>0.12&&!R.fin)t+='<span class="mal">'+(Math.abs(c5.beta)>1.15?'TROMPO':'PATINA')+'</span>';
+      if(hg.innerHTML!==t)hg.innerHTML=t;}}
   const hp=$('hPen'),cu=R.car.culpas||0;if(R.pen>0||cu>0){hp.textContent=(R.pen>0?'+'+R.pen+' s':'')+(R.pen>0&&cu?' · ':'')+(cu?'toques '+cu+'/'+CULPAS_MAX:'');hp.classList.remove('hide');}else hp.classList.add('hide');
 }
 let MV=null,MVz='';
@@ -4496,7 +4605,7 @@ const REN=(function(){
       if(t<=m[m.length-1][0]+2)autos.push({x:a[1]+(b[1]-a[1])*f,y:a[2]+(b[2]-a[2])*f,th:a[3]+dth*f,col:'#ffffff',col2:'#8d96a3',al:0.42,n:'Récord',st:0});
     }
     (R.rivales3||[]).forEach(r=>autos.push({x:r.x,y:r.y,th:r.th,col:r.col,col2:r.col2,al:1,n:r.n,st:r.st}));
-    autos.push({x:car.x,y:car.y,th:car.th,col:R.color,col2:R.color2,al:1,n:'',yo:1,st:car.st});
+    autos.push({x:car.x,y:car.y,th:car.th+(car.beta||0),col:R.color,col2:R.color2,al:1,n:'',yo:1,st:car.st});
     autos.forEach(a=>{const dx=a.x-ccx,dy=a.y-ccy;objs.push({z:dx*co+dy*si-(a.yo?0.01:0),t:5,a});});
     objs.sort((p,q)=>q.z-p.z);
     const etq=[];
@@ -5182,7 +5291,7 @@ const REN3=(function(){
     if(PG.userData.trazada)PG.userData.trazada.visible=!!AJ.trazada;
     const key=R.color+R.color2+AJ.nombre;
     if(!autoYo||autoYoKey!==key){if(autoYo)escena.remove(autoYo);autoYo=crearAuto(R.color,R.color2,numeroDe(AJ.nombre),false);autoYoKey=key;escena.add(autoYo);}
-    ponerAuto(autoYo,car.x,car.y,car.th,car.st,R.choque>0?0:v,dt);
+    ponerAuto(autoYo,car.x,car.y,car.th+(car.beta||0),car.st,R.choque>0?0:v,dt);
     autoYo.position.y=car.pasto&&v>5?(Math.random()-0.5)*0.08:0;
     /* fantasma del récord */
     if(R.fantasmaPos&&R.verdeYa&&!R.online){
@@ -5339,7 +5448,8 @@ function largarSala(){
   for(let i=ids.length-1;i>0;i--){const k=(Math.random()*(i+1))|0;[ids[i],ids[k]]=[ids[k],ids[i]];}
   const pz=RED.pista==='azar'?pistaAzar(RED.ultPista):RED.pista;RED.ultPista=pz;
   const L={t:'largada',inicio:Date.now()+3500,verde:4.2+0.3+Math.random()*0.9,grid:ids,pista:pz,vueltas:RED.vueltas,
-    jug:RED.jug.concat(ia.map(d=>({id:d.id,n:d.n,esc:d.esc,ia:true,listo:true}))),ia,camp:RED.camp?{n:RED.camp.n,fecha:RED.camp.fecha}:null};
+    jug:RED.jug.concat(ia.map(d=>({id:d.id,n:d.n,esc:d.esc,ia:true,listo:true}))),ia,camp:RED.camp?{n:RED.camp.n,fecha:RED.camp.fecha}:null,
+    reglas:{reb:AJ.rebufo,gom:AJ.gomas,pen:AJ.penal}};
   RED.fase='carrera';RED.fins={};RED.tPrimerFin=0;RED.est={};RED.res=null;
   repartir(L);empezarOnline(L);
 }
@@ -5419,7 +5529,7 @@ function empezarOnline(L){
   const yo=(L.jug||RED.jug).find(j=>j.id===RED.mi);if(yo){AJ.esc=yo.esc;}
   $('sala').classList.add('hide');
   largar({online:true,inicio:L.inicio,verde:L.verde,puesto:Math.max(0,L.grid.indexOf(RED.mi)),pista:L.pista,vueltas:L.vueltas,
-    iaDef:RED.host&&L.ia?L.ia:null,iaPuestos:RED.host&&L.ia?L.ia.map(d=>Math.max(0,L.grid.indexOf(d.id))):null});
+    reglas:L.reglas||null,iaDef:RED.host&&L.ia?L.ia:null,iaPuestos:RED.host&&L.ia?L.ia.map(d=>Math.max(0,L.grid.indexOf(d.id))):null});
 }
 /* cada celular manda su estado: lo llama el cuadro de la carrera */
 let tPos=0;
@@ -5727,7 +5837,7 @@ const CAMP=(function(){
 armarMenu();armarToques();armarPantallaSala();CAMP.armar();
 {const q=new URLSearchParams(location.search).get('sala');if(q){$('salaNombre').value=AJ.nombre||'';$('dTuAuto').open=!AJ.nombre;entrarSala(q);}}
 rafMenu=requestAnimationFrame(animarMenu);
-window.__GP={GPM,VOL,AJ,IN,REN,REN3,RED,posiciones,carrera:()=>R,giro,entrada,centrar,largar,pausar,aMenu,pista,PISTAS,LINEA,IA,CHOQUE,DISP,rivalesAhora,leerTop,anotarTop,pintarMenu,recibirEstados};
+window.__GP={GPM,VOL,AJ,IN,REN,REN3,RED,REAL,posiciones,carrera:()=>R,giro,entrada,centrar,largar,pausar,aMenu,pista,PISTAS,LINEA,IA,CHOQUE,DISP,rivalesAhora,leerTop,anotarTop,pintarMenu,recibirEstados};
 </script>
 </body>
 </html>
