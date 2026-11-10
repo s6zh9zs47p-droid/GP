@@ -490,6 +490,8 @@ input[type=range]{accent-color:var(--rojo)}
    <details id="dComo"><summary><span>Cómo se maneja</span></summary><div class="cuerpo">
     <p><b>Girando el celular:</b> agarralo acostado con las dos manos, como un volante, con la pantalla mirándote. Girarlo hacia la derecha dobla a la derecha. No hace falta tenerlo parado del todo: inclinado hacia atrás también anda.</p>
     <p><b>Pedales:</b> con los pulgares. Lado izquierdo de la pantalla frena, lado derecho acelera. Si te cansa, prendé “Acelera solo”.</p>
+    <p><b>Frenar y doblar:</b> el auto dobla lo que agarran las gomas, y agarran más cuanto más rápido vas (por la carga de los alerones). Si entrás pasado y le das más volante, se va de trompa: chillan las gomas y perdés velocidad. Frenando a fondo dobla la mitad, así que frená derecho antes de la curva, aflojá al doblar y acelerá a la salida. Acelerando a fondo en una curva lenta se puede ir de cola: contravolanteá. Los derrapes se apagan en “Volante y ayudas › Realismo”.</p>
+    <p><b>Cámara:</b> el botón 🎥 de arriba cambia entre la de atrás, una más pegada y la de la tele, arriba del auto.</p>
     <p><b>La trazada:</b> la línea del piso marca por dónde ir. Verde: a fondo. Amarilla: levantá o tocá el freno. Roja: frená fuerte. Antes de las frenadas grandes hay carteles de 150, 100 y 50 metros hasta la curva. La trazada se apaga en “Volante y ayudas” o desde la pausa.</p>
     <p><b>Contra la máquina:</b> elegí cuántos rivales y el nivel. Tranqui es para aprender la pista, Picante pelea pero se le puede ganar, Bravo es para los que ya la conocen.</p>
     <p><b>Choques:</b> los autos se chocan entre sí, también con los amigos en línea. La máquina maneja bien, pero cada tanto se equivoca: se pasa en una curva, le tiembla la mano o te cierra la puerta. Contra la defensa rebotás y perdés velocidad según cómo pegues. Si te vas lejos o de contramano, volvés a la pista casi parado y por un segundo no chocás con nadie.</p>
@@ -3144,19 +3146,33 @@ const ESC=[
 /* dentro de un visor ajeno (por ejemplo, la vista previa de un archivo en otra app) el sensor viene bloqueado */
 let ENMARCADA=false;try{ENMARCADA=window.self!==window.top;}catch(e){ENMARCADA=true;}
 const AJ_KEY='gp-app-ajustes';
-const AJ={modo:'incl',sens:30,centro:0,ayuda:1,auto:false,sonido:true,nombre:'',esc:'fer',pista:'ar-1952',vueltas:3,ia:3,nivel:1,trazada:true,azar:false,rebufo:true,gomas:true,derrape:false,penal:true};
+const AJ={modo:'incl',sens:30,centro:0,ayuda:0,cam:'atras',auto:false,sonido:true,nombre:'',esc:'fer',pista:'ar-1952',vueltas:3,ia:3,nivel:1,trazada:true,azar:false,rebufo:true,gomas:true,derrape:true,penal:true};
 const VUELTAS=[1,2,3,5,8,10,15,20],RIVALES=[0,1,3,5,7,11,15,21];
 try{const r=localStorage.getItem(AJ_KEY);if(r)Object.assign(AJ,JSON.parse(r));}catch(e){}
 if(!ESC.some(e=>e.id===AJ.esc))AJ.esc='fer';
 if(!RIVALES.includes(AJ.ia))AJ.ia=3;if(![1,2,3].includes(AJ.nivel))AJ.nivel=1;AJ.trazada=AJ.trazada!==false;AJ.rebufo=AJ.rebufo!==false;AJ.gomas=AJ.gomas!==false;AJ.penal=AJ.penal!==false;AJ.derrape=AJ.derrape===true;
 if(!VUELTAS.includes(AJ.vueltas))AJ.vueltas=3;AJ.azar=!!AJ.azar;
+/* v7: con la física nueva se arranca sin ayuda de volante y con derrapes (se cambia en Volante y ayudas) */
+if(!AJ.f7){AJ.f7=1;AJ.ayuda=0;AJ.derrape=true;try{localStorage.setItem(AJ_KEY,JSON.stringify(AJ));}catch(e){}}
 function guardar(){try{localStorage.setItem(AJ_KEY,JSON.stringify(AJ));}catch(e){}}
 function leerJSON(k){try{const r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch(e){return null;}}
 function grabarJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
 
 /* ================= MOTOR (sin DOM) ================= */
 const GPM=(function(){
-  const CFG={w:15,vmax:110,kmax:0.08,vu:55,acc:26,dec:20,fre:52,suelto:7,pasto:0.3,agarrePasto:0.5,frenoPasto:58,filtro:0.07};
+  /* v7: física con agarre de verdad. El auto dobla lo que le dan las gomas (agarre mecánico + carga aerodinámica, que crece con la velocidad):
+     si le pedís más volante del que agarra, se va de trompa y pierde velocidad. Frenar o acelerar fuerte gasta el mismo agarre que doblar
+     (círculo de fricción): frenando a fondo dobla la mitad. Motor con potencia y aire que frena: la punta sale sola (~330 km/h). */
+  const CFG={w:15,vmax:92,kmax:0.10,vu:55,pasto:0.3,agarrePasto:0.5,filtro:0.09,
+    g:9.81,mu0:1.6,aero:0.00068,latTope:5.6,fre0:1.45,freAero:0.0005,freTope:5.2,trac:9,pot:880,cd:0.00112,rr:0.18,freMotor:2.4,pastoX:4};
+  const aLat=v=>CFG.g*Math.min(CFG.latTope,CFG.mu0+CFG.aero*v*v);
+  const aFreno=v=>CFG.g*Math.min(CFG.freTope,CFG.fre0+CFG.freAero*v*v);
+  const arrastre=(v,reb)=>CFG.cd*(1-0.11*(reb||0))*v*v+CFG.rr;
+  const aMotor=(v,pot,mu)=>Math.min((CFG.trac+0.0012*v*v)*(mu||1),CFG.pot*(pot||1)/Math.max(8,v));
+  /* curvatura que pide el volante a fondo: con 70 % de volante ya estás en el límite de agarre */
+  const kSteer=v=>Math.min(CFG.kmax,1.45*aLat(v)/Math.pow(Math.max(v,6),2));
+  /* curvatura que de verdad hace (para dibujar a los de afuera) */
+  const kReal=(v,st)=>{const k=st*kSteer(v),kg=aLat(v)/Math.pow(Math.max(v,3),2);return Math.abs(k)>kg?Math.sign(k)*kg:k;};
   function construir(def){
     const P=def.p,n=P.length/2,x=new Float64Array(n),y=new Float64Array(n),s=new Float64Array(n+1);
     for(let i=0;i<n;i++){x[i]=P[2*i];y[i]=P[2*i+1];}
@@ -3200,7 +3216,7 @@ const GPM=(function(){
     const n=T.n,ade=Math.round((10+c.v*0.32)/8),j=(c.i+Math.max(2,ade))%n;
     const dx=T.x[j]-c.x,dy=T.y[j]-c.y,L=Math.hypot(dx,dy)||1;
     let e=Math.atan2(dy,dx)-c.th;e=Math.atan2(Math.sin(e),Math.cos(e));
-    const kq=2*Math.sin(e)/L,kmax=CFG.kmax/(1+Math.pow(c.v/CFG.vu,2));
+    const kq=2*Math.sin(e)/L,kmax=kSteer(c.v);
     return clamp(kq/kmax,-1,1);
   }
   /* inp = {s: volante -1..1 (positivo = derecha), gas: 0..1, fr: frena} */
@@ -3210,25 +3226,38 @@ const GPM=(function(){
     const s=clamp(inp.s||0,-1,1);
     c.st+=(s-c.st)*Math.min(1,dt/CFG.filtro);
     /* v5: reb = rebufo (0..1, va pegado atrás de otro en recta: menos aire, más punta); grip = agarre (gomas y aire sucio) */
-    const a=Math.abs(c.st),pot=c.pot||1,reb=c.reb||0,gr=c.grip||1,vmx=CFG.vmax*pot*(1+0.03*reb);
-    c.frU=!!inp.fr;c.gasU=inp.gas||0;
-    let vt=vmx*(1-0.5*Math.pow(a,1.5));
-    if(c.pasto)vt=Math.min(vt,CFG.vmax*CFG.pasto);
-    const dec=c.pasto?CFG.frenoPasto:CFG.dec;
-    if(inp.fr){c.v=Math.max(0,c.v-CFG.fre*dt);if(c.v>vt)c.v=Math.max(vt,c.v-dec*dt);}
-    else if(inp.gas>0){
-      if(c.v<vt)c.v=Math.min(vt,c.v+CFG.acc*pot*inp.gas*(1-0.45*(1-0.4*reb)*c.v/vmx)*dt);
-      else c.v=Math.max(vt,c.v-dec*dt);
-    }else{c.v=Math.max(0,c.v-CFG.suelto*dt);if(c.v>vt)c.v=Math.max(vt,c.v-dec*dt);}
-    /* en el pasto se dobla menos: no hay agarre */
-    let k=c.st*CFG.kmax*gr*(c.pasto?CFG.agarrePasto:1)/(1+Math.pow(c.v/CFG.vu,2));
+    const a=Math.abs(c.st),pot=c.pot||1,reb=c.reb||0,gr=c.grip||1;
+    c.frU=inp.fr?(inp.fr===true?1:clamp(+inp.fr,0,1)):0;c.gasU=inp.gas||0;
+    /* v7: agarre de las gomas (gastadas, frías, aire sucio, pasto) */
+    const v0=Math.max(0,c.v),mu=gr*(c.pasto?CFG.agarrePasto:1),aLx=aLat(v0)*mu,aFx=aFreno(v0)*mu,vv=Math.max(v0,3);
+    const kReq=c.st*kSteer(v0);
+    /* lo que piden las gomas para adelante o atrás (sin contar el aire) */
+    let aT;
+    if(inp.fr)aT=-0.92*aFx*c.frU;   /* la máquina frena de a poco (fr entre 0 y 1); el pedal, a fondo */
+    else if(inp.gas>0)aT=inp.gas*aMotor(v0,pot,mu);
+    else aT=-CFG.freMotor;
+    /* círculo de fricción: lo que se usa para frenar o acelerar no está para doblar */
+    /* acelerando pesa menos (traccionan las de atrás; las de adelante, que doblan, se descargan un poco) */
+    const uL=inp.fr?Math.min(0.85,Math.abs(aT)/aFx):0.45*Math.min(1,Math.max(0,aT)/aFx),latAv=aLx*Math.sqrt(1-uL*uL),latReq=v0*v0*Math.abs(kReq);
+    let k=kReq,sub=0;
+    if(v0>2&&latReq>latAv){k=Math.sign(kReq)*latAv/(vv*vv);sub=Math.min(1,latReq/latAv-1);}
+    const latUs=v0*v0*Math.abs(k),uLat=Math.min(1,latUs/aLx),longAv=aFx*Math.sqrt(Math.max(0,1-uLat*uLat));
+    if(inp.fr){if(-aT>longAv)aT=-Math.max(longAv,0.35*aFx);}
+    else if(aT>longAv)aT=longAv;
+    /* se va de trompa: las gomas arrastran de costado y frenan el auto */
+    let dv=aT-arrastre(v0,reb)-sub*(2.5+0.07*v0);
+    /* el pasto frena según la velocidad (parado no te traba: siempre podés volver a salir) */
+    if(c.pasto){dv-=CFG.pastoX*Math.min(1,v0/15);if(v0>CFG.vmax*CFG.pasto)dv-=16;}
+    c.v=Math.max(0,c.v+dv*dt);
+    c.uso=latUs/aLat(Math.max(v0,1));c.sub=sub;c.aLong=aT;
+    /* en el pasto se dobla menos: no hay agarre (ya está en mu) */
     /* v5: derrapes (opcional, solo tu auto). beta = cuánto apunta la trompa para adentro respecto de para dónde va el auto.
-       Frenar doblando fuerte o acelerar a fondo con mucho volante en una curva lenta hace salir la cola; contravolantear la junta.
-       Mientras patina dobla menos y pierde velocidad; pasado de cierto ángulo es trompo. */
+       v7: sale la cola cuando las gomas de atrás se quedan sin agarre: frenando en curva cerca del límite, o acelerando a fondo
+       en una curva lenta. Contravolantear la junta. Mientras patina dobla menos y pierde velocidad; pasado de cierto ángulo es trompo. */
     if(c.derr){
-      const sg=c.st>0?1:c.st<0?-1:0;let kick=0;
-      if(inp.fr&&a>0.45&&c.v>26)kick+=sg*(a-0.45)*1.5*Math.min(1,c.v/60);
-      if(!inp.fr&&inp.gas>0&&c.v>5&&c.v<30&&a>0.6)kick+=sg*(a-0.6)*2.2*(1-c.v/30);
+      const sg=k>0?1:k<0?-1:0,us=Math.min(1.2,c.uso+sub*0.5);let kick=0;
+      if(inp.fr&&us>0.55&&c.v>22)kick+=sg*(us-0.55)*1.7*Math.min(1,c.v/60);
+      if(!inp.fr&&inp.gas>0&&c.v>4&&c.v<34&&us>0.72)kick+=sg*(us-0.72)*3.2*(1-c.v/34);
       if(c.pasto&&c.v>12)kick*=1.5;
       kick*=1+(1-gr)*4;
       const b=c.beta||0,contra=b!==0&&sg!==0&&sg!==(b>0?1:-1);
@@ -3269,8 +3298,16 @@ const GPM=(function(){
     const dx=T.x[j]-T.x[i],dy=T.y[j]-T.y[i],l=Math.hypot(dx,dy)||1,nx=-dy/l,ny=dx/l,L=lat||0;
     return{x:T.x[i]+dx*t+nx*L,y:T.y[i]+dy*t+ny*L,th:Math.atan2(dy,dx)};
   }
-  return{CFG,construir,nuevoAuto,paso,avance,puntoEn,volanteIdeal,volver:volverAPista};
+  return{CFG,construir,nuevoAuto,paso,avance,puntoEn,volanteIdeal,volver:volverAPista,aLat,aFreno,arrastre,aMotor,kSteer,kReal};
 })();
+/* v7: lugares de Cipolletti en el callejero (dibujados a mano, ubicados a ojo: no van a escala).
+   i = punto de la pista, sg = lado (-1 izquierda, 1 derecha), d = metros desde la defensa */
+if(PISTAS.cipo&&PISTAS.cipo.zona){const Zc=PISTAS.cipo.zona;
+  Zc.lugares=[{t:'arco',i:372},{t:'aca',i:380,sg:-1,d:26},{t:'wpc',i:245,sg:-1,d:44},{t:'runadi',i:112,sg:1,d:30},
+    {t:'rosauer',i0:396,i1:428,sg:-1},{t:'loba',i:330,sg:-1,d:12}];
+  /* el bulevar termina antes de las esquinas: el murito pegado no puede meterse adentro de una curva cerrada */
+  Zc.bulevar=[[446,481,-1],[0,86,-1]];
+  Zc.calles=(Zc.calles||[]).concat([{i:364,t:'TOSCHI'},{i:236,t:'RUTA 151'}]);}
 const TRACKS={};
 function pista(z){if(!TRACKS[z])TRACKS[z]=GPM.construir({z,p:PISTAS[z].p});return TRACKS[z];}
 
@@ -3282,14 +3319,15 @@ const LINEA=(function(){
   const CACHE=new Map();
   const MARGEN_K=0.93,   /* se usa el 93 % del agarre: nadie maneja perfecto */
         FRENO=0.78,      /* y el 78 % del freno */
-        ROJO=20,AMAR=2.5;/* desaceleración necesaria (m/s²) para pintar rojo o amarillo */
+        ROJO=11,AMAR=2.5;/* desaceleración necesaria (m/s²) para pintar rojo o amarillo (v7: el freno ahora depende de la velocidad) */
   /* velocidad máxima para una curvatura k, con este motor (volante a fondo = kmax/(1+(v/vu)²), y doblar resta velocidad) */
   function vCurva(k){
     const CF=GPM.CFG;k=Math.abs(k);if(k<1e-5)return CF.vmax;
     let lo=0,hi=CF.vmax;
+    /* v7: la que deja el agarre (v²·k ≤ 93 % del agarre lateral) y el volante a fondo */
     for(let it=0;it<40;it++){
-      const v=(lo+hi)/2,a=k*(1+Math.pow(v/CF.vu,2))/(CF.kmax*MARGEN_K);
-      if(a<=1&&v<=CF.vmax*(1-0.5*Math.pow(a,1.5)))lo=v;else hi=v;
+      const v=(lo+hi)/2;
+      if(v*v*k<=MARGEN_K*GPM.aLat(v)&&k<=GPM.kSteer(v))lo=v;else hi=v;
     }
     return lo;
   }
@@ -3351,8 +3389,8 @@ const LINEA=(function(){
     const vl=new Float64Array(n);for(let i=0;i<n;i++)vl[i]=vCurva(k[i]);
     /* perfil: hacia adelante acelerando como el auto, hacia atrás frenando; dos pasadas por ser circuito cerrado */
     const v=Float64Array.from(vl);
-    for(let p=0;p<2;p++)for(let q=0;q<n;q++){const i=q,j=(q+1)%n;const acc=CF.acc*(1-0.45*v[i]/CF.vmax);v[j]=Math.min(v[j],Math.sqrt(v[i]*v[i]+2*acc*ds[i]));}
-    for(let p=0;p<2;p++)for(let q=n-1;q>=0;q--){const i=q,j=(q+1)%n;v[i]=Math.min(v[i],Math.sqrt(v[j]*v[j]+2*CF.fre*FRENO*ds[i]));}
+    for(let p=0;p<2;p++)for(let q=0;q<n;q++){const i=q,j=(q+1)%n;const acc=Math.max(0.3,GPM.aMotor(v[i],1,1)-GPM.arrastre(v[i]));v[j]=Math.min(v[j],Math.sqrt(v[i]*v[i]+2*acc*ds[i]));}
+    for(let p=0;p<2;p++)for(let q=n-1;q>=0;q--){const i=q,j=(q+1)%n;v[i]=Math.min(v[i],Math.sqrt(v[j]*v[j]+2*(GPM.aFreno(v[j])*FRENO+GPM.arrastre(v[j]))*ds[i]));}
     /* color: 0 verde, 1 amarillo, 2 rojo (mirando lo que hay que bajar en el tramo que sigue) */
     const col=new Uint8Array(n);
     for(let i=0;i<n;i++){
@@ -3391,9 +3429,19 @@ const LINEA=(function(){
         if(libre(p[0],p[1],T.w+4))carteles.push({i:ii,L,m});
       }
     }
-    d={n,o,lx,ly,ds,k,vl,v,col,carteles};CACHE.set(T,d);return d;
+    d={n,o,lx,ly,ds,k,vl,v,col,carteles,PK:new Map()};CACHE.set(T,d);return d;
   }
-  return{calcular,vCurva};
+  /* v7: perfil para alguien que dobla al k de la trazada: entra más despacio pero frena en recta, no adentro de la curva */
+  function perfil(d,kk){
+    if(Math.abs(kk-1)<0.005)return d.v;
+    const q=Math.round(kk*100);let p=d.PK.get(q);if(p)return p;
+    const n=d.n,ds=d.ds,CF=GPM.CFG,f=q/100;p=new Float64Array(n);
+    for(let i=0;i<n;i++)p[i]=Math.min(CF.vmax*1.06,d.vl[i]*f);
+    for(let r=0;r<2;r++)for(let i=0;i<n;i++){const j=(i+1)%n;p[j]=Math.min(p[j],Math.sqrt(p[i]*p[i]+2*Math.max(0.3,GPM.aMotor(p[i],1,1)-GPM.arrastre(p[i]))*ds[i]));}
+    for(let r=0;r<2;r++)for(let i=n-1;i>=0;i--){const j=(i+1)%n;p[i]=Math.min(p[i],Math.sqrt(p[j]*p[j]+2*(GPM.aFreno(p[j])*0.78*Math.min(1.08,f)+GPM.arrastre(p[j]))*ds[i]));}
+    d.PK.set(q,p);return p;
+  }
+  return{calcular,vCurva,perfil};
 })();
 
 /* ================= LA MÁQUINA: rivales que manejan solos =================
@@ -3405,13 +3453,14 @@ const IA=(function(){
   const NOMBRES=['Pocho','Cacho','Tito','Lalo','Toto','Chueco','Flaco','Pájaro','Ruso','Tano','Gringo','Colo','Turco','Mono','Pipo','Nene',
     'Bocha','Pato','Cholo','Chino','Lucho','Beto','Pepe','Coco','Fito','Quique'];
   /* k = qué parte de la velocidad de la trazada usan. Con 1 van como la trazada; arriba de 1,3 ya no se puede ir más rápido */
-  const NIVELES={1:{n:'Tranqui',k:0.82},2:{n:'Picante',k:0.94},3:{n:'Bravo',k:1.22}};
+  /* v7: con agarre de verdad, pasar el 100 % de la trazada (que ya usa el 93 % del agarre) es irse de trompa */
+  const NIVELES={1:{n:'Tranqui',k:0.8},2:{n:'Picante',k:0.92},3:{n:'Bravo',k:1.0}};
   /* v4: errores de la máquina. Cada tanto uno se equivoca: frena tarde y se pasa en la curva, le tiembla el volante
      o cierra la puerta y se tira encima del otro. Cuanto más rápido el nivel, menos seguido (Tranqui ~30 s, Bravo ~80 s). */
   function cadaErr(k){return 30+50*clamp((k-0.8)/0.42,0,1);}
   function sortearErr(a){
     const r=a.rnd(),x=a.rnd();
-    if(r<0.45)a.err={tipo:'tarde',m:1.12+x*0.1,g:0.32+a.rnd()*0.2,dentro:false,t:0,max:9};
+    if(r<0.45)a.err={tipo:'tarde',m:1.05+x*0.07,   /* v7: con agarre de verdad, 5 a 12 % pasado ya alcanza para abrirse */g:0.32+a.rnd()*0.2,dentro:false,t:0,max:9};
     else if(r<0.75)a.err={tipo:'mano',amp:(0.18+x*0.17)*(a.rnd()<0.5?-1:1),t:0,max:0.6+a.rnd()*0.7,fq:1.1+a.rnd()*0.6};
     else a.err={tipo:'tapa',t:0,max:5+x*4};
     a.nErr=(a.nErr||0)+1;
@@ -3451,7 +3500,7 @@ const IA=(function(){
     a.tRuido-=h||0.016;if(a.tRuido<=0){a.tRuido=1+a.rnd()*2;a.ruido=(a.rnd()-0.5)*0.025;}
     let k=a.k*(1+a.ruido);if(honor)k=0.55;
     const hh=h||0.016;
-    if(honor||!ERRORES.on){a.err=null;}
+    if(honor||!ERRORES.on||a.sinErr){a.err=null;}
     else{
       if(a.tErr==null)a.tErr=cadaErr(a.k)*(0.5+a.rnd());
       if(a.err){a.err.t+=hh;if(a.err.t>a.err.max)a.err=null;}
@@ -3479,7 +3528,7 @@ const IA=(function(){
         if(ds<(tapa?9+v*0.18:18+v*0.4)&&Math.abs(dl)<6.5){
           vTope=Math.min(vTope,ov-1.5-(ds<12?3:0));
           /* si me lo como en menos de un segundo, freno ya */
-          const cv=v-ov;if(cv>0&&(ds-6)/cv<0.9)vTope=Math.min(vTope,ov-4);
+          const cv=v-ov;if(cv>0&&(ds-6)/cv<1.25)vTope=Math.min(vTope,Math.max(ov-4,ov*0.7));   /* v7: ahora se frena de verdad: más margen con el de adelante */
         }
       }
     }
@@ -3497,14 +3546,16 @@ const IA=(function(){
     const px=bx-T.ty[jj]*latObj,py=by+T.tx[jj]*latObj;
     const dx=px-c.x,dy=py-c.y,Ld=Math.hypot(dx,dy)||1;
     let e=Math.atan2(dy,dx)-c.th;e=Math.atan2(Math.sin(e),Math.cos(e));
-    const kq=2*Math.sin(e)/Ld,kcap=CF.kmax/(1+Math.pow(v/CF.vu,2));
+    const kq=2*Math.sin(e)/Ld,kcap=GPM.kSteer(v);
     let s=clamp(kq/kcap,-1,1);
+    /* v7: siente el límite: no le pide al auto más de lo que agarra (si no, se va de trompa y arrastra las gomas) */
+    {const sm=GPM.aLat(v)*(c.grip||1)/Math.pow(Math.max(v,3),2)/kcap*Math.sqrt(1-Math.pow(Math.min(0.85,0.92*(c.frU||0)),2))*1.03;if(sm<1)s=clamp(s,-sm,sm);}
     if(E&&E.tipo==='mano')s=clamp(s+E.amp*Math.sin(2*Math.PI*E.fq*E.t),-1,1);
     /* se pasó: entra fuerte y no le alcanza el volante, se abre */
     if(E&&E.tipo==='tarde'&&E.dentro)s*=E.g;
     /* velocidad: el perfil un poco más adelante (los que frenan tarde, un poco más) */
-    const ade=(c.i+2+Math.round(v*0.08))%n;
-    let vObj=L.v[ade]*k*(1+a.frenaTarde*(L.col[ade]>0?1:0));
+    const ade=(c.i+1+Math.round(v*0.022))%n;   /* v7: el perfil ya trae la frenada: mirar poco adelante (si no, frena 80 m antes) */
+    let vObj=LINEA.perfil(L,k)[ade]*(1+a.frenaTarde*(L.col[ade]>0?1:0));
     /* frenó tarde: llega pasado a la curva y se abre (a veces hasta el pasto) */
     if(E&&E.tipo==='tarde'){if(L.col[ade]>0){E.dentro=true;vObj*=E.m;}else if(E.dentro){if(E.sal==null)E.sal=E.t;if(E.t-E.sal<1.0)vObj*=E.m;else a.err=null;}}
     /* v5: con menos agarre (gomas gastadas, aire sucio) entra más despacio; con rebufo estira en la recta */
@@ -3512,7 +3563,8 @@ const IA=(function(){
     if(c.pasto)vObj=Math.min(vObj,CF.vmax*CF.pasto);
     vObj=Math.min(vObj,vTope);
     let gas=0,fr=false;
-    if(v>vObj+2)fr=true;else if(v<vObj)gas=1;
+    /* v7: frena dosificando, como un piloto: cuanto más pasado, más fuerte */
+    if(v>vObj+0.8)fr=Math.min(1,0.3+(v-vObj)*0.22);else if(v<vObj)gas=1;
     return{s,gas,fr};
   }
   return{crear,control,NIVELES,NOMBRES,ERRORES,cadaErr};
@@ -3538,7 +3590,7 @@ const CHOQUE=(function(){
   /* contra la defensa: devuelve qué tan fuerte pegó (m/s hacia el muro) */
   function muro(T,DD,c){
     const bar=c.lat<0?DD.barI:DD.barD;if(!bar||!bar[c.i])return 0;
-    const lim=(DD.LBa?DD.LBa[c.i]:DD.LB)-2.6;if(c.dist<=lim)return 0;
+    const LS=c.lat<0?DD.LBi:DD.LBd,lim=(LS?LS[c.i]:DD.LBa?DD.LBa[c.i]:DD.LB)-2.6;if(c.dist<=lim)return 0;
     const i=c.i,sg=c.lat<0?-1:1,inx=sg*T.ty[i],iny=-sg*T.tx[i];
     const pen=c.dist-lim;c.x+=inx*pen;c.y+=iny*pen;c.dist=lim;
     const [vx,vy]=vel(c),vn=vx*inx+vy*iny;
@@ -3696,7 +3748,7 @@ function dibujarMini(cv,z,col){
   const nx=-T.ty[0],ny=T.tx[0],r=13/k;c.strokeStyle='#e0262e';c.lineWidth=6/k;c.lineCap='butt';
   c.beginPath();c.moveTo(T.x[0]-nx*r,T.y[0]-ny*r);c.lineTo(T.x[0]+nx*r,T.y[0]+ny*r);c.stroke();c.restore();
 }
-const recKey=(z,v)=>'gp-app-rec-'+z+'-'+v;
+const recKey=(z,v)=>'gp-app-rec7-'+z+'-'+v;   /* v7: física nueva, récords nuevos */
 /* pista al azar: nunca repite la anterior */
 const AZAR={prox:null};
 function pistaAzar(no){const L=Object.keys(PISTAS).filter(z=>z!==no);return L[(Math.random()*L.length)|0];}
@@ -3707,14 +3759,14 @@ function dibujarDado(cv){
   c.fillStyle='#202328';[[-22,-22],[22,22],[0,0],[22,-22],[-22,22]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,8,0,7);c.fill();});c.restore();
 }
 /* ---------- mejores tiempos: las cinco mejores vueltas y carreras de cada pista, guardadas en este celular ---------- */
-const topKey=z=>'gp-app-top-'+z;
+const topKey=z=>'gp-app-top7-'+z;
 function leerTop(z){
   let d=leerJSON(topKey(z));
   if(!d||typeof d!=='object')d={v:[],c:{}};
   if(!Array.isArray(d.v))d.v=[];if(!d.c||typeof d.c!=='object')d.c={};
   /* lo que ya estaba guardado de antes (récord con fantasma y mejor vuelta) entra a la lista la primera vez */
   if(!d.mig){
-    d.mig=1;
+    d.mig=1;if(topKey(z).indexOf('top7')>=0)return d;
     const mv=leerJSON('gp-app-mv-'+z);if(mv&&isFinite(mv.t))d.v.push({t:mv.t,n:mv.n||'',f:0,m:''});
     [1,2,3,5].forEach(v=>{const r=leerJSON(recKey(z,v));if(r&&isFinite(r.t))(d.c[v]=d.c[v]||[]).push({t:r.t,n:r.n||'',f:r.f||0,m:''});});
   }
@@ -3856,93 +3908,177 @@ function armarMenu(){
 }
 
 /* ================= SONIDO ================= */
-/* Motor sintetizado: dos sierras desafinadas + subgrave, saturadas y filtradas, con la frecuencia atada a las vueltas por minuto
-   de la marcha. Turbo que silba, cubiertas que chillan al doblar fuerte, pasto, pianos, petardeo al levantar y golpe contra el muro. */
+/* v7: motor nuevo. En vez de dos sierras, cada motor es un V6 de cuatro tiempos armado por armónicos de verdad:
+   la vuelta del cigüeñal (fc = rpm/60) con el pulso de explosión 3 veces por vuelta, más los órdenes chicos que le dan la aspereza.
+   Encima, ruido de combustión que late al ritmo de las explosiones, resonancias del escape, el silbido del turbo y del eléctrico,
+   y un filtro que se abre con el acelerador. Suena distinto con carga y suelto (petardeo).
+   Además: chillido de gomas según cuánto se pasan de agarre, viento según la velocidad, pasto, pianos,
+   y el motor de los dos rivales más cercanos, con distancia, lado (estéreo) y efecto Doppler cuando te pasan o los pasás. */
 const SON={ctx:null};
 function ruidoBuf(ctx,seg){const b=ctx.createBuffer(1,Math.round(ctx.sampleRate*seg),ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b;}
+function ruidoLento(ctx,seg,k){const b=ctx.createBuffer(1,Math.round(ctx.sampleRate*seg),ctx.sampleRate),d=b.getChannelData(0);let v=0;for(let i=0;i<d.length;i++){v+=(Math.random()*2-1-v)*k;d[i]=v;}let m=0;for(let i=0;i<d.length;i++)m=Math.max(m,Math.abs(d[i]));for(let i=0;i<d.length;i++)d[i]/=m||1;return b;}
 function curvaSat(k){const n=1024,cu=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;cu[i]=Math.tanh(k*x)/Math.tanh(k);}return cu;}
+/* forma de onda de una vuelta de cigüeñal de un V6 (fase y peso de cada armónico fijos: siempre el mismo motor) */
+function ondaV6(ctx,brillo){
+  const N=48,re=new Float32Array(N+1),im=new Float32Array(N+1);let s=12345;const rn=()=>{s=(s*16807)%2147483647;return s/2147483647;};
+  for(let n=1;n<=N;n++){
+    const pulso=n%3===0?1/Math.pow(n/3,0.62):0.0,orden=n%3!==0?0.34/Math.pow(n,0.55):0,med=n===1||n===2?0.22:0;
+    let a=(pulso+orden+med)*Math.exp(-n/(14+30*brillo));
+    const f=rn()*Math.PI*2;re[n]=a*Math.cos(f);im[n]=a*Math.sin(f);
+  }
+  return ctx.createPeriodicWave(re,im,{disableNormalization:false});
+}
+/* pulso corto 3 veces por vuelta: para hacer latir el ruido de combustión */
+function ondaPulso(ctx){const N=24,re=new Float32Array(N+1),im=new Float32Array(N+1);for(let n=3;n<=N;n+=3){re[n]=Math.exp(-n/16);}return ctx.createPeriodicWave(re,im);}
+/* una voz de motor completa, que va a "dest". El tuyo y el de los rivales usan la misma */
+function crearMotor(ctx,dest,op){
+  op=op||{};
+  const out=ctx.createGain();out.gain.value=0;
+  const pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
+  if(pan){out.connect(pan);pan.connect(dest);}else out.connect(dest);
+  /* tono: dos ondas (con carga y suelto) que se mezclan */
+  const oC=ctx.createOscillator(),oS=ctx.createOscillator();oC.setPeriodicWave(ondaV6(ctx,1));oS.setPeriodicWave(ondaV6(ctx,0.25));
+  const gC=ctx.createGain(),gS=ctx.createGain();gC.gain.value=0.6;gS.gain.value=0.4;
+  /* subgrave media vuelta (lo que retumba en el pecho) */
+  const oSub=ctx.createOscillator();oSub.type='sine';const gSub=ctx.createGain();gSub.gain.value=0.18;
+  /* vida: un temblor lento e irregular en la afinación */
+  const tem=ctx.createBufferSource();tem.buffer=SON.lento;tem.loop=true;const gTem=ctx.createGain();gTem.gain.value=op.rival?14:9;tem.connect(gTem);gTem.connect(oC.detune);gTem.connect(oS.detune);
+  const mez=ctx.createGain();mez.gain.value=0.5;
+  oC.connect(gC);oS.connect(gS);gC.connect(mez);gS.connect(mez);oSub.connect(gSub);gSub.connect(mez);
+  /* combustión: ruido filtrado que late con cada explosión */
+  const rz=ctx.createBufferSource();rz.buffer=SON.nb;rz.loop=true;rz.loopStart=Math.random();
+  const bpR=ctx.createBiquadFilter();bpR.type='bandpass';bpR.frequency.value=1600;bpR.Q.value=0.9;
+  const vca=ctx.createGain();vca.gain.value=0;
+  const oP=ctx.createOscillator();oP.setPeriodicWave(ondaPulso(ctx));const gP=ctx.createGain();gP.gain.value=0.5;oP.connect(gP);gP.connect(vca.gain);
+  rz.connect(bpR);bpR.connect(vca);vca.connect(mez);
+  /* saturación y escape: tres resonancias fijas del caño */
+  const sat=ctx.createWaveShaper();sat.curve=curvaSat(3.2);sat.oversample='2x';
+  const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=45;
+  const r1=ctx.createBiquadFilter();r1.type='peaking';r1.frequency.value=310;r1.Q.value=1.4;r1.gain.value=5;
+  const r2=ctx.createBiquadFilter();r2.type='peaking';r2.frequency.value=880;r2.Q.value=1.8;r2.gain.value=6;
+  const r3=ctx.createBiquadFilter();r3.type='peaking';r3.frequency.value=2300;r3.Q.value=2.2;r3.gain.value=3;
+  const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1200;lp.Q.value=0.6;
+  mez.connect(sat);sat.connect(hp);hp.connect(r1);r1.connect(r2);r2.connect(r3);r3.connect(lp);lp.connect(out);
+  /* turbo y eléctrico: silbidos finos que siguen a las vueltas */
+  const oT=ctx.createOscillator();oT.type='sine';const gT=ctx.createGain();gT.gain.value=0;oT.connect(gT);gT.connect(out);
+  const oE=ctx.createOscillator();oE.type='triangle';const gE=ctx.createGain();gE.gain.value=0;oE.connect(gE);gE.connect(out);
+  [oC,oS,oSub,oP,oT,oE].forEach(o=>o.start());tem.start(0,Math.random()*3);rz.start(0,Math.random());
+  let gasA=0;
+  return{out,pan,
+    /* rpm 0..1 (ralentí a 12.500) · carga 0..1 · vol 0..1 · tono: multiplicador (Doppler) */
+    set(rpm,carga,vol,tono,ta){
+      const t=ctx.currentTime,tc=ta||0.03,rr=4000+8500*clamp(rpm,0,1.03),fc=rr/60*(tono||1);
+      gasA+=(carga-gasA)*0.35;
+      [oC,oS,oP].forEach(o=>o.frequency.setTargetAtTime(fc,t,tc));
+      oSub.frequency.setTargetAtTime(fc/2,t,tc);
+      gC.gain.setTargetAtTime(0.25+0.6*gasA,t,0.04);gS.gain.setTargetAtTime(0.55-0.3*gasA,t,0.04);
+      vca.gain.setTargetAtTime(0.05+0.25*gasA,t,0.04);bpR.frequency.setTargetAtTime(900+1800*rpm,t,0.05);
+      lp.frequency.setTargetAtTime(500+rpm*1400+gasA*(1600+3600*rpm),t,0.04);
+      r2.frequency.setTargetAtTime(780+240*rpm,t,0.08);
+      oT.frequency.setTargetAtTime(2400+5200*rpm,t,0.12);gT.gain.setTargetAtTime(0.006*gasA*rpm*rpm*vol,t,0.15);
+      oE.frequency.setTargetAtTime(fc*9.5,t,tc);gE.gain.setTargetAtTime(0.0035*(0.3+gasA)*rpm*vol,t,0.1);
+      out.gain.setTargetAtTime(vol*(0.42+0.5*gasA+0.12*rpm),t,0.05);
+    },
+    callar(){const t=ctx.currentTime;out.gain.cancelScheduledValues(t);out.gain.setTargetAtTime(0,t,0.05);gT.gain.setTargetAtTime(0,t,0.05);gE.gain.setTargetAtTime(0,t,0.05);},
+    lado(p){if(pan)pan.pan.setTargetAtTime(clamp(p,-0.9,0.9),ctx.currentTime,0.05);},
+    tono(){return oC.frequency.value;}
+  };
+}
 function sonidoIniciar(){
   if(!AJ.sonido)return;
   try{
     if(!SON.ctx){
       const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
       const ctx=new C();SON.ctx=ctx;
-      const comp=ctx.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(ctx.destination);
-      const master=ctx.createGain();master.gain.value=0.9;master.connect(comp);
-      /* motor */
-      const mezcla=ctx.createGain();mezcla.gain.value=0.5;
-      const o1=ctx.createOscillator();o1.type='sawtooth';
-      const o2=ctx.createOscillator();o2.type='sawtooth';o2.detune.value=9;
-      const o3=ctx.createOscillator();o3.type='square';
-      const g3=ctx.createGain();g3.gain.value=0.35;
-      /* aspereza: un vibrato rápido e irregular en la frecuencia */
-      const lfo=ctx.createOscillator();lfo.type='triangle';lfo.frequency.value=31;const lfoG=ctx.createGain();lfoG.gain.value=6;lfo.connect(lfoG);lfoG.connect(o1.frequency);lfoG.connect(o2.frequency);
-      o1.connect(mezcla);o2.connect(mezcla);o3.connect(g3);g3.connect(mezcla);
-      const sat=ctx.createWaveShaper();sat.curve=curvaSat(2.6);sat.oversample='2x';
-      const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=70;
-      const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1800;lp.Q.value=0.8;
-      const pico=ctx.createBiquadFilter();pico.type='peaking';pico.frequency.value=900;pico.Q.value=1.2;pico.gain.value=7;
-      const gMotor=ctx.createGain();gMotor.gain.value=0;
-      mezcla.connect(sat);sat.connect(hp);hp.connect(pico);pico.connect(lp);lp.connect(gMotor);gMotor.connect(master);
-      /* turbo */
-      const tu=ctx.createOscillator();tu.type='sine';tu.frequency.value=2600;const gTu=ctx.createGain();gTu.gain.value=0;tu.connect(gTu);gTu.connect(master);
-      /* ruidos: cubiertas, pasto, pianos */
-      const nb=ruidoBuf(ctx,2);
-      const mkRuido=(tipo,f,q)=>{const s=ctx.createBufferSource();s.buffer=nb;s.loop=true;const fl=ctx.createBiquadFilter();fl.type=tipo;fl.frequency.value=f;fl.Q.value=q;const g=ctx.createGain();g.gain.value=0;s.connect(fl);fl.connect(g);g.connect(master);s.start();return g;};
-      const gChillido=mkRuido('bandpass',1900,6),gPasto=mkRuido('lowpass',380,0.7),gPiano=mkRuido('bandpass',140,3);
-      [o1,o2,o3,lfo,tu].forEach(o=>o.start());
-      Object.assign(SON,{master,o1,o2,o3,lp,pico,gMotor,tu,gTu,gChillido,gPasto,gPiano,nb,gasAnt:0,ultPop:0});
+      const comp=ctx.createDynamicsCompressor();comp.threshold.value=-16;comp.knee.value=8;comp.ratio.value=5;comp.attack.value=0.004;comp.release.value=0.2;comp.connect(ctx.destination);
+      const master=ctx.createGain();master.gain.value=0.85;master.connect(comp);
+      SON.nb=ruidoBuf(ctx,2);SON.lento=ruidoLento(ctx,4,0.0008);
+      const yo=crearMotor(ctx,master,{});
+      const riv=[crearMotor(ctx,master,{rival:1}),crearMotor(ctx,master,{rival:1})];
+      /* ruidos: gomas, viento, pasto, pianos */
+      const mkRuido=(tipo,f,q)=>{const s=ctx.createBufferSource();s.buffer=SON.nb;s.loop=true;s.loopStart=Math.random();const fl=ctx.createBiquadFilter();fl.type=tipo;fl.frequency.value=f;fl.Q.value=q;const g=ctx.createGain();g.gain.value=0;s.connect(fl);fl.connect(g);g.connect(master);s.start(0,Math.random());return{g,fl};};
+      const goma=mkRuido('bandpass',1250,9),viento=mkRuido('lowpass',520,0.5),pasto=mkRuido('lowpass',380,0.7),piano=mkRuido('bandpass',140,3);
+      /* el chillido tiene un tono que tiembla: un oscilador fino además del ruido */
+      const oG=ctx.createOscillator();oG.type='square';oG.frequency.value=1150;const fG=ctx.createBiquadFilter();fG.type='bandpass';fG.frequency.value=1250;fG.Q.value=6;
+      const gG=ctx.createGain();gG.gain.value=0;oG.connect(fG);fG.connect(gG);gG.connect(master);
+      const vib=ctx.createOscillator();vib.frequency.value=7;const gV=ctx.createGain();gV.gain.value=40;vib.connect(gV);gV.connect(oG.frequency);oG.start();vib.start();
+      Object.assign(SON,{master,yo,riv,goma,viento,pasto,piano,oG,gG,gasAnt:0,ultPop:0,gMotor:yo.out});
     }
     if(SON.ctx.state==='suspended')SON.ctx.resume();
-  }catch(e){}
+  }catch(e){SON.ctx=null;}
 }
 /* rpm de 0 a 1 · gas 0/1 · v en m/s · st volante */
 function sonidoCuadro(rpm,gas,v,pasto,st,piano,on){
-  if(!SON.ctx||!SON.o1)return;
+  if(!SON.ctx||!SON.yo)return;
   const ctx=SON.ctx,t=ctx.currentTime;on=on&&AJ.sonido;
-  const f=95+rpm*430;     /* encendido de un V6: de ralentí a 12.500 rpm */
-  SON.o1.frequency.setTargetAtTime(f,t,0.025);SON.o2.frequency.setTargetAtTime(f,t,0.025);SON.o3.frequency.setTargetAtTime(f/2,t,0.025);
-  SON.lp.frequency.setTargetAtTime(900+gas*2600*rpm+400*rpm,t,0.04);
-  SON.pico.frequency.setTargetAtTime(600+700*rpm,t,0.05);
-  SON.gMotor.gain.setTargetAtTime(on?0.10+0.13*gas+0.05*rpm:0,t,0.05);
-  SON.tu.frequency.setTargetAtTime(1800+2600*rpm,t,0.05);
-  SON.gTu.gain.setTargetAtTime(on?0.007*gas*rpm:0,t,0.08);
-  const chi=Math.abs(st)>0.55&&v>28&&!pasto?Math.min(1,(Math.abs(st)-0.55)/0.4)*Math.min(1,(v-28)/40):0;
-  SON.gChillido.gain.setTargetAtTime(on?0.05*chi:0,t,0.06);
-  SON.gPasto.gain.setTargetAtTime(on&&pasto&&v>3?Math.min(0.22,0.05+v/250):0,t,0.05);
-  SON.gPiano.gain.setTargetAtTime(on&&piano?0.3:0,t,0.02);
+  const c=R&&R.car;
+  SON.yo.set(rpm,gas,on?1:0,1);
+  /* gomas: chillan según cuánto se pasan de agarre (de trompa o de cola) y un poco al frenar fuerte */
+  const sub=c?(c.sub||0):0,uso=c?(c.uso||0):0,beta=c?Math.abs(c.beta||0):0,fr=c?(c.frU||0):0;
+  let chi=pasto||v<8?0:clamp(sub*1.4+Math.max(0,uso-0.9)*3+beta*2.2+(fr>0.5&&v>30?0.12:0),0,1)*Math.min(1,v/22);
+  SON.goma.g.gain.setTargetAtTime(on?0.09*chi:0,t,0.05);SON.gG.gain.setTargetAtTime(on?0.022*chi*chi:0,t,0.05);
+  SON.oG.frequency.setTargetAtTime(1000+260*chi+v*2,t,0.1);SON.goma.fl.frequency.setTargetAtTime(1100+300*chi,t,0.1);
+  /* viento: crece con el cuadrado de la velocidad */
+  const vi=clamp(v/92,0,1.1);SON.viento.g.gain.setTargetAtTime(on?0.10*vi*vi:0,t,0.1);SON.viento.fl.frequency.setTargetAtTime(350+900*vi,t,0.1);
+  SON.pasto.g.gain.setTargetAtTime(on&&pasto&&v>3?Math.min(0.22,0.05+v/250):0,t,0.05);
+  SON.piano.g.gain.setTargetAtTime(on&&piano?0.3:0,t,0.02);
   /* petardeo al soltar el acelerador con el motor arriba */
   if(on&&SON.gasAnt>0.5&&gas<0.5&&rpm>0.7&&t-SON.ultPop>0.6){SON.ultPop=t;petardos(t,3+Math.floor(Math.random()*3));}
   SON.gasAnt=gas;
+  sonidoRivales(on);
+}
+/* rpm de un auto que no es el tuyo: la marcha sale de la velocidad, como la caja de verdad */
+function rpmDe(v){const k=Math.max(0,v)*3.6;let g=1;while(g<8&&k>TOPE[g])g++;const lo=g===1?0:TOPE[g-1];return g===1?0.25+0.75*k/TOPE[1]:0.62+0.38*(k-lo)/(TOPE[g]-lo);}
+function sonidoRivales(on){
+  if(!SON.riv)return;
+  const L=[];
+  if(on&&R&&R.car&&R.verdeYa){
+    const c=R.car,co=Math.cos(c.th),si=Math.sin(c.th),vx=c.v*co,vy=c.v*si;
+    const ver=o=>{if(!o||o===c)return;const dx=o.x-c.x,dy=o.y-c.y,d=Math.hypot(dx,dy);if(d>260)return;L.push({o,d,dx,dy});};
+    (R.ia||[]).forEach(a=>ver(a.car));(R.rivales3||[]).forEach(ver);
+    L.sort((a,b)=>a.d-b.d);
+    for(let q=0;q<2;q++){
+      const e=L[q],m=SON.riv[q];
+      if(!e){m.set(0.3,0,0,1);continue;}
+      const o=e.o,d=Math.max(1,e.d),ux=e.dx/d,uy=e.dy/d,ov=Math.max(0,o.v||0);
+      const ovx=ov*Math.cos(o.th),ovy=ov*Math.sin(o.th);
+      /* Doppler: se acercan, suena más agudo; se alejan, más grave */
+      const vAcerca=(vx*ux+vy*uy)-(ovx*ux+ovy*uy),dop=clamp(343/(343-vAcerca),0.8,1.25);
+      const vol=0.75/(1+d/9)/(1+d/120);
+      const gas=o.gasU!=null?o.gasU:(o.frU?0:1);
+      m.set(rpmDe(ov),gas,vol,dop,0.05);
+      /* de qué lado está (izquierda o derecha del auto) */
+      m.lado((ux*si-uy*co)*-1);
+    }
+  }else SON.riv.forEach(m=>m.set(0.3,0,0,1));
 }
 function petardos(t0,n){
   const ctx=SON.ctx;
   for(let i=0;i<n;i++){
     const t=t0+0.05+i*(0.06+Math.random()*0.07);
-    const s=ctx.createBufferSource();s.buffer=SON.nb;const fl=ctx.createBiquadFilter();fl.type='bandpass';fl.frequency.value=500+Math.random()*700;fl.Q.value=1.5;
-    const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.35,t+0.004);g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
-    s.connect(fl);fl.connect(g);g.connect(SON.master);s.start(t,Math.random());s.stop(t+0.07);
+    const s=ctx.createBufferSource();s.buffer=SON.nb;const fl=ctx.createBiquadFilter();fl.type='bandpass';fl.frequency.value=400+Math.random()*600;fl.Q.value=1.2;
+    const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.4,t+0.003);g.gain.exponentialRampToValueAtTime(0.001,t+0.06);
+    s.connect(fl);fl.connect(g);g.connect(SON.master);s.start(t,Math.random());s.stop(t+0.08);
   }
 }
-/* cambio de marcha: el motor corta un instante */
+/* cambio de marcha: el motor corta un instante (las vueltas bajan solas con la marcha nueva) */
 function sonidoCambio(){
-  if(!SON.ctx||!SON.gMotor||!AJ.sonido)return;
-  const t=SON.ctx.currentTime,g=SON.gMotor.gain;
-  g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(g.value*0.35,t+0.03);g.linearRampToValueAtTime(g.value,t+0.11);
+  if(!SON.ctx||!SON.yo||!AJ.sonido)return;
+  const t=SON.ctx.currentTime,g=SON.yo.out.gain;
+  g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(g.value*0.3,t+0.02);g.linearRampToValueAtTime(g.value,t+0.07);
 }
-/* v5: rebaje: golpe de acelerador (sube de vueltas un instante) y a veces un petardo */
+/* rebaje: golpe de acelerador (el motor sube de vueltas un instante) y a veces un petardo */
 function sonidoBajada(){
-  if(!SON.ctx||!SON.o1||!AJ.sonido)return;
-  const t=SON.ctx.currentTime,g=SON.gMotor.gain,f0=SON.o1.frequency.value,f1=Math.min(560,f0*1.32);
-  [SON.o1,SON.o2].forEach(o=>{o.frequency.cancelScheduledValues(t);o.frequency.setValueAtTime(f0,t);o.frequency.linearRampToValueAtTime(f1,t+0.05);o.frequency.setTargetAtTime(f0,t+0.06,0.06);});
-  g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(Math.min(0.32,g.value+0.12),t+0.04);g.setTargetAtTime(g.value,t+0.07,0.06);
-  if(Math.random()<0.45)petardos(t+0.04,1+Math.floor(Math.random()*2));
+  if(!SON.ctx||!SON.yo||!AJ.sonido)return;
+  const t=SON.ctx.currentTime,g=SON.yo.out.gain;
+  g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(Math.min(1.1,g.value*1.5+0.1),t+0.035);g.setTargetAtTime(g.value,t+0.06,0.06);
+  if(Math.random()<0.45)petardos(t+0.03,1+Math.floor(Math.random()*2));
 }
-/* v5: corte de vueltas arriba de todo en la última marcha */
+/* corte de vueltas arriba de todo en la última marcha */
 function sonidoCorte(){
-  if(!SON.ctx||!SON.gMotor||!AJ.sonido)return;
-  const t=SON.ctx.currentTime,g=SON.gMotor.gain,v=g.value;
-  g.cancelScheduledValues(t);g.setValueAtTime(v,t);g.linearRampToValueAtTime(v*0.25,t+0.015);g.linearRampToValueAtTime(v,t+0.05);
+  if(!SON.ctx||!SON.yo||!AJ.sonido)return;
+  const t=SON.ctx.currentTime,g=SON.yo.out.gain,v=g.value;
+  g.cancelScheduledValues(t);g.setValueAtTime(v,t);g.linearRampToValueAtTime(v*0.2,t+0.012);g.linearRampToValueAtTime(v,t+0.045);
 }
 function sonidoGolpe(k){
   if(!SON.ctx||!SON.nb||!AJ.sonido)return;
@@ -3955,8 +4091,9 @@ function sonidoGolpe(k){
   const go=ctx.createGain();go.gain.setValueAtTime(0.7*k,t);go.gain.exponentialRampToValueAtTime(0.001,t+0.35);o.connect(go);go.connect(SON.master);o.start(t);o.stop(t+0.4);
 }
 function sonidoCallar(){
-  if(!SON.ctx||!SON.gMotor)return;const t=SON.ctx.currentTime;
-  [SON.gMotor,SON.gTu,SON.gChillido,SON.gPasto,SON.gPiano].forEach(g=>{g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(0,t,0.05);});
+  if(!SON.ctx||!SON.yo)return;const t=SON.ctx.currentTime;
+  SON.yo.callar();SON.riv.forEach(m=>m.callar());
+  [SON.goma.g,SON.gG,SON.viento.g,SON.pasto.g,SON.piano.g].forEach(g=>{g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(0,t,0.05);});
 }
 
 /* ================= CARRERA ================= */
@@ -4059,6 +4196,10 @@ function armarToques(){
   addEventListener('keydown',e=>{if(K[e.key]){IN[K[e.key]]=true;e.preventDefault();}if(e.key==='Escape'&&R&&R.activo)pausar(!R.pausa);});
   addEventListener('keyup',e=>{if(K[e.key])IN[K[e.key]]=false;});
   $('btnPausa').onclick=()=>{if(R&&R.online){$('capaPausa').classList.remove('hide');}else pausar(true);};
+  /* v7: botón de cámara (de atrás, pegada, la de la tele arriba del auto) */
+  {const bp=$('btnPausa');if(bp&&!$('btnCam')){const b=document.createElement('button');b.id='btnCam';b.title='Cámara';b.textContent='🎥';bp.parentNode.insertBefore(b,bp);
+    const CAMS=['atras','cerca','tcam'],TXT={atras:'🎥 Cámara de atrás',cerca:'🎥 Cámara pegada',tcam:'🎥 Cámara arriba del auto'};
+    b.onclick=()=>{const k=(CAMS.indexOf(AJ.cam||'atras')+1)%CAMS.length;AJ.cam=CAMS[k];guardar();aviso(TXT[AJ.cam],1.2);if(REN3)REN3.reset();};}}
   $('btnSeguir').onclick=()=>{if(R&&R.online)$('capaPausa').classList.add('hide');else pausar(false);};
   $('btnReiniciar').onclick=()=>{const cp=R&&R.camp;salirCarrera();largar(cp?{camp:cp}:undefined);};
   $('btnTrazada').onclick=()=>{AJ.trazada=!AJ.trazada;guardar();pintarBtnTrazada();};
@@ -4166,14 +4307,14 @@ const REAL=(function(){
     for(const c of R.cuerpos){
       const[rb,su]=cerca(c,todos,rg.reb);
       /* el rebufo sirve en recta y con velocidad; el aire sucio molesta solo doblando */
-      const enRecta=Math.abs(c.st)<0.25&&c.v>30;
+      const us=c.uso==null?Math.abs(c.st):c.uso,enRecta=us<0.25&&c.v>30;
       c.reb+=((enRecta?rb:0)-c.reb)*Math.min(1,h*3);
-      const doblando=Math.abs(c.st)>0.2;
+      const doblando=us>0.3;
       c.sucio+=((doblando?su:0)-c.sucio)*Math.min(1,h*4);
       let g=1;
       if(rg.gom){
         if(R.verdeYa&&c.v>1){
-          const st=Math.abs(c.st);
+          const st=Math.min(1.1,us)*0.55;
           c.gt=Math.min(1,c.gt+h*(0.008+c.v*(0.00018+st*0.0006)+(c.frU?0.004:0)));
           c.gw=Math.min(1,c.gw+h*c.v*(1+2.4*st*Math.min(1,c.v/50)+(c.frU?0.7:0)+(c.pasto?2:0))/(T.L*32));
         }
@@ -4244,7 +4385,7 @@ function volanteAyuda(T,c){
   const n=T.n,j=(c.i+Math.max(2,Math.round((10+c.v*0.32)/8)))%n,o=R.L.o[j];
   const dx=T.x[j]-T.ty[j]*o-c.x,dy=T.y[j]+T.tx[j]*o-c.y,Ld=Math.hypot(dx,dy)||1;
   let e=Math.atan2(dy,dx)-c.th;e=Math.atan2(Math.sin(e),Math.cos(e));
-  const CF=GPM.CFG,kmax=CF.kmax/(1+Math.pow(c.v/CF.vu,2));
+  const kmax=GPM.kSteer(c.v);
   return clamp(2*Math.sin(e)/Ld/kmax,-1,1);
 }
 function paso(dt){
@@ -4279,7 +4420,7 @@ function paso(dt){
   let frAuto=false;
   if(AJ.ayuda===2&&R.choque<=0&&!c.pasto){
     /* frena donde la trazada se pone roja: el perfil de velocidades ya trae las frenadas */
-    const n=T.n,j=(c.i+1+Math.round(c.v*0.06))%n;
+    const n=T.n,j=(c.i+1+Math.round(c.v*0.025))%n;
     if(c.v>R.L.v[j]*0.97+1.5)frAuto=true;
   }
   const gas=gasIn,fr=frIn||frAuto;
@@ -4305,7 +4446,7 @@ function paso(dt){
     if(enPiano){R.tPiano-=dt;if(R.tPiano<=0){vibrar(10);R.tPiano=0.11;}sacudir(0.22);}
     R.piano=enPiano;
   }
-  marchas(dt,c.v*3,fr?0:gas);
+  marchas(dt,c.v*3.6,fr?0:gas);
   sonidoCuadro(R.rpm,fr?0:gas,c.v,c.pasto,c.st,R.piano,!R.fin);
   /* fantasma y posiciones: una muestra cada 0,1 s (t, x, y, rumbo, avance en vueltas) */
   grabarMuestras();
@@ -4502,6 +4643,20 @@ const REN=(function(){
     /* a la entrada y a la salida del puente el paredón se abre de a poco (no es un escalón) */
     if(Z&&Z.puente)for(let i=0;i<n;i++)if(puente[i])for(let q=1;q<=6;q++)for(const j of[(i+q)%n,(i-q+n)%n])if(!puente[j]){
       const L2=w+2.5+(LB-w-2.5)*q/7;if(L2<LBa[j]){LBa[j]=L2;barI[j]=barD[j]=1;}}
+    /* v7: el bulevar de Alem: de ese lado no hay escapatoria; la pista va pegada a un murito de hormigón y atrás está el cantero */
+    const LBi=Float32Array.from(LBa),LBd=Float32Array.from(LBa),bulI=new Uint8Array(n),bulD=new Uint8Array(n);
+    const enR=(i,a,b)=>a<=b?i>=a&&i<=b:(i>=a||i<=b);
+    if(Z&&Z.bulevar){Z.bulevar.forEach(([a,b,sg])=>{const A=sg<0?LBi:LBd,F=sg<0?bulI:bulD,BA=sg<0?barI:barD;for(let i=0;i<n;i++)if(enR(i,a,b)){A[i]=w+3.4;F[i]=1;BA[i]=1;}});
+      for(const [A,F,BA] of [[LBi,bulI,barI],[LBd,bulD,barD]])for(let i=0;i<n;i++)if(F[i])for(let q=1;q<=6;q++)for(const j of[(i+q)%n,(i-q+n)%n])if(!F[j]){const L2=w+3.4+(LB-w-3.4)*q/7;if(L2<A[j]){A[j]=L2;BA[j]=1;}}}
+    const enBulv=(i,sg)=>(sg<0?bulI:bulD)[((i%n)+n)%n]===1;
+    /* v7: lugares de la zona: dónde cae cada uno (para no plantarles árboles ni casas encima) */
+    const lugares=[];
+    ((Z&&Z.lugares)||[]).forEach(L=>{
+      if(L.t==='rosauer'){const len=((L.i1-L.i0+n)%n),im=(L.i0+(len>>1))%n,p=pt(im,L.sg*(LB+58));lugares.push(Object.assign({x:p[0],y:p[1],r:Math.max(70,len*4.6),im},L));}
+      else if(L.t==='arco'){const p=pt(L.i,0);lugares.push(Object.assign({x:p[0],y:p[1],r:0},L));}
+      else{const R0={aca:30,wpc:58,runadi:42,loba:16}[L.t]||30,p=pt(L.i,L.sg*(LB+L.d));lugares.push(Object.assign({x:p[0],y:p[1],r:R0},L));}
+    });
+    const cercaLugar=(x,y,m)=>lugares.some(L=>L.r>0&&Math.hypot(x-L.x,y-L.y)<L.r+(m||0));
     const AG=aguaDe(T,AM);
     const enRio=(x,y,m)=>!!(Z&&Z.rio&&x>Z.rio.x0-(m||0)&&x<Z.rio.x1+(m||0))||AG.en(x,y,m||0);
     const arboles=[];
@@ -4519,7 +4674,8 @@ const REN=(function(){
         const p=pt(i,sg*(base+44+hh%70));if(libre(p[0],p[1],base+30)&&!enRio(p[0],p[1],6))arboles.push({x:p[0],y:p[1],h:12+(hh>>>4)%10,c:(hh>>>8)%3,tp:tipos[0][0]});}
     }else if(!AM)for(let i=0;i<n;i+=2)for(const sg of[-1,1]){
       const hh=hash(i,sg+5);if(hh%7===0)continue;
-      const L=sg*(w+30+hh%22);const p=pt(i,L);
+      const L=sg*(w+30+hh%22+(enBulv(i,sg)?40:0));const p=pt(i,L);
+      if(cercaLugar(p[0],p[1],6))continue;
       if(libre(p[0],p[1],w+22)&&!enRio(p[0],p[1],12))arboles.push({x:p[0],y:p[1],h:13+(hh>>>4)%9,c:(hh>>>8)%3});
     }
     const flechas=[];
@@ -4531,16 +4687,17 @@ const REN=(function(){
     const carteles=[];const TX=AM&&AM.carteles||Z&&Z.carteles||['LA TIMBA','TABERNERA','ALTO VALLE','CIPOLLETTI','NEUQUÉN','🏁 GRAN PREMIO'];
     for(let i=6,c=0;i<n-6;i+=14,c++){
       const sg=(c&1)?1:-1,L=sg*(w+10),a=pt(i,L),b=pt(i+2,L);
-      if(puente[i]||puente[(i+2)%n])continue;
+      if(puente[i]||puente[(i+2)%n]||enBulv(i,sg)||enBulv(i+2,sg)||cercaLugar(a[0],a[1],8))continue;
       if(libre(a[0],a[1],w+8)&&libre(b[0],b[1],w+8)&&!enRio(a[0],a[1],8))carteles.push({i,L,t:TX[c%TX.length],c:c%4});
     }
     /* el bulevar de Alem: álamos en el cantero del medio */
-    if(Z&&Z.bulevar)Z.bulevar.forEach(([i0,i1,sg])=>{for(let i=i0;i<=i1;i+=3){const p=pt(i,sg*(LB+4.5)),hh=hash(i,77);arboles.push({x:p[0],y:p[1],h:11+hh%5,c:hh%3});}});
+    /* v7: ahora en el cantero de verdad, pegado a la pista, de a uno cada 16 m */
+    if(Z&&Z.bulevar)Z.bulevar.forEach(([i0,i1,sg])=>{for(let i=i0;i<=i1;i+=2){const hh=hash(i,77),p=pt(i,sg*(w+8.8+((i>>1)&1?1.1:-1.1)));arboles.push({x:p[0],y:p[1],h:12+hh%5,c:hh%3});}});
     /* álamos de cortina al fondo de las chacras */
-    if(Z&&Z.chacras)Z.chacras.forEach(([i0,i1,sg])=>{for(let i=i0;i<=i1;i++){const p=pt(i,sg*(LB+74)),hh=hash(i,91);if(libre(p[0],p[1],LB+40))arboles.push({x:p[0],y:p[1],h:17+hh%6,c:hh%3});}});
+    if(Z&&Z.chacras)Z.chacras.forEach(([i0,i1,sg])=>{for(let i=i0;i<=i1;i++){const p=pt(i,sg*(LB+74)),hh=hash(i,91);if(libre(p[0],p[1],LB+40)&&!cercaLugar(p[0],p[1],4))arboles.push({x:p[0],y:p[1],h:17+hh%6,c:hh%3});}});
     /* v6: de qué lado queda el adentro de la pista (+1 = a la derecha del que corre) */
     let area=0;for(let i=0;i<n;i++){const j=(i+1)%n;area+=T.x[i]*T.y[j]-T.x[j]*T.y[i];}
-    d={k,piano,barI,barD,LB,LBa,puente,arboles,flechas,carteles,Z,AM,AG,sgInt:area>0?1:-1};DATOS.set(T,d);return d;
+    d={k,piano,barI,barD,LB,LBa,LBi,LBd,bulI,bulD,lugares,puente,arboles,flechas,carteles,Z,AM,AG,sgInt:area>0?1:-1};DATOS.set(T,d);return d;
   }
   let W=390,H=700,DPR=1,W2=195,HY=200,F=300,HC=6;const NEAR=0.6;
   let dprMax=1.5,lentoT=0,fpsAcum=0,fpsN=0;
@@ -4925,7 +5082,7 @@ const REN=(function(){
   function tablero(c,R,land){
     const r=land?Math.max(44,Math.min(60,H*0.16)):Math.max(46,Math.min(62,W*0.16));
     const cx=W-SA.r-r-30,cy=H-SA.b-r*0.82-14;
-    const rpm=R.rpm||0,kmh=Math.round(Math.max(0,R.car.v)*3);
+    const rpm=R.rpm||0,kmh=Math.round(Math.max(0,R.car.v)*3.6);
     c.save();
     /* fondo */
     c.fillStyle='rgba(8,10,14,.74)';
@@ -4995,13 +5152,19 @@ const REN3=(function(){
   function ruido(g,w,h,base,var_,n){g.fillStyle=base;g.fillRect(0,0,w,h);for(let i=0;i<n;i++){const v=(Math.random()-0.5)*var_;g.fillStyle=v>0?'rgba(255,255,255,'+v+')':'rgba(0,0,0,'+(-v)+')';g.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*2,1+Math.random()*2);}}
   /* asfalto: 30 m de ancho = 256 px; con líneas blancas al borde y la goma marcada por donde se pasa */
   const TX={};
-  TX.asfalto=tex(lienzo(256,256,(g,w,h)=>{
-    ruido(g,w,h,'#55595f',0.22,9000);
-    const gr=g.createLinearGradient(0,0,w,0);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(0.35,'rgba(0,0,0,.10)');gr.addColorStop(0.5,'rgba(0,0,0,.16)');gr.addColorStop(0.65,'rgba(0,0,0,.10)');gr.addColorStop(1,'rgba(0,0,0,0)');
-    g.fillStyle=gr;g.fillRect(0,0,w,h);
-    g.fillStyle='#ececec';g.fillRect(4,0,5,h);g.fillRect(w-9,0,5,h);
+  /* v7: asfalto más oscuro y con grano, parches de reparación, juntas y la línea blanca un poco adentro del borde */
+  TX.asfalto=tex(lienzo(512,512,(g,w,h)=>{
+    ruido(g,w,h,'#45484d',0.2,30000);
+    for(let i=0;i<9000;i++){const v=Math.random();g.fillStyle=v<0.5?'rgba(20,20,22,.35)':'rgba(170,170,175,.18)';g.fillRect(Math.random()*w,Math.random()*h,1,1);}
+    for(let i=0;i<5;i++){const x=40+Math.random()*(w-120),y=Math.random()*h;g.fillStyle='rgba(15,16,18,.16)';g.fillRect(x,y,30+Math.random()*60,40+Math.random()*120);}
+    g.strokeStyle='rgba(10,10,12,.3)';g.lineWidth=1.2;for(let i=0;i<3;i++){g.beginPath();let x=30+Math.random()*(w-60),y=Math.random()*h;g.moveTo(x,y);for(let q=0;q<10;q++){x+=(Math.random()-0.5)*14;y+=6+Math.random()*10;g.lineTo(x,y);}g.stroke();}
+    g.fillStyle='rgba(0,0,0,.25)';g.fillRect(0,h-2,w,2);
+    g.fillStyle='#f1f1f1';g.fillRect(10,0,7,h);g.fillRect(w-17,0,7,h);
+    g.fillStyle='rgba(0,0,0,.12)';g.fillRect(0,0,10,h);g.fillRect(w-10,0,10,h);
   }),1,1);
-  TX.pasto=tex(lienzo(256,256,(g,w,h)=>{ruido(g,w,h,'#4f9a3f',0.16,7000);for(let i=0;i<40;i++){g.fillStyle='rgba(30,70,20,.10)';g.beginPath();g.arc(Math.random()*w,Math.random()*h,8+Math.random()*24,0,7);g.fill();}}),1,1);
+  /* v7: pasto cortado a franjas, como en los autódromos */
+  function pastoFranjas(g,w,h,base){ruido(g,w,h,base,0.16,9000);g.fillStyle='rgba(255,255,255,.07)';g.fillRect(0,0,w/2,h);g.fillStyle='rgba(0,30,0,.06)';g.fillRect(w/2,0,w/2,h);for(let i=0;i<40;i++){g.fillStyle='rgba(30,70,20,.08)';g.beginPath();g.arc(Math.random()*w,Math.random()*h,8+Math.random()*24,0,7);g.fill();}}
+  TX.pasto=tex(lienzo(256,256,(g,w,h)=>pastoFranjas(g,w,h,'#4f9a3f')),1,1);
   TX.franjas=tex(lienzo(64,64,(g,w,h)=>{g.fillStyle='#ffffff';g.fillRect(0,0,w,h/2);g.fillStyle='#d9d9d9';g.fillRect(0,h/2,w,h/2);}),1,1,false);
   TX.piano=tex(lienzo(64,128,(g,w,h)=>{g.fillStyle='#d42a2f';g.fillRect(0,0,w,h/2);g.fillStyle='#f4f4f4';g.fillRect(0,h/2,w,h/2);g.fillStyle='rgba(0,0,0,.18)';g.fillRect(0,0,6,h);}),1,1);
   TX.grava=tex(lienzo(128,128,(g,w,h)=>ruido(g,w,h,'#cdb68c',0.3,4000)),1,1);
@@ -5112,10 +5275,26 @@ const REN3=(function(){
       const po=new T3.Mesh(new T3.BoxGeometry(0.18,4.4,0.18),MAT.poste);po.position.set(p[0],2.2,p[1]);G.add(po);
     });
     /* bulevar: cordones, el cantero con los álamos y la otra mano de la avenida */
+    /* v7: el bulevar de Alem pegado a la pista: murito, cordón, cantero con álamos y faroles, la otra mano con autos estacionados y la vereda */
+    if(!MAT.calleOtra){
+      MAT.calleOtra=new T3.MeshLambertMaterial({map:tex(lienzo(256,256,(g,W,H)=>{ruido(g,W,H,'#4a4d52',0.18,9000);g.fillStyle='#e9e9e9';for(let y=0;y<H;y+=64)g.fillRect(W*0.5-3,y,6,32);g.fillStyle='rgba(240,240,240,.85)';g.fillRect(6,0,4,H);g.fillRect(W-10,0,4,H);}),1,1)});
+      MAT.cantero=new T3.MeshLambertMaterial({color:CL('#3d7f33'),polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
+      MAT.calleOtra.polygonOffset=true;MAT.calleOtra.polygonOffsetFactor=-2;MAT.calleOtra.polygonOffsetUnits=-2;
+    }
     (Z.bulevar||[]).forEach(([a,b,sg])=>{
-      const f=i=>enRango(i,a,b)&&enRango((i+1)%n,a,b);
-      [[1,1.6,0.12,MAT.cordon],[7.4,8,0.12,MAT.cordon],[8,22,0.02,MAT.asfalto]].forEach(([l0,l1,y,m])=>{
-        const c=cinta(T,i=>sg*(DD.LBa[i]+l0),i=>sg*(DD.LBa[i]+l1),y,m,m===MAT.asfalto?30:6,f,0,1);if(c)G.add(c);});
+      const f=i=>enRango(i,a,b)&&enRango((i+1)%n,a,b),B=w+3.4;
+      [[0.6,1.3,0.16,MAT.cordon],[1.3,10.4,0.13,MAT.cantero],[10.4,11.1,0.16,MAT.cordon],[11.1,25.5,0.06,MAT.calleOtra],[25.5,26.2,0.16,MAT.cordon],[26.2,31,0.14,MAT.vereda]].forEach(([l0,l1,y,m])=>{
+        /* (de menor a mayor: si no, la cara queda para abajo y no se ve; por eso antes el bulevar no aparecía) */
+        const c=cinta(T,Math.min(sg*(B+l0),sg*(B+l1)),Math.max(sg*(B+l0),sg*(B+l1)),y,m,m===MAT.calleOtra?30:6,f,0,1);if(c)G.add(c);});
+      /* faroles de doble brazo en el cantero, cada 32 m */
+      const FL=[];for(let q=0,len=((b-a+n)%n)+1;q<len;q+=4){const i=(a+q)%n;FL.push([pt(T,i,sg*(B+5.8)),thI(i)]);}
+      if(FL.length){const po=new T3.InstancedMesh(new T3.CylinderGeometry(0.16,0.24,11,6),MAT.acero,FL.length),br=new T3.InstancedMesh(new T3.BoxGeometry(0.18,0.18,7),MAT.acero,FL.length),o=new T3.Object3D();
+        FL.forEach(([p,th],k)=>{o.position.set(p[0],5.5,p[1]);o.rotation.set(0,-th,0);o.updateMatrix();po.setMatrixAt(k,o.matrix);o.position.y=10.8;o.updateMatrix();br.setMatrixAt(k,o.matrix);});G.add(po);G.add(br);}
+      /* autos estacionados contra el cordón de enfrente */
+      const AU=[],CA=['#e8e8e8','#2b2f36','#9aa3ad','#b3261e','#1f4e8c','#d8d2c4','#476b3a','#7a2d2d'];
+      for(let q=0,len=((b-a+n)%n)+1;q<len;q++){const i=(a+q)%n,h=hs(i,sg+51);if(h%3)continue;AU.push([pt(T,i,sg*(B+23.6)),thI(i),CA[(h>>>4)%CA.length]]);}
+      if(AU.length){const ca=new T3.InstancedMesh(new T3.BoxGeometry(8.6,2.4,3.6),MAT.casa,AU.length),cb=new T3.InstancedMesh(new T3.BoxGeometry(4.6,1.6,3.3),MAT.oscuro,AU.length),o=new T3.Object3D();
+        AU.forEach(([p,th,c],k)=>{o.position.set(p[0],1.5,p[1]);o.rotation.set(0,-th,0);o.updateMatrix();ca.setMatrixAt(k,o.matrix);ca.setColorAt(k,CL(c));o.position.y=3.3;o.updateMatrix();cb.setMatrixAt(k,o.matrix);});G.add(ca);G.add(cb);}
     });
     /* la rotonda: isla con cantero, cordón y un monolito */
     if(Z.rotonda){
@@ -5207,6 +5386,7 @@ const REN3=(function(){
         if(!lejosDe(p[0],p[1],w+8+fondo/2))continue;
         if(Z.rotonda&&Math.hypot(p[0]-Z.rotonda.x,p[1]-Z.rotonda.y)<Z.rotonda.r+24)continue;
         if(DD.Z.rio&&p[0]>DD.Z.rio.x0-20&&p[0]<DD.Z.rio.x1+20)continue;
+        if((DD.lugares||[]).some(L=>L.r>0&&Math.hypot(p[0]-L.x,p[1]-L.y)<L.r+fondo))continue;
         casas.push([p[0],p[1],ancho,fondo,alto,thI(i),COL[(h>>>12)%COL.length]]);
       }}
     });
@@ -5215,6 +5395,99 @@ const REN3=(function(){
       casas.forEach(([x,y,a,f,h,th,c],k)=>{o.position.set(x,h/2,y);o.scale.set(a,h,f);o.rotation.set(0,-th,0);o.updateMatrix();im.setMatrixAt(k,o.matrix);im.setColorAt(k,CL(c));});
       im.receiveShadow=true;G.add(im);
     }
+  }
+  /* v7: los lugares de Cipolletti, dibujados a mano (formas simples, no a escala) */
+  function lugaresZona(T,DD,G){
+    const n=T.n,LB=DD.LB,thI=i=>{i=((i%n)+n)%n;return Math.atan2(T.ty[i],T.tx[i]);};
+    const M=(c,o)=>new T3.MeshLambertMaterial(Object.assign({color:CL(c)},o||{}));
+    const box=(g,w_,h_,d_,m,x,y,z,ry)=>{const b=new T3.Mesh(new T3.BoxGeometry(w_,h_,d_),m);b.position.set(x,y,z);if(ry)b.rotation.y=ry;b.castShadow=true;b.receiveShadow=true;g.add(b);return b;};
+    const cyl=(g,rt,rb,h_,m,x,y,z,seg)=>{const c=new T3.Mesh(new T3.CylinderGeometry(rt,rb,h_,seg||10),m);c.position.set(x,y,z);c.castShadow=true;g.add(c);return c;};
+    const cartel=(g,t,fondo,letra,ancho,alto,x,y,z,ry)=>{const m=new T3.Mesh(new T3.PlaneGeometry(ancho,alto),new T3.MeshBasicMaterial({map:texTexto(t,fondo,letra,1024,Math.round(1024*alto/ancho))}));m.position.set(x,y,z);m.rotation.y=ry||0;g.add(m);return m;};
+    const piso=(g,a,l,m,x,z,y)=>{const pl=new T3.Mesh(new T3.PlaneGeometry(a,l),m);pl.rotation.x=-Math.PI/2;pl.position.set(x,y||0.05,z);pl.receiveShadow=true;g.add(pl);return pl;};
+    const grupo=(L,dist)=>{const i=((L.i%n)+n)%n,p=pt(T,i,L.sg*dist),g=new T3.Group();g.position.set(p[0],0,p[1]);g.rotation.y=-thI(i);G.add(g);return g;};
+    /* la cara que mira a la pista: en el grupo, el lado -sg del eje z */
+    const hacia=sg=>sg>0?Math.PI:0;
+    const auto=(g,x,z,c,ry)=>{box(g,8.6,2.4,3.6,M(c),x,1.5,z,ry);box(g,4.6,1.6,3.3,MAT.oscuro,x,3.3,z,ry);};
+    const mCem=M('#a9aaa6'),mBlanco=M('#f3f3f1'),mVidrio=M('#cfe8f2',{transparent:true,opacity:0.28,depthWrite:false,side:T3.DoubleSide});
+    (DD.lugares||[]).forEach(L=>{
+      if(L.t==='arco'){
+        /* el arco de la entrada: dos columnas y el travesaño con el cartel, de lado a lado de la avenida */
+        const i=((L.i%n)+n)%n,p=pt(T,i,0),g=new T3.Group();g.position.set(p[0],0,p[1]);g.rotation.y=-thI(i);G.add(g);
+        const an=Math.max(DD.LBi?DD.LBi[i]:LB,DD.LBd?DD.LBd[i]:LB)+2.5,mCol=M('#b5543a'),mViga=M('#efe9dc');
+        for(const z of[-an,an]){box(g,3.4,16,3.4,mCol,0,8,z);box(g,4.4,1,4.4,mViga,0,16.3,z);}
+        box(g,2.2,3.6,2*an+3.4,mViga,0,14.6,0);
+        cartel(g,'BIENVENIDO A CIPOLLETTI','#0b4f8a','#ffffff',Math.min(46,2*an-6),3.2,-1.15,14.6,0,-Math.PI/2);
+        const bk=new T3.Mesh(new T3.PlaneGeometry(Math.min(46,2*an-6),3.2),M('#0b4f8a'));bk.position.set(1.15,14.6,0);bk.rotation.y=Math.PI/2;g.add(bk);
+      }
+      else if(L.t==='aca'){
+        /* la estación de servicio al lado del arco: playa, techo, surtidores, minimercado y el cartel alto */
+        const g=grupo(L,LB+L.d),f=-L.sg,mAz=M('#0e4c96');
+        piso(g,52,34,mCem,0,0,0.06);
+        for(const x of[-11,11])for(const z of[-6,6])cyl(g,0.35,0.35,6.4,mBlanco,x,3.2,z,8);
+        box(g,30,1,18,mBlanco,0,6.9,0);box(g,30.2,0.9,18.2,mAz,0,7.8,0);
+        for(const x of[-7,0,7]){box(g,1.4,0.4,5,mCem,x,0.25,0);box(g,1,2.6,1.6,M('#d9dde2'),x,1.7,-1.4);box(g,1,2.6,1.6,M('#d9dde2'),x,1.7,1.4);}
+        box(g,18,5.2,10,M('#e9e6df'),0,2.6,-f*21);cartel(g,'MINIMERCADO','#0e4c96','#ffffff',12,1.6,0,4.2,-f*21+f*5.05,hacia(L.sg));
+        cyl(g,0.45,0.45,14,M('#7d858f'),20,7,f*11,8);box(g,6,3.6,0.8,mAz,20,15.4,f*11);
+        cartel(g,'ACA','#0e4c96','#ffffff',5.6,3,20,15.4,f*11+f*0.42,hacia(L.sg));
+        auto(g,-7,4.2,'#e8e8e8');auto(g,7,-4.2,'#b3261e');
+      }
+      else if(L.t==='wpc'){
+        /* World Padel Center Patagonia: el galpón grande con techo curvo, la playa de estacionamiento y el cartel */
+        const g=grupo(L,LB+L.d),f=-L.sg,mCh=M('#d6dadf'),mTe=M('#9aa3ad',{side:T3.DoubleSide});
+        box(g,84,11,42,mCh,0,5.5,0);
+        {const ge=new T3.CylinderGeometry(21.5,21.5,84,24,1,true,0,Math.PI);ge.rotateZ(Math.PI/2);ge.scale(1,0.34,1);const te=new T3.Mesh(ge,mTe);te.position.y=11;te.castShadow=true;g.add(te);}
+        cartel(g,'WORLD PADEL CENTER','#101418','#ffd23f',60,4.4,0,8.2,f*21.06,hacia(L.sg));
+        cartel(g,'PATAGONIA','#101418','#ffffff',24,2.2,0,3.4,f*21.06,hacia(L.sg));
+        piso(g,84,22,mCem,0,f*33,0.06);
+        [['#2b2f36',-30],['#e8e8e8',-18],['#9aa3ad',-6],['#1f4e8c',10],['#b3261e',24]].forEach(([c,x],k)=>auto(g,x,f*(29+(k&1)*7),c,Math.PI/2));
+      }
+      else if(L.t==='runadi'){
+        /* Runadi Pádel: el club con su edificio, canchas de vidrio al aire libre y el cartel */
+        const g=grupo(L,LB+L.d),f=-L.sg,mCes=M('#2f6fb8'),mNeg=M('#16181c');
+        box(g,26,7,12,M('#ece7dc'),-26,3.5,0);cartel(g,'RUNADI PÁDEL','#16181c','#ffffff',20,2.6,-26,5.2,f*6.06,hacia(L.sg));
+        for(const x of[2,26]){piso(g,20,36,mCes,x,0,0.07);
+          for(const z of[-18,18]){const v=new T3.Mesh(new T3.PlaneGeometry(20,4),mVidrio);v.position.set(x,2,z);g.add(v);}
+          for(const xx of[x-10,x+10]){const v=new T3.Mesh(new T3.PlaneGeometry(10,4),mVidrio);v.position.set(xx,2,-13);v.rotation.y=Math.PI/2;g.add(v);const v2=v.clone();v2.position.z=13;g.add(v2);
+            const al=new T3.Mesh(new T3.PlaneGeometry(16,4),MAT.alambre);al.position.set(xx,2,0);al.rotation.y=Math.PI/2;g.add(al);}
+          for(const xx of[x-10,x+10])for(const z of[-18,-8,8,18])box(g,0.2,4.2,0.2,mNeg,xx,2.1,z);
+          box(g,20,1,0.1,mNeg,x,0.5,0);
+          const lin=new T3.Mesh(new T3.PlaneGeometry(0.15,36),mBlanco);lin.rotation.x=-Math.PI/2;lin.position.set(x,0.09,0);g.add(lin);}
+        cyl(g,0.35,0.35,10,M('#7d858f'),-10,5,f*15,8);cartel(g,'RUNADI PÁDEL','#2f6fb8','#ffffff',9,2.4,-10,9.6,f*15+f*0.05,hacia(L.sg));
+      }
+      else if(L.t==='rosauer'){
+        /* Parque Rosauer: pasto, senderos, árboles, bancos y el cartel de la entrada */
+        const sg=L.sg,f=i=>enR(i,L.i0,L.i1)&&enR((i+1)%n,L.i0,L.i1),mP=M('#4e9b3d'),mS=M('#cdbb98');
+        function enR(i,a,b){return a<=b?i>=a&&i<=b:(i>=a||i<=b);}
+        const O=(a,b)=>[Math.min(sg*a,sg*b),Math.max(sg*a,sg*b)];
+        const ps=cinta(T,...O(LB+5,LB+118),0.045,mP,8,f,0,1);if(ps)G.add(ps);
+        for(const [a,b] of[[LB+11,LB+15],[LB+66,LB+70]]){const c=cinta(T,...O(a,b),0.06,mS,8,f,0,1);if(c)G.add(c);}
+        const len=((L.i1-L.i0+n)%n);
+        for(let q=4;q<len;q+=10){const i=(L.i0+q)%n,a=pt(T,i,sg*(LB+11)),b=pt(T,i,sg*(LB+70)),th=thI(i),c=new T3.Mesh(new T3.PlaneGeometry(4,59),mS);
+          c.rotation.x=-Math.PI/2;c.rotation.z=-th;c.position.set((a[0]+b[0])/2,0.058,(a[1]+b[1])/2);G.add(c);}
+        const cop=[],CO=['#3f7d34','#4f8f3a','#5e9a3c','#2f6d2c'];
+        for(let q=0;q<=len;q++)for(let r=0;r<4;r++){const i=(L.i0+q)%n,h=((i*2654435761+r*40503)>>>0);if(h%3===0)continue;const p=pt(T,i,sg*(LB+20+r*24+(h%9)));cop.push([p[0],p[1],3.4+(h>>>5)%3,CO[(h>>>8)%4]]);}
+        if(cop.length){const cm=new T3.InstancedMesh(new T3.SphereGeometry(1,8,6),MAT.copa,cop.length),tr=new T3.InstancedMesh(new T3.CylinderGeometry(0.3,0.42,1,6),MAT.tronco,cop.length),o=new T3.Object3D();
+          cop.forEach(([x,y,r,c],k)=>{o.position.set(x,r*1.5,y);o.scale.set(r,r*1.05,r);o.rotation.set(0,k,0);o.updateMatrix();cm.setMatrixAt(k,o.matrix);cm.setColorAt(k,CL(c));o.position.set(x,r*0.55,y);o.scale.set(1,r*1.1,1);o.updateMatrix();tr.setMatrixAt(k,o.matrix);});G.add(cm);G.add(tr);}
+        for(let q=6;q<len;q+=8){const i=(L.i0+q)%n,p=pt(T,i,sg*(LB+16.5)),b=new T3.Mesh(new T3.BoxGeometry(3,0.5,1),MAT.tronco);b.position.set(p[0],0.7,p[1]);b.rotation.y=-thI(i);G.add(b);}
+        const im=(L.i0+(len>>1))%n,g=grupo({i:im,sg},LB+7);
+        box(g,18,2.2,1,M('#8a6a4a'),0,1.1,0);cartel(g,'PARQUE ROSAUER','#2f5a2a','#ffffff',16,1.6,0,1.25,-sg*0.52,hacia(sg));
+      }
+      else if(L.t==='loba'){
+        /* la Loba: la loba con los mellizos sobre un pedestal, en una placita */
+        const g=grupo(L,LB+L.d),f=-L.sg,mBr=new T3.MeshStandardMaterial({color:CL('#6e5136'),roughness:0.45,metalness:0.6}),mPi=M('#c9c3b5');
+        const pz=new T3.Mesh(new T3.CircleGeometry(14,32),M('#bdb6a6'));pz.rotation.x=-Math.PI/2;pz.position.y=0.06;g.add(pz);
+        box(g,8,1,8,mPi,0,0.5,0);box(g,6,5,6,mPi,0,3.5,0);box(g,7,0.6,7,mPi,0,6.3,0);
+        const s=new T3.Group();s.position.y=6.6;s.scale.setScalar(1.5);g.add(s);
+        const el=(rx,ry,rz,x,y,z,m)=>{const e=new T3.Mesh(new T3.SphereGeometry(1,14,10),m||mBr);e.scale.set(rx,ry,rz);e.position.set(x,y,z);e.castShadow=true;s.add(e);return e;};
+        el(2.3,0.95,0.85,0,2.9,0);el(0.75,0.8,0.7,2.2,3.6,0);
+        const ho=new T3.Mesh(new T3.ConeGeometry(0.42,1.1,10),mBr);ho.rotation.z=-Math.PI/2;ho.position.set(3.2,3.6,0);s.add(ho);
+        for(const z of[-0.32,0.32]){const o=new T3.Mesh(new T3.ConeGeometry(0.2,0.55,6),mBr);o.position.set(2.0,4.45,z);s.add(o);}
+        for(const [x,z] of[[1.5,0.45],[1.5,-0.45],[-1.5,0.45],[-1.5,-0.45]]){const p=new T3.Mesh(new T3.CylinderGeometry(0.2,0.16,2.2,8),mBr);p.position.set(x,1.1,z);s.add(p);}
+        const co=new T3.Mesh(new T3.CylinderGeometry(0.16,0.1,2.2,8),mBr);co.position.set(-2.8,2.4,0);co.rotation.z=-0.9;s.add(co);
+        for(const z of[-0.5,0.5]){el(0.55,0.42,0.42,0.2,0.62,z);el(0.32,0.32,0.32,0.9,0.95,z*0.9);}
+        cartel(g,'LA LOBA','#3b3f45','#f2f2f2',4.6,0.9,0,3.3,f*3.03,hacia(L.sg));
+      }
+    });
   }
   /* v6: muro de hormigón de los callejeros y la vereda de atrás */
   MAT.muroCalle=new T3.MeshLambertMaterial({map:tex(lienzo(128,32,(g,w,h)=>{ruido(g,w,h,'#c4c6c7',0.16,700);g.fillStyle='rgba(0,0,0,.28)';g.fillRect(0,h-5,w,5);g.fillStyle='#1d3f8f';g.fillRect(0,3,w,4);g.fillStyle='rgba(0,0,0,.35)';g.fillRect(w-1,0,1,h);g.fillRect(w/2-1,0,1,h);}),1,1),side:T3.DoubleSide});
@@ -5244,7 +5517,7 @@ const REN3=(function(){
     let t;
     if(tipo==='arena')t=tex(lienzo(256,256,(g,w,h)=>{ruido(g,w,h,col||SUELOS.arena,0.14,6000);g.strokeStyle='rgba(120,90,50,.10)';g.lineWidth=3;for(let y=0;y<h;y+=18){g.beginPath();for(let x=0;x<=w;x+=8)g.lineTo(x,y+Math.sin(x/20+y)*4);g.stroke();}}),1,1);
     else if(tipo==='cemento')t=tex(lienzo(256,256,(g,w,h)=>{ruido(g,w,h,col||SUELOS.cemento,0.12,6000);g.strokeStyle='rgba(0,0,0,.18)';g.lineWidth=2;for(let x=0;x<=w;x+=64){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke();g.beginPath();g.moveTo(0,x);g.lineTo(w,x);g.stroke();}}),1,1);
-    else t=tex(lienzo(256,256,(g,w,h)=>{ruido(g,w,h,col||SUELOS.pasto,0.16,7000);for(let i=0;i<40;i++){g.fillStyle='rgba(30,60,20,.10)';g.beginPath();g.arc(Math.random()*w,Math.random()*h,8+Math.random()*24,0,7);g.fill();}}),1,1);
+    else t=tex(lienzo(256,256,(g,w,h)=>pastoFranjas(g,w,h,col||SUELOS.pasto)),1,1);
     texSuelo[k]=new T3.MeshLambertMaterial({map:t});return texSuelo[k];
   }
   const texPub={};
@@ -5738,7 +6011,7 @@ const REN3=(function(){
     /* v6: escapatoria de grava, de asfalto pintado o nada (callejeros) */
     if(!AM||AM.escape!=='no'){
       const mE=AM&&AM.escape==='asfalto'?matEscape(AM.escCol):MAT.grava,esA=mE!==MAT.grava;
-      const gr1=cinta(T,-(w+14),-(w+2.8),0.035,mE,14,afueraIzq,esA?1:0,esA?0:1),gr2=cinta(T,w+2.8,w+14,0.035,mE,14,afueraDer,0,1);
+      const gr1=cinta(T,-(w+14),-(w+2.8),0.035,mE,14,i=>afueraIzq(i)&&!(DD.bulI&&DD.bulI[i]),esA?1:0,esA?0:1),gr2=cinta(T,w+2.8,w+14,0.035,mE,14,i=>afueraDer(i)&&!(DD.bulD&&DD.bulD[i]),0,1);
       if(gr1)G.add(gr1);if(gr2)G.add(gr2);
     }
     /* largada a cuadros y la grilla pintada */
@@ -5751,26 +6024,33 @@ const REN3=(function(){
     /* defensas: muro rojo y blanco con alambrado arriba, solo donde hay lugar */
     const LB=DD.LB,LA=i=>DD.LBa?DD.LBa[i]:LB,nPu=i=>!DD.puente||(!DD.puente[i]&&!DD.puente[(i+1)%n]);
     const mMuro=AM&&AM.calle?MAT.muroCalle:MAT.muro;
-    const m1=pared(T,i=>-LA(i),0,1.4,mMuro,4,i=>DD.barI[i]&&nPu(i)),m2=pared(T,LA,0,1.4,mMuro,4,i=>DD.barD[i]&&nPu(i));
+    /* v7: cada lado con su distancia (en el bulevar de Alem el muro va pegado) */
+    const LAI=i=>DD.LBi?DD.LBi[i]:LA(i),LAD=i=>DD.LBd?DD.LBd[i]:LA(i),bvI=i=>!!(DD.bulI&&DD.bulI[i]),bvD=i=>!!(DD.bulD&&DD.bulD[i]);
+    const m1=pared(T,i=>-LAI(i),0,1.4,mMuro,4,i=>DD.barI[i]&&nPu(i)&&!bvI(i)),m2=pared(T,LAD,0,1.4,mMuro,4,i=>DD.barD[i]&&nPu(i)&&!bvD(i));
     if(m1)G.add(m1);if(m2)G.add(m2);
+    {const h1=pared(T,i=>-LAI(i),0,1.05,MAT.muroCalle,4,i=>DD.barI[i]&&bvI(i)),h2=pared(T,LAD,0,1.05,MAT.muroCalle,4,i=>DD.barD[i]&&bvD(i));if(h1)G.add(h1);if(h2)G.add(h2);
+     const c1=cinta(T,i=>-(LAI(i)+0.6),i=>-LAI(i),1.05,MAT.vereda,6,i=>DD.barI[i]&&bvI(i),0,1),c2=cinta(T,LAD,i=>LAD(i)+0.6,1.05,MAT.vereda,6,i=>DD.barD[i]&&bvD(i),0,1);if(c1)G.add(c1);if(c2)G.add(c2);}
     /* v6: en los callejeros, vereda atrás del muro */
     if(AM&&AM.calle){const v1=cinta(T,i=>-(LA(i)+7),i=>-(LA(i)+0.5),0.12,MAT.vereda,6,i=>DD.barI[i]&&nPu(i),0,1),v2=cinta(T,i=>LA(i)+0.5,i=>LA(i)+7,0.12,MAT.vereda,6,i=>DD.barD[i]&&nPu(i),0,1);if(v1)G.add(v1);if(v2)G.add(v2);}
-    const t1=cinta(T,i=>-(LA(i)+0.6),i=>-LA(i),1.4,MAT.riel,10,i=>DD.barI[i]&&nPu(i),0,1),t2=cinta(T,LA,i=>LA(i)+0.6,1.4,MAT.riel,10,i=>DD.barD[i]&&nPu(i),0,1);
+    const t1=cinta(T,i=>-(LAI(i)+0.6),i=>-LAI(i),1.4,MAT.riel,10,i=>DD.barI[i]&&nPu(i)&&!bvI(i),0,1),t2=cinta(T,LAD,i=>LAD(i)+0.6,1.4,MAT.riel,10,i=>DD.barD[i]&&nPu(i)&&!bvD(i),0,1);
     if(t1)G.add(t1);if(t2)G.add(t2);
     TX.alambre.repeat.set(1,1);
-    const a1=pared(T,i=>-(LA(i)+0.3),1.4,4.6,MAT.alambre,3.2,i=>DD.barI[i]&&nPu(i)),a2=pared(T,i=>LA(i)+0.3,1.4,4.6,MAT.alambre,3.2,i=>DD.barD[i]&&nPu(i));
+    const a1=pared(T,i=>-(LAI(i)+0.3),1.4,4.6,MAT.alambre,3.2,i=>DD.barI[i]&&nPu(i)&&!bvI(i)),a2=pared(T,i=>LAD(i)+0.3,1.4,4.6,MAT.alambre,3.2,i=>DD.barD[i]&&nPu(i)&&!bvD(i));
     if(a1)G.add(a1);if(a2)G.add(a2);
     /* postes del alambrado */
     {
-      const pos=[];for(let i=0;i<n;i+=3){if(!nPu(i))continue;if(DD.barI[i])pos.push(pt(T,i,-(LA(i)+0.3)));if(DD.barD[i])pos.push(pt(T,i,LA(i)+0.3));}
+      const pos=[];for(let i=0;i<n;i+=3){if(!nPu(i))continue;if(DD.barI[i]&&!bvI(i))pos.push(pt(T,i,-(LAI(i)+0.3)));if(DD.barD[i]&&!bvD(i))pos.push(pt(T,i,LAD(i)+0.3));}
       const im=new T3.InstancedMesh(new T3.BoxGeometry(0.18,4.8,0.18),MAT.poste,pos.length),o=new T3.Object3D();
       pos.forEach((p,k)=>{o.position.set(p[0],2.4,p[1]);o.updateMatrix();im.setMatrixAt(k,o.matrix);});G.add(im);
     }
-    if(DD.Z)decorarZona(T,DD,G);
+    if(DD.Z){decorarZona(T,DD,G);try{lugaresZona(T,DD,G);}catch(e){console.error('lugares',e);}}
     /* recta principal: boxes de un lado, tribuna del otro, pórtico de largada */
     const th0=Math.atan2(T.ty[0],T.tx[0]);
     const lado=s=>{let ok=0;for(let q=-14;q<=14;q+=2){const i=(q+n)%n,p=pt(T,i,s*(LB+18));if(libre(T,p[0],p[1],w+16))ok++;}return ok;};
-    const ladoBox=lado(-1)>=lado(1)?-1:1;DD.ladoBox=ladoBox;
+    let ladoBox=lado(-1)>=lado(1)?-1:1;
+    /* v7: los boxes nunca van del lado del bulevar */
+    if(DD.bulI&&DD.bulI[0])ladoBox=1;else if(DD.bulD&&DD.bulD[0])ladoBox=-1;
+    DD.ladoBox=ladoBox;
     {
       const i=(n-6)%n,p=pt(T,i,ladoBox*(LB+16)),th=Math.atan2(T.ty[i],T.tx[i]);
       const largo=Math.min(220,T.L*0.05),g=new T3.Group();
@@ -5781,7 +6061,7 @@ const REN3=(function(){
       g.position.set(p[0],0,p[1]);g.rotation.y=-th;G.add(g);
       /* tribuna enfrente */
       const q=pt(T,i,-ladoBox*(LB+14));
-      if(libre(T,q[0],q[1],w+14)){
+      if(libre(T,q[0],q[1],w+14)&&!((-ladoBox<0?DD.bulI:DD.bulD)||[])[i]){
         const tg=new T3.Group(),lt=Math.min(160,T.L*0.04);
         const MP=AM&&AM.pub?matPublico(AM.pub):MAT.publico;
         for(let f=0;f<6;f++){const e=new T3.Mesh(new T3.BoxGeometry(lt,1.6,3),[MAT.gris,MAT.gris,MAT.gris,MAT.gris,MP,MP]);e.position.set(0,0.8+f*1.6,-ladoBox*(f*3));e.receiveShadow=true;tg.add(e);}
@@ -5832,6 +6112,18 @@ const REN3=(function(){
       const g=new T3.BufferGeometry();g.setAttribute('position',new T3.Float32BufferAttribute(pos,3));g.setAttribute('color',new T3.Float32BufferAttribute(cols,3));
       const m=new T3.Mesh(g,new T3.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:0.85,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,side:T3.DoubleSide}));
       m.renderOrder=2;G.add(m);G.userData.trazada=m;
+      /* v7: la goma que dejan los autos por la trazada (más marcada donde se frena y en las curvas), debajo de la pintura */
+      {
+        const tG=tex(lienzo(64,256,(g,W,H)=>{g.clearRect(0,0,W,H);const gr=g.createLinearGradient(0,0,W,0);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(0.2,'rgba(0,0,0,.55)');gr.addColorStop(0.42,'rgba(0,0,0,.25)');gr.addColorStop(0.58,'rgba(0,0,0,.25)');gr.addColorStop(0.8,'rgba(0,0,0,.55)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,W,H);
+          for(let i=0;i<60;i++){g.fillStyle='rgba(0,0,0,'+(0.15+Math.random()*0.25)+')';const x=W*(Math.random()<0.5?0.2:0.72)+Math.random()*8;g.fillRect(x,Math.random()*H,1.5,20+Math.random()*80);}}),1,1,false);
+        const tira=(fil,op,an)=>{const P=[],U=[],I=[];let v=0;const ok=new Uint8Array(n);for(let i=0;i<n;i++)ok[i]=fil(i)?1:0;
+          for(let i=0;i<n;i++){const s=pt(T,i,LL.o[i]),nx=-T.ty[i]*an,ny=T.tx[i]*an;P.push(s[0]-nx,0.05,s[1]-ny,s[0]+nx,0.05,s[1]+ny);U.push(0,v/24,1,v/24);v+=LL.ds[i];
+            const j=(i+1)%n;if(ok[i]&&ok[j]&&j>i){const a=2*i,b=2*j;I.push(a,a+1,b+1,a,b+1,b);}}
+          const g=new T3.BufferGeometry();g.setAttribute('position',new T3.Float32BufferAttribute(P,3));g.setAttribute('uv',new T3.Float32BufferAttribute(U,2));g.setIndex(I);
+          const mm=new T3.Mesh(g,new T3.MeshBasicMaterial({map:tG,transparent:true,opacity:op,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));mm.renderOrder=1;mm.userData.vivo=true;return mm;};
+        G.add(tira(()=>true,0.32,3.4));
+        G.add(tira(i=>LL.col[i]===2||LL.col[(i+1)%n]===2||Math.abs(LL.k[i])>0.012,0.4,3.0));
+      }
       const texM={};
       LL.carteles.forEach(cd=>{
         if(!texM[cd.m])texM[cd.m]=new T3.MeshLambertMaterial({map:tex(lienzo(128,96,(g2,W,H)=>{g2.fillStyle='#f4f4f4';g2.fillRect(0,0,W,H);g2.strokeStyle='#1d3f8f';g2.lineWidth=10;g2.strokeRect(5,5,W-10,H-10);g2.fillStyle='#111';g2.font='900 52px Archivo,system-ui';g2.textAlign='center';g2.textBaseline='middle';g2.fillText(String(cd.m),W/2,H/2+3);}),1,1)});
@@ -6039,17 +6331,35 @@ const REN3=(function(){
     const por=PG&&PG.userData.portico;
     if(por){const L=por.userData.luces,nOn=R.verdeYa?0:Math.min(5,Math.floor(Math.max(0,R.tLuces)/0.8));
       L.forEach((l,k)=>l.material.color.copy(CL(R.verdeYa?(R.tCarrera<1.2?'#22e06b':'#3a0d10'):(k<nOn?'#ff2a3c':'#3a0d10'))));}
-    /* cámara de persecución */
+    /* v7: tres cámaras (botón 🎥): de atrás, pegada atrás y arriba del auto (la de la tele, encima de la toma de aire) */
     if(!cam)cam={th:car.th,d:0};
-    let dd=car.th-cam.th;dd=Math.atan2(Math.sin(dd),Math.cos(dd));cam.th+=dd*Math.min(1,dt*4.2);
-    const dObj=(land?13:17)+0.045*v;cam.d=cam.d?cam.d+(dObj-cam.d)*Math.min(1,dt*2):dObj;
-    const alto=land?5.4:7.2,co=Math.cos(cam.th),si=Math.sin(cam.th);
+    const modoCam=AJ.cam||'atras';
+    let dd=car.th-cam.th;dd=Math.atan2(Math.sin(dd),Math.cos(dd));
     shake=Math.max(0,shake-dt*3);
-    const sx=shake?(Math.random()-0.5)*0.35*shake:0,sy=shake?(Math.random()-0.5)*0.35*shake:0;
-    camara.position.set(car.x-co*cam.d+sx,alto+sy,car.y-si*cam.d);
-    camara.lookAt(car.x+co*14,1.6,car.y+si*14);
-    camara.rotateZ((R.s||0)*Math.min(1,v/40)*0.045);
-    const fov=(land?56:70)+9*Math.min(1,v/110);if(Math.abs(camara.fov-fov)>0.05){camara.fov=fov;camara.updateProjectionMatrix();}
+    /* a mucha velocidad tiembla un poco, y más en el pasto y en los pianos */
+    const vib=(modoCam==='tcam'?0.05:0.025)*Math.pow(clamp(v/92,0,1),2)+(car.pasto&&v>5?0.12:0)+(R.piano?0.08:0);
+    const sx=(shake?(Math.random()-0.5)*0.35*shake:0)+(Math.random()-0.5)*vib,sy=(shake?(Math.random()-0.5)*0.35*shake:0)+(Math.random()-0.5)*vib;
+    let fov;
+    if(modoCam==='tcam'){
+      cam.th+=dd*Math.min(1,dt*14);
+      const hd=car.th+(car.beta||0)*0.6,co=Math.cos(hd),si=Math.sin(hd),xA=-0.3;
+      camara.position.set(car.x+co*xA+sx*0.3,2.32+sy*0.5,car.y+si*xA);
+      camara.lookAt(car.x+co*60,1.1,car.y+si*60);
+      /* frenando se va para adelante, acelerando para atrás (se nota el peso) */
+      camara.rotateX(clamp((car.aLong||0)/49,-0.5,0.3)*-0.035);
+      camara.rotateZ(-(car.uso||0)*Math.sign(car.st||0)*0.025);
+      fov=(land?66:80)+8*Math.min(1,v/92);
+    }else{
+      const cerca=modoCam==='cerca';
+      cam.th+=dd*Math.min(1,dt*(cerca?6:4.2));
+      const dObj=(cerca?(land?10.5:13):(land?13:17))+(cerca?0.025:0.045)*v;cam.d=cam.d?cam.d+(dObj-cam.d)*Math.min(1,dt*2):dObj;
+      const alto=cerca?(land?3.7:4.8):(land?5.4:7.2),co=Math.cos(cam.th),si=Math.sin(cam.th);
+      camara.position.set(car.x-co*cam.d+sx,alto+sy,car.y-si*cam.d);
+      camara.lookAt(car.x+co*14,cerca?1.4:1.6,car.y+si*14);
+      camara.rotateZ((R.s||0)*Math.min(1,v/40)*0.045);
+      fov=(land?56:70)+11*Math.min(1,v/92);
+    }
+    if(Math.abs(camara.fov-fov)>0.05){camara.fov=fov;camara.updateProjectionMatrix();}
     {const tt=performance.now()/1000;for(let q=0;q<ANIM.length;q++)ANIM[q](tt,dt||0.016);}
     sol.position.set(car.x+SOL_OFF[0],SOL_OFF[1],car.y+SOL_OFF[2]);sol.target.position.set(car.x,0,car.y);
     cielo.position.set(car.x,0,car.y);
@@ -6290,7 +6600,7 @@ function rivalesAhora(dt){
     const e=ESC.find(x=>x.id===j.esc)||ESC[0],u=b[b.length-1];
     let x=u.x,y=u.y,th=u.th;const v=Math.max(0,u.v||0),st=u.st||0;
     let pt=R.verdeYa&&!u.f?clamp(now-u.tc,0,0.4):0;
-    const k=st*CF.kmax/(1+Math.pow(v/CF.vu,2));
+    const k=GPM.kReal(v,st);
     while(pt>1e-4){const hh=Math.min(0.02,pt);th+=v*k*hh;x+=v*Math.cos(th)*hh;y+=v*Math.sin(th)*hh;pt-=hh;}
     let d=DISP.get(id);
     if(!d||d.r!==u.r){d={ex:0,ey:0,eth:0,tc:u.tc,r:u.r,x,y,th,fant:d?1.6:0};DISP.set(id,d);}   /* volvió a la pista: aparece ahí y un rato no choca */
@@ -6421,11 +6731,11 @@ function mostrarFinalOnline(filas){
 const CAMP=(function(){
   const KEY='gp-app-carrera';
   const CATS=[
-    {n:'Zonal del Alto Valle',c:'Zonal',fechas:4,vueltas:2,riv:7,k:0.86,suf:' Junior',fijas:['cipo','nqn-cipo']},
-    {n:'Fórmula Nacional',c:'Nacional',fechas:4,vueltas:2,riv:9,k:0.94,suf:' Junior',fijas:['ar-1952','cipo']},
-    {n:'Fórmula 3',c:'F3',fechas:5,vueltas:3,riv:11,k:1.02,pre:'Academia '},
-    {n:'Fórmula 2',c:'F2',fechas:5,vueltas:3,riv:13,k:1.1,pre:'Academia '},
-    {n:'Fórmula 1',c:'F1',fechas:6,vueltas:3,riv:15,k:1.18}];
+    {n:'Zonal del Alto Valle',c:'Zonal',fechas:4,vueltas:2,riv:7,k:0.82,suf:' Junior',fijas:['cipo','nqn-cipo']},
+    {n:'Fórmula Nacional',c:'Nacional',fechas:4,vueltas:2,riv:9,k:0.86,suf:' Junior',fijas:['ar-1952','cipo']},
+    {n:'Fórmula 3',c:'F3',fechas:5,vueltas:3,riv:11,k:0.9,pre:'Academia '},
+    {n:'Fórmula 2',c:'F2',fechas:5,vueltas:3,riv:13,k:0.94,pre:'Academia '},
+    {n:'Fórmula 1',c:'F1',fechas:6,vueltas:3,riv:15,k:0.98}];   /* v7: ritmos de la máquina en la escala de la física nueva */
   const PTS=[25,18,15,12,10,8,6,4,2,1];
   let S=leerJSON(KEY);if(!S||typeof S!=='object'||!S.v)S=null;
   let borrarArmado=false;
