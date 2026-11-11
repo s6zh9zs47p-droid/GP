@@ -542,7 +542,7 @@ input[type=range]{accent-color:var(--rojo)}
     </div></details>
   </div>
   <button class="btn gh" id="btnSalaSalir" style="width:100%;margin-top:10px">Salir de la sala</button>
-  <p class="tiny cen">Anda mejor si están todos en el mismo wifi. Con datos móviles también suele andar, aunque alguna compañía puede trabar la conexión.</p>
+  <p class="tiny cen">Anda desde cualquier lado: mismo wifi, otra casa o datos móviles. Si la conexión directa entre celulares no abre, entra solo por un servidor (arriba dice cuál está usando).</p>
 </div></section>
 
 <!-- ================= CARRERA ================= -->
@@ -3305,10 +3305,18 @@ const GPM=(function(){
    v8: rehechos a partir de fotos; la estación pasa a la derecha del arco (como se ve al entrar), y se suman la sede del Club Cipolletti e Il Nero (en la esquina de Alem) */
 if(PISTAS.cipo&&PISTAS.cipo.zona){const Zc=PISTAS.cipo.zona;
   Zc.lugares=[{t:'arco',i:372},{t:'aca',i:381,sg:1,d:24},{t:'wpc',i:245,sg:-1,d:56},{t:'runadi',i:112,sg:1,d:30},
-    {t:'rosauer',i0:396,i1:428,sg:-1},{t:'loba',i:330,sg:-1,d:30},{t:'sede',i:180,sg:1,d:19},{t:'ilnero',i:437,sg:-1,d:19}];
+    {t:'bodega',i0:396,i1:428,sg:-1},{t:'loba',i:330,sg:-1,d:24,esc:1.4},{t:'sede',i:180,sg:1,d:19},{t:'ilnero',i:437,sg:1,d:20,esc:1.5}];
+  /* v9: el portal de ladrillo con torres es la Bodega (con viñedo alrededor), la Loba va adentro del Parque Rosauer,
+     e Il Nero pasa a la esquina de afuera (queda de frente cuando llegás a la curva). Los tres más grandes y más cerca */
   /* el bulevar termina antes de las esquinas: el murito pegado no puede meterse adentro de una curva cerrada */
   Zc.bulevar=[[446,481,-1],[0,86,-1]];
   Zc.calles=(Zc.calles||[]).concat([{i:364,t:'TOSCHI'},{i:236,t:'RUTA 151'}]);}
+/* v9: ¿cae sobre un lugar, o en la franja entre la pista y el lugar? */
+function cercaDeLugares(Ls,x,y,m){m=m||0;
+  for(const L of Ls||[]){if(!(L.r>0))continue;if(Math.hypot(x-L.x,y-L.y)<L.r+m)return true;
+    if(L.ax!=null){const vx=L.x-L.ax,vy=L.y-L.ay,l2=vx*vx+vy*vy||1,t=Math.max(0,Math.min(1,((x-L.ax)*vx+(y-L.ay)*vy)/l2));
+      if(Math.hypot(x-L.ax-vx*t,y-L.ay-vy*t)<L.fr+m)return true;}}
+  return false;}
 const TRACKS={};
 function pista(z){if(!TRACKS[z])TRACKS[z]=GPM.construir({z,p:PISTAS[z].p});return TRACKS[z];}
 
@@ -4653,11 +4661,13 @@ const REN=(function(){
     /* v7: lugares de la zona: dónde cae cada uno (para no plantarles árboles ni casas encima) */
     const lugares=[];
     ((Z&&Z.lugares)||[]).forEach(L=>{
-      if(L.t==='rosauer'){const len=((L.i1-L.i0+n)%n),im=(L.i0+(len>>1))%n,p=pt(im,L.sg*(LB+58));lugares.push(Object.assign({x:p[0],y:p[1],r:Math.max(70,len*4.6),im},L));}
+      if(L.t==='rosauer'||L.t==='bodega'){const len=((L.i1-L.i0+n)%n),im=(L.i0+(len>>1))%n,p=pt(im,L.sg*(LB+58));lugares.push(Object.assign({x:p[0],y:p[1],r:Math.max(70,len*4.6),im},L));}
       else if(L.t==='arco'){const p=pt(L.i,0);lugares.push(Object.assign({x:p[0],y:p[1],r:0},L));}
-      else{const R0={aca:30,wpc:64,runadi:44,loba:40,sede:30,ilnero:22}[L.t]||30,p=pt(L.i,L.sg*(LB+L.d));lugares.push(Object.assign({x:p[0],y:p[1],r:R0},L));}
+      else{const R0=({aca:30,wpc:64,runadi:44,loba:40,sede:30,ilnero:22}[L.t]||30)*(L.esc||1),p=pt(L.i,L.sg*(LB+L.d)),a=pt(L.i,L.sg*w);
+        /* v9: además del lugar, una franja libre desde el borde de la pista (sin árboles, casas ni carteles adelante) */
+        lugares.push(Object.assign({x:p[0],y:p[1],r:R0,ax:a[0],ay:a[1],fr:L.t==='loba'?R0*1.1:R0*0.85},L));}
     });
-    const cercaLugar=(x,y,m)=>lugares.some(L=>L.r>0&&Math.hypot(x-L.x,y-L.y)<L.r+(m||0));
+    const cercaLugar=(x,y,m)=>cercaDeLugares(lugares,x,y,m);
     const AG=aguaDe(T,AM);
     const enRio=(x,y,m)=>!!(Z&&Z.rio&&x>Z.rio.x0-(m||0)&&x<Z.rio.x1+(m||0))||AG.en(x,y,m||0);
     const arboles=[];
@@ -5367,7 +5377,7 @@ const REN3=(function(){
       for(let q=0,len=((b-a+n)%n)+1;q<len;q+=2){const i=(a+q)%n;for(let r=0;r<5;r++){
         const h=hs(i,r),p=pt(T,i,sg*(DD.LBa[i]+16+r*8+(h%3)));
         /* v8: sin frutales encima de los lugares */
-        if(lejosDe(p[0],p[1],LB+4)&&!(DD.lugares||[]).some(L=>L.r>0&&Math.hypot(p[0]-L.x,p[1]-L.y)<L.r+4))copas.push([p[0],p[1],1.9+(h%5)*0.12,(h>>>5)%4?'#4f8a35':'#6d9a2e']);
+        if(lejosDe(p[0],p[1],LB+4)&&!cercaDeLugares(DD.lugares,p[0],p[1],4))copas.push([p[0],p[1],1.9+(h%5)*0.12,(h>>>5)%4?'#4f8a35':'#6d9a2e']);
       }}
     });
     if(copas.length){
@@ -5388,7 +5398,7 @@ const REN3=(function(){
         if(!lejosDe(p[0],p[1],w+8+fondo/2))continue;
         if(Z.rotonda&&Math.hypot(p[0]-Z.rotonda.x,p[1]-Z.rotonda.y)<Z.rotonda.r+24)continue;
         if(DD.Z.rio&&p[0]>DD.Z.rio.x0-20&&p[0]<DD.Z.rio.x1+20)continue;
-        if((DD.lugares||[]).some(L=>L.r>0&&Math.hypot(p[0]-L.x,p[1]-L.y)<L.r+fondo))continue;
+        if(cercaDeLugares(DD.lugares,p[0],p[1],fondo))continue;
         casas.push([p[0],p[1],ancho,fondo,alto,thI(i),COL[(h>>>12)%COL.length]]);
       }}
     });
@@ -5597,25 +5607,22 @@ const REN3=(function(){
         plano(g,9,2.25,mN,-9,8.6,f*17.12,hacia(L.sg));box(g,9.4,2.6,0.2,M('#7d858f'),-9,8.6,f*17);
         terminar(g);
       }
-      else if(L.t==='rosauer'){
-        /* Parque Rosauer: pasto, senderos, árboles y bancos; en el medio, el portal de ladrillo con almenas y el portón de rejas, con los álamos atrás */
-        const sg=L.sg,f=i=>enR(i,L.i0,L.i1)&&enR((i+1)%n,L.i0,L.i1),mP=M('#4e9b3d'),mS=M('#cdbb98');
+      else if(L.t==='bodega'){
+        /* v9: la Bodega: el viñedo en filas y, en el medio, el portal de ladrillo con almenas y el portón de rejas, con los álamos atrás */
+        const sg=L.sg,f=i=>enR(i,L.i0,L.i1)&&enR((i+1)%n,L.i0,L.i1),mP=M('#7d8a4a'),mS=M('#cdbb98');
         function enR(i,a,b){return a<=b?i>=a&&i<=b:(i>=a||i<=b);}
         const O=(a,b)=>[Math.min(sg*a,sg*b),Math.max(sg*a,sg*b)];
-        const ps=cinta(T,...O(LB+5,LB+118),0.045,mP,8,f,0,1);if(ps)G.add(ps);
-        for(const [a,b] of[[LB+11,LB+15],[LB+66,LB+70]]){const c=cinta(T,...O(a,b),0.06,mS,8,f,0,1);if(c)G.add(c);}
-        const len=((L.i1-L.i0+n)%n),im=(L.i0+(len>>1))%n,dP=LB+19,pP=pt(T,im,sg*dP);
-        const lejosPortal=(x,y,m)=>Math.hypot(x-pP[0],y-pP[1])>m;
-        for(let q=4;q<len;q+=10){const i=(L.i0+q)%n;if(Math.abs(i-im)<3)continue;const a=pt(T,i,sg*(LB+11)),b=pt(T,i,sg*(LB+70)),th=thI(i),c=new T3.Mesh(new T3.PlaneGeometry(4,59),mS);
-          c.rotation.x=-Math.PI/2;c.rotation.z=-th;c.position.set((a[0]+b[0])/2,0.058,(a[1]+b[1])/2);G.add(c);}
-        const cop=[],CO=['#3f7d34','#4f8f3a','#5e9a3c','#2f6d2c'];
-        for(let q=0;q<=len;q++)for(let r=0;r<4;r++){const i=(L.i0+q)%n,h=((i*2654435761+r*40503)>>>0);if(h%3===0)continue;const p=pt(T,i,sg*(LB+20+r*24+(h%9)));
-          if(!lejosPortal(p[0],p[1],22))continue;cop.push([p[0],p[1],3.4+(h>>>5)%3,CO[(h>>>8)%4]]);}
-        if(cop.length){const cm=new T3.InstancedMesh(new T3.SphereGeometry(1,8,6),MAT.copa,cop.length),tr=new T3.InstancedMesh(new T3.CylinderGeometry(0.3,0.42,1,6),MAT.tronco,cop.length),o=new T3.Object3D();
-          cop.forEach(([x,y,r,c],k)=>{o.position.set(x,r*1.5,y);o.scale.set(r,r*1.05,r);o.rotation.set(0,k,0);o.updateMatrix();cm.setMatrixAt(k,o.matrix);cm.setColorAt(k,CL(c));o.position.set(x,r*0.55,y);o.scale.set(1,r*1.1,1);o.updateMatrix();tr.setMatrixAt(k,o.matrix);});G.add(cm);G.add(tr);}
-        for(let q=6;q<len;q+=8){const i=(L.i0+q)%n;if(Math.abs(i-im)<3)continue;const p=pt(T,i,sg*(LB+16.5)),b=new T3.Mesh(new T3.BoxGeometry(3,0.5,1),MAT.tronco);b.position.set(p[0],0.7,p[1]);b.rotation.y=-thI(i);G.add(b);}
+        const ps=cinta(T,...O(LB+5,LB+11),0.045,mP,8,f,0,1);if(ps)G.add(ps);
+        const len=((L.i1-L.i0+n)%n),im=(L.i0+(len>>1))%n,ES=1.4,dP=LB+7,pP=pt(T,im,sg*dP);
+        /* el viñedo: filas paralelas a la calle sobre la tierra, con un callejón abierto frente al portal */
+        {const filas=[];for(let q=1;q<len;q++){const i=(L.i0+q)%n;if(Math.abs(q-(len>>1))<3)continue;
+            for(let r=0;r<17;r++){const p=pt(T,i,sg*(LB+16+r*5.5)),h=((i*2654435761+r*40503)>>>0);filas.push([p[0],p[1],thI(i),1.55+(h%5)*0.06,h]);}}
+          if(filas.length){const tierra=cinta(T,...O(LB+11,LB+112),0.05,M('#b49b72'),8,f,0,1);if(tierra)G.add(tierra);
+            const vm=new T3.InstancedMesh(new T3.BoxGeometry(1,1,1),new T3.MeshLambertMaterial({color:0xffffff}),filas.length),o=new T3.Object3D(),VC=['#557f2c','#4b7428','#628a33','#6f9438'];
+            filas.forEach(([x,y,th,h,hh],k)=>{o.position.set(x,h/2+0.15,y);o.scale.set(8.4,h,1.1);o.rotation.set(0,-th,0);o.updateMatrix();vm.setMatrixAt(k,o.matrix);vm.setColorAt(k,CL(VC[hh%4]));});
+            vm.castShadow=true;vm.receiveShadow=true;G.add(vm);}}
         /* el portal: dos torres con almenas, el paño del medio con el arco de dovelas claras, zócalo de piedra y el portón de rejas */
-        const g=grupo(im,sg,dP),fr=-sg;
+        const g=grupo(im,sg,dP),fr=-sg;g.scale.setScalar(ES);
         const mLad=MT(ladrillo('#8a5b3d','#6b4a36')),mPie=MT(piedra('#b3ab9c','#8d877c')),mCre=M('#d8c9a8'),mReja=M('#4a4f55');
         const pared=extruir(formaArco(9.2,9.4,5.8,5.0),2.6,mLad);g.add(pared);
         const dov=extruir(aro(2.9,3.55),2.75,mCre);dov.position.y=5.0;g.add(dov);
@@ -5631,18 +5638,35 @@ const REN3=(function(){
         for(let x=-2.8;x<=2.81;x+=0.23)box(g,0.07,4.4,0.07,mReja,x,2.3,fr*0.5);
         for(const y of[0.35,2.4,4.45])box(g,5.8,0.12,0.1,mReja,0,y,fr*0.5);box(g,0.14,4.6,0.14,mReja,0,2.3,fr*0.5);
         /* el camino de tierra que entra al parque, los álamos y unos pinos atrás */
-        piso(g,12,dP-LB+2,M('#bfa47a'),0,fr*(dP-LB+2)/2,0.075);piso(g,6.5,40,M('#bfa47a'),0,-fr*20,0.075);
-        for(let k=0;k<9;k++){const x=-15+k*3.7+((k*7)%3-1)*0.6;alamo(g,x,-fr*(9+(k&1)*3),20+(k*5)%6);}
-        for(const [x,z] of[[-20,-5],[19,-6],[-23,-14],[23,-15]])hojas(g,x,-fr*(-z),12,4.2,'#2f5f32');
+        piso(g,12,(dP-LB+2)/ES,M('#bfa47a'),0,fr*(dP-LB+2)/ES/2,0.075);piso(g,6.5,60,M('#bfa47a'),0,-fr*30,0.075);
+        for(let k=0;k<9;k++){const x=-15+k*3.7+((k*7)%3-1)*0.6;alamo(g,x,-fr*(66+(k&1)*3),20+(k*5)%6);}
         /* el cartel del parque */
-        box(g,0.3,2.6,0.3,MAT.tronco,-12.2,1.3,fr*3);box(g,0.3,2.6,0.3,MAT.tronco,-7.8,1.3,fr*3);
-        cartel(g,'PARQUE ROSAUER','#2f5a2a','#ffffff',4.8,0.9,-10,2.2,fr*3.17,hacia(sg));box(g,5,1.1,0.25,M('#6a4b30'),-10,2.2,fr*3);
+        box(g,0.3,2.6,0.3,MAT.tronco,-15.2,1.3,fr*3);box(g,0.3,2.6,0.3,MAT.tronco,-8.8,1.3,fr*3);
+        cartel(g,'BODEGA GEROME MARTEAU','#5a2430','#f3e7cf',6.6,0.95,-12,2.2,fr*3.17,hacia(sg));box(g,6.8,1.15,0.25,M('#6a4b30'),-12,2.2,fr*3);
         terminar(g);
       }
       else if(L.t==='loba'){
         /* el monumento de la Loba: la columnata de ladrillo en medio círculo con arcos y columnas blancas, el templete redondo blanco en el medio,
            la loba con los mellizos sobre su pedestal, la escalinata, la reja negra con cadenas adelante y los cipreses atrás */
-        const g=grupo(L.i,L.sg,LB+L.d),sg=L.sg;
+        const g=grupo(L.i,L.sg,LB+L.d),sg=L.sg,ES=L.esc||1;g.scale.setScalar(ES);
+        /* v9: el Parque Rosauer alrededor: pasto, senderos, bancos, árboles a los costados y atrás (nunca adelante) y el cartel en la vereda */
+        {const i=((L.i%n)+n)%n,f=j=>{const q=((j-i+n+n/2)%n)-n/2;return Math.abs(q)<=16&&Math.abs(((j+1-i+n+n/2)%n)-n/2)<=16;};
+          const O=(a,b)=>[Math.min(sg*a,sg*b),Math.max(sg*a,sg*b)];
+          const ps=cinta(T,...O(LB+3,LB+L.d+60),0.045,M('#4e9b3d'),8,f,0,1);if(ps)G.add(ps);
+          const sd=cinta(T,...O(LB+5,LB+8.5),0.06,M('#cdbb98'),8,f,0,1);if(sd)G.add(sd);
+          const cop=[],CO=['#3f7d34','#4f8f3a','#5e9a3c','#2f6d2c'];
+          for(let q=-16;q<=16;q++){const j=(i+q+n)%n;for(let r=0;r<5;r++){const h=((j*2654435761+r*40503)>>>0);if(h%3===0)continue;
+            const lat=LB+12+r*12+(h%7),p=pt(T,j,sg*lat),dx=p[0]-g.position.x,dz=p[1]-g.position.z;
+            /* afuera del monumento y de la franja de adelante */
+            if(Math.hypot(dx,dz)<(21+9)*ES)continue;if(Math.abs(q)<9&&lat<LB+L.d+(21+6)*ES)continue;
+            cop.push([p[0],p[1],3.2+(h>>>5)%3,CO[(h>>>8)%4]]);}}
+          if(cop.length){const cm=new T3.InstancedMesh(new T3.SphereGeometry(1,8,6),MAT.copa,cop.length),tr=new T3.InstancedMesh(new T3.CylinderGeometry(0.3,0.42,1,6),MAT.tronco,cop.length),o=new T3.Object3D();
+            cop.forEach(([x,y,r,c],k)=>{o.position.set(x,r*1.5,y);o.scale.set(r,r*1.05,r);o.rotation.set(0,k,0);o.updateMatrix();cm.setMatrixAt(k,o.matrix);cm.setColorAt(k,CL(c));o.position.set(x,r*0.55,y);o.scale.set(1,r*1.1,1);o.updateMatrix();tr.setMatrixAt(k,o.matrix);});G.add(cm);G.add(tr);}
+          for(const q of[-14,-11,11,14]){const j=(i+q+n)%n,p=pt(T,j,sg*(LB+9.6)),b=new T3.Mesh(new T3.BoxGeometry(3,0.5,1),MAT.tronco);b.position.set(p[0],0.7,p[1]);b.rotation.y=-thI(j);G.add(b);}
+          const gc=grupo((i-9+n)%n,sg,LB+4),fr=-sg;
+          box(gc,0.3,2.8,0.3,MAT.tronco,-3.3,1.4,0);box(gc,0.3,2.8,0.3,MAT.tronco,3.3,1.4,0);
+          cartel(gc,'PARQUE ROSAUER','#2f5a2a','#ffffff',6.4,1.2,0,2.4,fr*0.17,hacia(sg));box(gc,6.6,1.4,0.25,M('#6a4b30'),0,2.4,0);
+          terminar(gc);}
         const Rc=21,N=13,Hp=1.2,dB=1.5,b=2*Rc*Math.sin(Math.PI/(2*N))+0.06,a=2.7,hs=4.0,H=6.3;
         const mLad=MT(ladrillo('#b5603b','#d6c9b8')),mBl=M('#f1efe9'),mBl2=M('#e2dfd7');
         const P=(u,v)=>[u,sg*v];
@@ -5750,14 +5774,18 @@ const REN3=(function(){
       else if(L.t==='ilnero'){
         /* Il Nero Pasta: la esquina blanca con la ochava, las pilastras azules, el cartel negro sobre blanco, la puerta de vidrio,
            las ventanas con rejas blancas, la marquesina, los globos azules y blancos en la puerta y las baldosas amarillas */
-        const i=((L.i%n)+n)%n,sg=L.sg,gp=4.5,li=k=>(sg<0?(DD.LBi||DD.LBa):(DD.LBd||DD.LBa))[((k%n)+n)%n];
+        const i=((L.i%n)+n)%n,sg=L.sg,li=k=>(sg<0?(DD.LBi||DD.LBa):(DD.LBd||DD.LBa))[((k%n)+n)%n];
+        /* v9: de qué lado dobla la curva: si el local queda afuera, la cuadra de enfrente es la que da a la calle por la que llegás */
+        let ks=0;for(let q=-8;q<=8;q++)ks+=DD.k[(i+q+n)%n];
+        const fuera=Math.sign(ks)!==sg,gp=fuera?6:4.5;
         const i1=(i-12+n)%n,i2=(i+12)%n,t1=[T.tx[i1],T.ty[i1]],t2=[T.tx[i2],T.ty[i2]];
         const Q1=pt(T,i1,sg*(li(i1)+gp)),Q2=pt(T,i2,sg*(DD.LBa[i2]+gp));
         const det=t1[0]*(-t2[1])-t1[1]*(-t2[0]);if(Math.abs(det)<0.2)return;
         const s_=((Q2[0]-Q1[0])*(-t2[1])-(Q2[1]-Q1[1])*(-t2[0]))/det,Pc=[Q1[0]+t1[0]*s_,Q1[1]+t1[1]*s_];
-        let e1=[-t1[0],-t1[1]],e2=t2,DA=20,DB=17;
+        let e1=fuera?t1:[-t1[0],-t1[1]],e2=fuera?[-t2[0],-t2[1]]:t2,DA=20,DB=17;
         let phi=Math.atan2(-e1[1],e1[0]);if(Math.sin(phi)*e2[0]+Math.cos(phi)*e2[1]<0){const tmp=e1;e1=e2;e2=tmp;const t_=DA;DA=DB;DB=t_;phi=Math.atan2(-e1[1],e1[0]);}
-        const g=new T3.Group();g.position.set(Pc[0],0,Pc[1]);g.rotation.y=phi;G.add(g);
+        const g=new T3.Group();g.position.set(Pc[0],0,Pc[1]);g.rotation.y=phi;g.scale.setScalar(L.esc||1);G.add(g);
+        L.pc=Pc;
         const ch=5.66,H1=6.6,H2=11.5,PXM=48;
         const foot=[[ch,0],[DA,0],[DA,DB],[0,DB],[0,ch]];
         const ofs=(pp,d)=>{const m=pp.length,out=[];for(let k=0;k<m;k++){const a=pp[(k-1+m)%m],b=pp[k],c=pp[(k+1)%m];
@@ -5770,7 +5798,7 @@ const REN3=(function(){
           const uv=geo.attributes.uv;for(let k=0;k<uv.count;k++)uv.setXY(k,uv.getX(k)*0.5,uv.getY(k)*0.5);return malla(g,geo,m,0,y0,0);};
         losa(foot,0,H2,mBlanco);
         losa(ofs(foot,0.7*sgO),H1,0.35,M('#f8f8f6'));losa(ofs(foot,0.25*sgO),H2,0.55,M('#d9d9d6'));
-        losa(ofs(foot,5.5*sgO),0,0.12,MAT.vereda);
+        losa(ofs(foot,(fuera?3.4:5.5)*sgO),0,0.12,MAT.vereda);
         /* las fachadas pintadas */
         const nero=(lm,ochava)=>lz(Math.round(lm*PXM),Math.round(H2*PXM),(c,W_,H)=>{
           const m=PXM,yG=v=>H-v*m;c.fillStyle='#f4f4f2';c.fillRect(0,0,W_,H);c.fillStyle='rgba(0,0,0,.05)';c.fillRect(0,yG(H1+0.2),W_,0.6*m);
@@ -6697,54 +6725,162 @@ const RED={peer:null,host:false,conns:new Map(),hc:null,code:'',jug:[],off:0,rtt
 const ALFA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 function codigoNuevo(){let c='';for(let i=0;i<5;i++)c+=ALFA[(Math.random()*ALFA.length)|0];return c;}
 function idSala(c){return 'timbagp-'+c.toLowerCase();}
+/* v9: servidores para que la conexión directa entre celulares atraviese redes distintas (datos móviles, wifi de otra casa).
+   STUN de siempre y, si se puede armar, el TURN público de Open Relay (con su clave pública de ejemplo). */
+const TURN={ice:[]};
+(async()=>{try{
+  const te=new TextEncoder(),exp=Math.floor(Date.now()/1000)+24*3600,user=exp+':timbagp';
+  const k=await crypto.subtle.importKey('raw',te.encode('openrelayprojectsecret'),{name:'HMAC',hash:'SHA-1'},false,['sign']);
+  const sig=new Uint8Array(await crypto.subtle.sign('HMAC',k,te.encode(user)));let b='';sig.forEach(x=>b+=String.fromCharCode(x));
+  const h='staticauth.openrelay.metered.ca';
+  TURN.ice=[{urls:['turn:'+h+':80','turn:'+h+':80?transport=tcp','turn:'+h+':443','turns:'+h+':443?transport=tcp'],username:user,credential:btoa(b)}];
+}catch(e){}})();
 function cfgPeer(){
   const q=new URLSearchParams(location.search),ph=q.get('peerhost');
-  const base={debug:0,config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}]}};
+  const base={debug:0,config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}].concat(ph?[]:TURN.ice)}};
   if(ph){const [h,p]=ph.split(':');return Object.assign(base,{host:h,port:+p||9000,path:'/',secure:false});}
   return base;
 }
+/* v9: relevo por servidor (MQTT sobre WebSocket seguro, servidores públicos y gratis). Si la conexión directa no abre
+   (pasa mucho entre redes distintas), los mensajes pasan por uno de estos servidores. El organizador escucha en todos;
+   cada invitado prueba de a uno hasta que el organizador le contesta. Solo viajan nombres, escuderías y posiciones. */
+const RELE=(()=>{
+  const q=new URLSearchParams(location.search);
+  const BROKERS=q.get('mqtt')?q.get('mqtt').split(','):['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt','wss://test.mosquitto.org:8081/mqtt'];
+  const te=new TextEncoder(),td=new TextDecoder();
+  const vlen=n=>{const o=[];do{let b=n%128;n=Math.floor(n/128);if(n>0)b|=128;o.push(b);}while(n>0);return o;};
+  const str=b=>{if(typeof b==='string')b=te.encode(b);const o=new Uint8Array(2+b.length);o[0]=b.length>>8;o[1]=b.length&255;o.set(b,2);return o;};
+  const paq=(h,partes)=>{let L=0;partes.forEach(p=>L+=p.length);const v=vlen(L),o=new Uint8Array(1+v.length+L);o[0]=h;o.set(v,1);let k=1+v.length;partes.forEach(p=>{o.set(p,k);k+=p.length;});return o;};
+  function cliente(url,alMensaje){
+    const C={url,ok:false,vivo:true,subs:new Set(),ws:null,pid:1,cola:[],intentos:0,alAbrir:[]};
+    const id='tgp'+Math.random().toString(36).slice(2,12);
+    function abrir(){
+      if(!C.vivo)return;
+      let ws;try{ws=new WebSocket(url,['mqtt']);}catch(e){reabrir();return;}
+      C.ws=ws;ws.binaryType='arraybuffer';let buf=new Uint8Array(0);
+      ws.onopen=()=>{try{ws.send(paq(0x10,[new Uint8Array([0,4,77,81,84,84,4,2,0,30]),str(id)]));}catch(e){}};
+      ws.onmessage=ev=>{
+        if(!(ev.data instanceof ArrayBuffer))return;
+        const d=new Uint8Array(ev.data),nb=new Uint8Array(buf.length+d.length);nb.set(buf);nb.set(d,buf.length);buf=nb;
+        while(buf.length>=2){
+          let m=1,v=0,k=1,b,completo=true;
+          do{if(k>=buf.length){completo=false;break;}b=buf[k++];v+=(b&127)*m;m*=128;}while(b&128);
+          if(!completo||buf.length<k+v)break;
+          const tipo=buf[0]>>4,fl=buf[0]&15,c=buf.slice(k,k+v);buf=buf.slice(k+v);
+          if(tipo===2){if(c[1]===0){C.ok=true;C.intentos=0;C.subs.forEach(subEnviar);const cl=C.cola.splice(0);cl.forEach(x=>{try{ws.send(x);}catch(e){}});C.alAbrir.forEach(f=>{try{f();}catch(e){}});}}
+          else if(tipo===3){const tl=(c[0]<<8)|c[1],top=td.decode(c.subarray(2,2+tl));let p=2+tl;if((fl>>1)&3)p+=2;try{alMensaje(top,td.decode(c.subarray(p)),C);}catch(e){}}
+        }
+      };
+      ws.onclose=()=>{if(C.ws===ws){C.ws=null;C.ok=false;reabrir();}};
+      ws.onerror=()=>{try{ws.close();}catch(e){}};
+    }
+    function reabrir(){if(!C.vivo)return;C.intentos++;setTimeout(abrir,Math.min(6000,500*C.intentos));}
+    function subEnviar(t){if(C.ws&&C.ok){const pid=(C.pid++%65535)+1;try{C.ws.send(paq(0x82,[new Uint8Array([pid>>8,pid&255]),str(t),new Uint8Array([0])]));}catch(e){}}}
+    C.sub=t=>{C.subs.add(t);subEnviar(t);};
+    C.pub=(t,s)=>{const x=paq(0x30,[str(t),te.encode(s)]);
+      if(C.ws&&C.ok&&C.ws.readyState===1){if(C.ws.bufferedAmount<256000)try{C.ws.send(x);}catch(e){}}
+      else{C.cola.push(x);if(C.cola.length>12)C.cola.shift();}};
+    C.cerrar=()=>{C.vivo=false;clearInterval(C.tPing);const ws=C.ws;C.ws=null;C.ok=false;try{if(ws){if(ws.readyState===1)ws.send(new Uint8Array([0xE0,0]));ws.close();}}catch(e){}};
+    C.tPing=setInterval(()=>{try{if(C.ws&&C.ok)C.ws.send(new Uint8Array([0xC0,0]));}catch(e){}},20000);
+    abrir();return C;
+  }
+  return{BROKERS,cliente};
+})();
+function topicoSala(c){return 'timbagp/v9/'+String(c||'').toLowerCase();}
 function ahoraHost(){return RED.host?Date.now():Date.now()+RED.off;}
 function linkSala(){return location.origin+location.pathname+'?sala='+RED.code;}
-function mandarHost(m){try{if(RED.hc&&RED.hc.open)RED.hc.send(m);}catch(e){}}
-function repartir(m){RED.conns.forEach(c=>{try{if(c.open)c.send(m);}catch(e){}});}
+/* v9: el invitado le habla al organizador por la conexión directa o por el servidor, según cuál ande */
+function mandarHost(m){try{
+  if(RED.via==='rele'&&RED.cli)RED.cli.pub(topicoSala(RED.code)+'/h',JSON.stringify({f:RED.mi,d:m}));
+  else if(RED.hc&&RED.hc.open)RED.hc.send(m);}catch(e){}}
+/* el organizador reparte: directo a cada uno, y una sola vez por servidor para todos los que están por ahí
+   (las posiciones van la mitad de seguido por el servidor, 10 por segundo) */
+let tickRele=0;
+function repartir(m){
+  const clis=new Set();
+  RED.conns.forEach(c=>{try{if(c.rele)clis.add(c.cli);else if(c.open)c.send(m);}catch(e){}});
+  if(!clis.size)return;
+  if(m.t==='estados'&&(tickRele++&1))return;
+  const txt=JSON.stringify(m),top=topicoSala(RED.code)+'/b';clis.forEach(C=>C.pub(top,txt));
+}
 function miPerfil(){return{n:(AJ.nombre||'').trim()||'Piloto',esc:AJ.esc};}
 function escLibre(pref,id){const ocup=new Set(RED.jug.filter(j=>j.id!==id).map(j=>j.esc));if(!ocup.has(pref))return pref;const l=ESC.find(e=>!ocup.has(e.id));return l?l.id:pref;}
 function pararRed(){
-  RED.timers.forEach(t=>clearInterval(t));RED.timers=[];
+  RED.timers.forEach(t=>{clearInterval(t);clearTimeout(t);});RED.timers=[];clearTimeout(RED.tBroker);
   try{if(RED.peer)RED.peer.destroy();}catch(e){}
-  Object.assign(RED,{peer:null,host:false,conns:new Map(),hc:null,code:'',jug:[],off:0,rtt:1e9,fase:'',mi:'',est:{},buf:new Map(),hist:new Map(),res:null,fins:{},tPrimerFin:0,largada:null,error:'',iaN:0,iaDef:[],campN:0,camp:null});
+  (RED.rele||[]).forEach(C=>C.cerrar());if(RED.cli)RED.cli.cerrar();
+  Object.assign(RED,{peer:null,host:false,conns:new Map(),hc:null,code:'',jug:[],off:0,rtt:1e9,fase:'',mi:'',est:{},buf:new Map(),hist:new Map(),res:null,fins:{},tPrimerFin:0,largada:null,error:'',iaN:0,iaDef:[],campN:0,camp:null,
+    via:'',cli:null,rele:null,releK:-1,buscandoRele:false,reconec:false,pingOn:false,ultRx:0,tCambio:0,tHola:0,p2pOk:false,releOk:false,p2pMal:''});
 }
 /* ---------- organizador ---------- */
 function armarSala(intento){
-  if(!window.Peer){salaError('No se pudo cargar la conexión. Revisá internet y recargá.');return;}
+  const q=new URLSearchParams(location.search),conP2P=!!window.Peer&&!q.has('rele'),conRele=!q.has('sinrele');
+  if(!conP2P&&!conRele){salaError('No se pudo cargar la conexión. Revisá internet y recargá.');return;}
   pararRed();RED.host=true;RED.code=codigoNuevo();RED.fase='conectando';RED.pista=AJ.azar?'azar':AJ.pista;RED.vueltas=AJ.vueltas;
+  RED.mi=idSala(RED.code);
   mostrarSala();
-  const p=new Peer(idSala(RED.code),cfgPeer());RED.peer=p;
-  p.on('open',id=>{
-    RED.mi=id;RED.fase='sala';
-    const pf=miPerfil();RED.jug=[{id,n:pf.n,esc:pf.esc,listo:true,host:true}];
-    pintarSala();
-    RED.timers.push(setInterval(tickHost,50));
-  });
-  p.on('connection',c=>{
-    c.on('data',d=>hostRecibe(c,d));
-    c.on('close',()=>salio(c.peer));
-    c.on('error',()=>salio(c.peer));
-    RED.conns.set(c.peer,c);
-  });
-  p.on('error',e=>{
-    if(e&&e.type==='unavailable-id'&&(intento||0)<3){armarSala((intento||0)+1);return;}
-    salaError('Problema con la conexión ('+(e&&e.type||'desconocido')+'). Probá de nuevo.');
-  });
-  p.on('disconnected',()=>{try{p.reconnect();}catch(e){}});
+  if(conP2P){try{
+    const p=new Peer(RED.mi,cfgPeer());RED.peer=p;
+    p.on('open',()=>{RED.p2pOk=true;RED.p2pMal='';hostListo();});
+    p.on('connection',c=>{
+      c.on('data',d=>hostRecibe(c,d));
+      c.on('close',()=>salioLuego(c.peer,c));
+      c.on('error',()=>salioLuego(c.peer,c));
+      RED.conns.set(c.peer,c);
+    });
+    p.on('error',e=>{
+      if(e&&e.type==='unavailable-id'&&(intento||0)<3){armarSala((intento||0)+1);return;}
+      /* v9: si la conexión directa falla, la sala sigue por el servidor */
+      RED.p2pMal=(e&&e.type)||'error';pintarSala();
+    });
+    p.on('disconnected',()=>{setTimeout(()=>{try{if(RED.peer===p&&!p.destroyed&&p.disconnected)p.reconnect();}catch(e){}},1000);});
+  }catch(e){RED.p2pMal='error';}}
+  if(conRele)releHost();
+  RED.timers.push(setTimeout(()=>{if(RED.fase==='conectando')salaError('No pude armar la sala. Revisá internet y probá de nuevo.');},15000));
 }
+function hostListo(){
+  if(RED.fase!=='conectando'||!RED.host)return;
+  RED.fase='sala';
+  const pf=miPerfil();RED.jug=[{id:RED.mi,n:pf.n,esc:pf.esc,listo:true,host:true}];
+  $('salaError').classList.add('hide');RED.error='';
+  pintarSala();
+  RED.timers.push(setInterval(tickHost,50));
+  RED.timers.push(setInterval(vigiaHost,1000));
+}
+/* el organizador escucha en todos los servidores a la vez */
+function releHost(){
+  const base=topicoSala(RED.code);
+  RED.rele=RELE.BROKERS.map(u=>{
+    const C=RELE.cliente(u,(top,txt,C)=>{
+      if(!RED.host||top!==base+'/h')return;
+      let o;try{o=JSON.parse(txt);}catch(e){return;}
+      if(!o||typeof o.f!=='string'||!o.d||typeof o.d!=='object')return;
+      const id=o.f.slice(0,40);let c=RED.conns.get(id);
+      if(!c||!c.rele||c.cli!==C){c={peer:id,open:true,rele:true,cli:C,ult:0,send:m=>C.pub(base+'/g/'+id,JSON.stringify(m)),close(){}};RED.conns.set(id,c);}
+      c.ult=Date.now();hostRecibe(c,o.d);
+    });
+    C.sub(base+'/h');C.alAbrir.push(()=>{RED.releOk=true;hostListo();pintarSala();});
+    return C;
+  });
+}
+/* los que entraron por el servidor no avisan cuando se van: si pasan 12 s sin noticias, se dan por idos */
+function vigiaHost(){
+  const now=Date.now();
+  RED.conns.forEach((c,id)=>{if(c.rele&&now-c.ult>12000)salio(id);});
+  if(RED.peer&&!RED.peer.destroyed&&RED.peer.disconnected&&!document.hidden){try{RED.peer.reconnect();}catch(e){}}
+}
+/* una conexión directa que se corta: se espera un rato por si vuelve por el servidor */
+function salioLuego(id,c){setTimeout(()=>{if(RED.conns.get(id)===c)salio(id);},8000);}
 function hostRecibe(c,d){
   if(!d||typeof d!=='object')return;
   const id=c.peer;
   if(d.t==='hola'){
-    if(RED.fase==='carrera'){try{c.send({t:'ocupado'});}catch(e){}return;}
     let j=RED.jug.find(x=>x.id===id);
+    /* v9: en plena carrera solo vuelve a entrar el que ya estaba (se le cortó y se reconectó) */
+    if(RED.fase==='carrera'&&!j){try{c.send({t:'ocupado'});}catch(e){}return;}
     if(!j){j={id,n:String(d.n||'Piloto').slice(0,16),esc:escLibre(d.esc,id),listo:false};RED.jug.push(j);}
+    else if(RED.fase==='carrera'&&RED.fins[id]&&RED.fins[id].fuera)delete RED.fins[id];
+    RED.conns.set(id,c);
     mandarSala();pintarSala();
   }else if(d.t==='perfil'){
     const j=RED.jug.find(x=>x.id===id);if(!j)return;
@@ -6757,6 +6893,7 @@ function hostRecibe(c,d){
   else if(d.t==='fuera'){RED.fins[id]={fuera:true};revisarFinal();}
 }
 function salio(id){
+  if(!RED.conns.has(id)&&!RED.jug.some(x=>x.id===id))return;
   RED.conns.delete(id);
   const j=RED.jug.find(x=>x.id===id);
   if(!j)return;
@@ -6842,30 +6979,86 @@ function cerrarCarrera(){
   mostrarFinalOnline(filas);
 }
 /* ---------- invitado ---------- */
+/* v9: primero prueba la conexión directa; si en 6 s no abrió (o falla), entra por el servidor. Si en plena carrera se corta,
+   se pasa solo al servidor y sigue. */
 function entrarSala(code){
-  if(!window.Peer){salaError('No se pudo cargar la conexión. Revisá internet y recargá.');return;}
+  const q=new URLSearchParams(location.search),conP2P=!!window.Peer&&!q.has('rele'),conRele=!q.has('sinrele');
+  if(!conP2P&&!conRele){salaError('No se pudo cargar la conexión. Revisá internet y recargá.');return;}
   pararRed();RED.host=false;RED.code=code.toUpperCase();RED.fase='conectando';
+  RED.mi='timbagp-g-'+Math.random().toString(36).slice(2,10);
   mostrarSala();
-  const p=new Peer(cfgPeer());RED.peer=p;
-  p.on('open',id=>{
-    RED.mi=id;
-    const c=p.connect(idSala(RED.code),{reliable:true});RED.hc=c;
-    c.on('open',()=>{
-      const pf=miPerfil();c.send({t:'hola',n:pf.n,esc:pf.esc});
-      const ping=()=>mandarHost({t:'ping',c:Date.now()});ping();
-      RED.timers.push(setInterval(ping,1500));
+  if(conP2P){try{
+    const p=new Peer(RED.mi,cfgPeer());RED.peer=p;
+    p.on('open',()=>{
+      if(RED.via==='rele'||RED.peer!==p)return;
+      const c=p.connect(idSala(RED.code),{reliable:true});RED.hc=c;
+      c.on('open',()=>{if(RED.via==='rele'||RED.hc!==c){try{c.close();}catch(e){}return;}usarVia('p2p');});
+      c.on('data',d=>{if(RED.via==='p2p'&&RED.hc===c){RED.ultRx=Date.now();invitadoRecibe(d);}});
+      c.on('close',()=>{if(RED.via==='p2p'&&RED.hc===c&&RED.fase)pasarARele();});
+      c.on('error',()=>{if(RED.via!=='rele'&&RED.hc===c&&RED.fase)pasarARele();});
     });
-    c.on('data',invitadoRecibe);
-    c.on('close',()=>{if(RED.fase)salaError('Se cortó la conexión con el organizador.');});
-    c.on('error',()=>salaError('Se cortó la conexión con el organizador.'));
+    p.on('error',e=>{if(RED.peer!==p)return;
+      if(!conRele){salaError(e&&e.type==='peer-unavailable'?'No encuentro la sala '+RED.code+'. Fijate que el organizador la tenga abierta.':'Problema con la conexión ('+(e&&e.type||'desconocido')+').');return;}
+      if(RED.via!=='rele')pasarARele();});
+    p.on('disconnected',()=>{setTimeout(()=>{try{if(RED.peer===p&&!p.destroyed&&p.disconnected)p.reconnect();}catch(e){}},1000);});
+  }catch(e){if(conRele)pasarARele();}}
+  else pasarARele();
+  if(conRele)RED.timers.push(setTimeout(()=>{if(RED.via!=='p2p'&&RED.via!=='rele')pasarARele();},6000));
+  else RED.timers.push(setTimeout(()=>{if(!RED.via)salaError('No encuentro la sala '+RED.code+'. Fijate que el organizador la tenga abierta.');},15000));
+  RED.timers.push(setInterval(vigiaInvitado,1000));
+}
+function usarVia(v){
+  RED.via=v;RED.ultRx=Date.now();RED.tCambio=Date.now();
+  if(v==='rele'){RED.buscandoRele=false;clearTimeout(RED.tBroker);}
+  if(RED.error){RED.error='';$('salaError').classList.add('hide');}
+  const pf=miPerfil();mandarHost({t:'hola',n:pf.n,esc:pf.esc});RED.tHola=Date.now();
+  if(!RED.pingOn){RED.pingOn=true;const ping=()=>mandarHost({t:'ping',c:Date.now()});ping();RED.timers.push(setInterval(ping,1500));}
+  pintarSala();
+}
+function pasarARele(){
+  if(RED.host||!RED.fase||RED.buscandoRele||RED.via==='rele')return;
+  if(new URLSearchParams(location.search).has('sinrele'))return;
+  RED.buscandoRele=true;RED.releK=-1;probarBroker();
+}
+/* prueba los servidores de a uno: se queda con el primero por el que contesta el organizador */
+function probarBroker(){
+  if(!RED.fase||RED.host)return;
+  if(RED.cli){RED.cli.cerrar();RED.cli=null;}
+  RED.releK++;
+  if(RED.releK>=RELE.BROKERS.length){RED.releK=0;
+    if(RED.via!=='rele'&&RED.via!=='p2p')salaError('No encuentro la sala '+RED.code+'. Fijate que el organizador la tenga abierta (sigo probando…).');}
+  const base=topicoSala(RED.code);
+  const C=RELE.cliente(RELE.BROKERS[RED.releK],(top,txt)=>{
+    if(RED.cli!==C||(top!==base+'/b'&&top!==base+'/g/'+RED.mi))return;
+    let d;try{d=JSON.parse(txt);}catch(e){return;}
+    RED.ultRx=Date.now();
+    if(RED.via!=='rele'){if(RED.hc){const h=RED.hc;RED.hc=null;try{h.close();}catch(e){}}usarVia('rele');}
+    invitadoRecibe(d);
   });
-  p.on('error',e=>{
-    if(e&&e.type==='peer-unavailable')salaError('No encuentro la sala '+RED.code+'. Fijate que el organizador la tenga abierta.');
-    else salaError('Problema con la conexión ('+(e&&e.type||'desconocido')+').');
-  });
+  RED.cli=C;C.sub(base+'/b');C.sub(base+'/g/'+RED.mi);
+  C.alAbrir.push(()=>{const pf=miPerfil();C.pub(base+'/h',JSON.stringify({f:RED.mi,d:{t:'hola',n:pf.n,esc:pf.esc}}));RED.tHola=Date.now();});
+  /* si el servidor ni conecta en 3 s, al siguiente; si conecta pero el organizador no contesta en 7 s, también */
+  clearTimeout(RED.tBroker);RED.tBroker=setTimeout(()=>{if(RED.cli!==C||RED.via==='rele')return;
+    if(!C.ok){probarBroker();return;}RED.tBroker=setTimeout(()=>{if(RED.cli===C&&RED.via!=='rele')probarBroker();},4000);},3000);
+}
+/* cada segundo: si el organizador no contesta, reintenta (y en la conexión directa, pasa al servidor) */
+function vigiaInvitado(){
+  if(!RED.fase||RED.host)return;
+  const now=Date.now(),antes=RED.reconec;
+  if(RED.buscandoRele&&RED.cli&&RED.cli.ok&&now-RED.tHola>2000){const pf=miPerfil();RED.cli.pub(topicoSala(RED.code)+'/h',JSON.stringify({f:RED.mi,d:{t:'hola',n:pf.n,esc:pf.esc}}));RED.tHola=now;}
+  if(RED.via){
+    const sil=now-RED.ultRx;
+    RED.reconec=sil>5000;
+    if(sil>5000&&RED.via==='p2p')pasarARele();
+    else if(sil>4000&&RED.via==='rele'&&now-RED.tHola>3000){const pf=miPerfil();mandarHost({t:'hola',n:pf.n,esc:pf.esc});RED.tHola=now;}
+    if(sil>14000&&RED.via==='rele'&&now-RED.tCambio>14000){RED.tCambio=now;RED.via='';RED.buscandoRele=true;probarBroker();}
+    if(sil>60000&&!RED.error)salaError('Se perdió la conexión con el organizador.');
+  }
+  if(antes!==RED.reconec){pintarSala();if(R&&R.activo&&R.online&&RED.reconec)aviso('📶 Reconectando…',2);}
 }
 function invitadoRecibe(d){
   if(!d||typeof d!=='object')return;
+  if(RED.error&&RED.fase){RED.error='';$('salaError').classList.add('hide');}
   if(d.t==='sala'){RED.jug=d.jug||[];RED.pista=d.pista;RED.vueltas=d.vueltas;RED.iaN=d.ia||0;RED.nivIA=d.niv||2;RED.camp=d.camp||null;RED.campN=d.campN||0;if(RED.fase!=='carrera'||d.fase==='sala'&&!R)RED.fase=d.fase==='carrera'?'carrera':'sala';pintarSala();}
   else if(d.t==='pong'){
     const now=Date.now(),rtt=now-d.c;
@@ -6891,7 +7084,7 @@ function empezarOnline(L){
 let tPos=0;
 function mandarPos(){
   if(!R||!R.online)return;
-  const now=performance.now();if(now-tPos<50)return;tPos=now;
+  const now=performance.now();if(now-tPos<(RED.via==='rele'?100:50))return;tPos=now;
   const c=R.car,m={t:'pos',x:+c.x.toFixed(2),y:+c.y.toFixed(2),th:+c.th.toFixed(3),v:+c.v.toFixed(1),st:+c.st.toFixed(2),p:+GPM.avance(R.T,c).toFixed(5),tc:+R.tCarrera.toFixed(3),f:R.fin?1:0,tt:R.totalFin,r:c.reset};
   if(RED.host)RED.est[RED.mi]=Object.assign(m,{id:RED.mi,rx:Date.now()});else mandarHost(m);
 }
@@ -6955,7 +7148,9 @@ function pintarSala(){
   if($('sala').classList.contains('hide'))return;
   const con=RED.fase==='sala'||RED.fase==='carrera';
   $('salaCodigo').textContent=RED.code||'…';
-  $('salaEstado').textContent=RED.fase==='conectando'?(RED.host?'Armando la sala…':'Entrando a la sala '+RED.code+'…'):RED.fase==='carrera'?'Carrera en curso…':'';
+  $('salaEstado').textContent=RED.fase==='conectando'?(RED.host?'Armando la sala…':'Entrando a la sala '+RED.code+'…'):RED.fase==='carrera'?'Carrera en curso…':
+    /* v9: por dónde va la conexión */
+    RED.host?(RED.p2pOk||RED.releOk?'🟢 Sala abierta':''):RED.reconec?'📶 Reconectando…':RED.via==='p2p'?'🟢 Conexión directa':RED.via==='rele'?'🟢 Conectado por servidor':RED.buscandoRele?'Buscando la sala…':'';
   /* invitación (la ven todos: cualquiera puede sumar a otro) */
   const link=RED.code?linkSala():'';
   $('salaLink').textContent=link;
