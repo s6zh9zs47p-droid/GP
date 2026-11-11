@@ -411,6 +411,7 @@ input[type=range]{accent-color:var(--rojo)}
    <div class="colB">
     <div class="opciones">
       <div class="op"><span class="op-l">Vueltas</span><div class="chips" id="chipsVueltas"></div></div>
+      <div class="op"><span class="op-l">Clima</span><div class="chips" id="chipsClima"></div></div>
       <div class="op"><span class="op-l">Rivales</span><div class="chips" id="chipsIA"></div></div>
       <div class="op" id="opNivel"><span class="op-l">Nivel de la máquina</span><div class="chips" id="chipsNivel"></div></div>
     </div>
@@ -490,6 +491,7 @@ input[type=range]{accent-color:var(--rojo)}
    <details id="dComo"><summary><span>Cómo se maneja</span></summary><div class="cuerpo">
     <p><b>Girando el celular:</b> agarralo acostado con las dos manos, como un volante, con la pantalla mirándote. Girarlo hacia la derecha dobla a la derecha. No hace falta tenerlo parado del todo: inclinado hacia atrás también anda.</p>
     <p><b>Pedales:</b> con los pulgares. Lado izquierdo de la pantalla frena, lado derecho acelera. Si te cansa, prendé “Acelera solo”.</p>
+    <p><b>Lluvia:</b> mojado se agarra y se frena bastante menos: frená antes y doblá suave. Cuando para, la trazada (por donde pasan todos) se seca primero; afuera sigue resbalando. Con el clima en 🎲 Sorpresa no sabés qué te toca (seco, lluvia o variable, que puede largarse o parar en plena carrera), y la pista 🌀 Sorpresa es un trazado nuevo cada vez.</p>
     <p><b>Frenar y doblar:</b> el auto dobla lo que agarran las gomas, y agarran más cuanto más rápido vas (por la carga de los alerones). Si entrás pasado y le das más volante, se va de trompa: chillan las gomas y perdés velocidad. Frenando a fondo dobla la mitad, así que frená derecho antes de la curva, aflojá al doblar y acelerá a la salida. Acelerando a fondo en una curva lenta se puede ir de cola: contravolanteá. Los derrapes se apagan en “Volante y ayudas › Realismo”.</p>
     <p><b>Cámara:</b> el botón 🎥 de arriba cambia entre la de atrás, una más pegada y la de la tele, arriba del auto.</p>
     <p><b>La trazada:</b> la línea del piso marca por dónde ir. Verde: a fondo. Amarilla: levantá o tocá el freno. Roja: frená fuerte. Antes de las frenadas grandes hay carteles de 150, 100 y 50 metros hasta la curva. La trazada se apaga en “Volante y ayudas” o desde la pausa.</p>
@@ -522,7 +524,7 @@ input[type=range]{accent-color:var(--rojo)}
   <div id="salaError" class="aviso hide"></div>
   <div class="card prin">
     <div class="salaCarrera"><small>Carrera</small><b id="salaPistaTxt"></b></div>
-    <div id="salaElige" class="hide"><div class="op"><span class="op-l">Pista</span><select id="salaPistaSel" class="sel"></select></div><div class="op"><span class="op-l">Vueltas</span><div class="chips" id="salaVueltas"></div></div><div class="op"><span class="op-l">Máquina</span><div class="chips" id="salaIA"></div></div><div class="op" id="opSalaNivel"><span class="op-l">Nivel</span><div class="chips" id="salaNivel"></div></div><div class="op"><span class="op-l">Campeonato</span><div class="chips" id="salaCampN"></div></div></div>
+    <div id="salaElige" class="hide"><div class="op"><span class="op-l">Pista</span><select id="salaPistaSel" class="sel"></select></div><div class="op"><span class="op-l">Vueltas</span><div class="chips" id="salaVueltas"></div></div><div class="op"><span class="op-l">Clima</span><div class="chips" id="salaClima"></div></div><div class="op"><span class="op-l">Máquina</span><div class="chips" id="salaIA"></div></div><div class="op" id="opSalaNivel"><span class="op-l">Nivel</span><div class="chips" id="salaNivel"></div></div><div class="op"><span class="op-l">Campeonato</span><div class="chips" id="salaCampN"></div></div></div>
     <div id="salaLista"></div>
     <div id="salaCamp" class="hide"></div>
     <div class="tiny cen" id="salaFaltan"></div>
@@ -3152,6 +3154,9 @@ try{const r=localStorage.getItem(AJ_KEY);if(r)Object.assign(AJ,JSON.parse(r));}c
 if(!ESC.some(e=>e.id===AJ.esc))AJ.esc='fer';
 if(!RIVALES.includes(AJ.ia))AJ.ia=3;if(![1,2,3].includes(AJ.nivel))AJ.nivel=1;AJ.trazada=AJ.trazada!==false;AJ.rebufo=AJ.rebufo!==false;AJ.gomas=AJ.gomas!==false;AJ.penal=AJ.penal!==false;AJ.derrape=AJ.derrape===true;
 if(!VUELTAS.includes(AJ.vueltas))AJ.vueltas=3;AJ.azar=!!AJ.azar;
+/* v10: clima (de entrada, sorpresa) y pista sorpresa */
+if(!['azar','seco','lluvia','cambia'].includes(AJ.clima))AJ.clima='azar';AJ.sorpresa=!!AJ.sorpresa&&!AJ.azar;
+if(!PISTAS[AJ.pista]||String(AJ.pista).indexOf('sz-')===0)AJ.pista='ar-1952';
 /* v7: con la física nueva se arranca sin ayuda de volante y con derrapes (se cambia en Volante y ayudas) */
 if(!AJ.f7){AJ.f7=1;AJ.ayuda=0;AJ.derrape=true;try{localStorage.setItem(AJ_KEY,JSON.stringify(AJ));}catch(e){}}
 function guardar(){try{localStorage.setItem(AJ_KEY,JSON.stringify(AJ));}catch(e){}}
@@ -3450,7 +3455,196 @@ const LINEA=(function(){
     for(let r=0;r<2;r++)for(let i=n-1;i>=0;i--){const j=(i+1)%n;p[i]=Math.min(p[i],Math.sqrt(p[j]*p[j]+2*(GPM.aFreno(p[j])*0.78*Math.min(1.08,f)+GPM.arrastre(p[j]))*ds[i]));}
     d.PK.set(q,p);return p;
   }
-  return{calcular,vCurva,perfil};
+  /* v10: lo mismo con menos agarre (pista mojada): dobla más despacio y frena antes */
+  function vCurvaG(k,G){
+    const CF=GPM.CFG;k=Math.abs(k);if(k<1e-5)return CF.vmax;
+    let lo=0,hi=CF.vmax;
+    for(let it=0;it<34;it++){const v=(lo+hi)/2;if(v*v*k<=MARGEN_K*GPM.aLat(v)*G&&k<=GPM.kSteer(v))lo=v;else hi=v;}
+    return lo;
+  }
+  function perfilG(d,kk,g){
+    const gq=Math.max(15,Math.min(25,Math.round(g*25)));if(gq>=25)return perfil(d,kk);
+    const q=Math.round(kk*100),key=100000+q*100+gq;let p=d.PK.get(key);if(p)return p;
+    const n=d.n,ds=d.ds,CF=GPM.CFG,f=q/100,G=gq/25;p=new Float64Array(n);
+    for(let i=0;i<n;i++)p[i]=Math.min(CF.vmax*1.06,vCurvaG(d.k[i],G)*f);
+    for(let r=0;r<2;r++)for(let i=0;i<n;i++){const j=(i+1)%n;p[j]=Math.min(p[j],Math.sqrt(p[i]*p[i]+2*Math.max(0.3,GPM.aMotor(p[i],1,G)-GPM.arrastre(p[i]))*ds[i]));}
+    for(let r=0;r<2;r++)for(let i=n-1;i>=0;i--){const j=(i+1)%n;p[i]=Math.min(p[i],Math.sqrt(p[j]*p[j]+2*(GPM.aFreno(p[j])*0.78*Math.min(1.08,f)*G+GPM.arrastre(p[j]))*ds[i]));}
+    d.PK.set(key,p);return p;
+  }
+  return{calcular,vCurva,perfil,perfilG,olvidar:T=>CACHE.delete(T)};
+})();
+
+/* ================= v10: CLIMA =================
+   Seco, lluvia o cambiante (con 🎲 Sorpresa se sortea en cada largada). Cuánto llueve (0 a 1) y cuán mojada está la pista (0 a 1)
+   salen de una semilla y del tiempo de carrera: en línea es igual en todos los celulares. Mojado se agarra y se frena hasta un 26 % menos;
+   cuando para, la trazada (por donde pasan todos) se seca primero y el resto tarda más. */
+const CLIMA=(function(){
+  const TIPOS=[['azar','🎲 Sorpresa'],['seco','☀️ Seco'],['lluvia','🌧️ Lluvia'],['cambia','🌦️ Variable']];
+  const nombre=t=>(TIPOS.find(x=>x[0]===t)||TIPOS[0])[1];
+  function rng(sem){let s=(sem>>>0)||7;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+  function lluviaEn(C,t){const P=C.pts;if(t<=P[0][0])return P[0][1];
+    for(let i=1;i<P.length;i++)if(t<=P[i][0]){const a=P[i-1],b=P[i],u=(t-a[0])/((b[0]-a[0])||1);return a[1]+(b[1]-a[1])*(u*u*(3-2*u));}
+    return P[P.length-1][1];}
+  /* tipo ('azar' sortea), semilla y más o menos cuánto dura la carrera en segundos */
+  function nuevo(tipo,sem,dur){
+    const r=rng(sem);r();r();dur=Math.max(60,dur||200);
+    if(tipo==='azar'){const x=r();tipo=x<0.5?'seco':x<0.72?'lluvia':'cambia';}
+    if(!TIPOS.some(t=>t[0]===tipo))tipo='seco';
+    const C={tipo,pts:[[0,0]],agua0:0};
+    if(tipo==='lluvia'){const I=0.5+r()*0.45;C.pts=[[0,I],[dur*(0.3+r()*0.4),Math.min(1,I*(0.7+r()*0.6))],[dur*1.7+400,I]];C.agua0=0.85+r()*0.15;}
+    else if(tipo==='cambia'){
+      if(r()<0.55){const t0=dur*(0.15+r()*0.4),I=0.45+r()*0.5,sube=20+r()*30;C.pts=[[0,0],[t0,0],[t0+sube,I]];
+        if(r()<0.4){const t1=t0+sube+dur*(0.15+r()*0.25);C.pts.push([t1,I],[t1+30,0]);}}
+      else{const I=0.4+r()*0.45,t1=dur*(0.1+r()*0.3);C.pts=[[0,I],[t1,I],[t1+35,0]];C.agua0=0.75+r()*0.25;
+        if(r()<0.3){const t2=t1+35+dur*(0.25+r()*0.25);C.pts.push([t2,0],[t2+30,I*0.8]);}}
+      C.pts.push([dur*1.7+400,C.pts[C.pts.length-1][1]]);
+    }
+    /* agua de la pista segundo a segundo, afuera y sobre la trazada */
+    const N=Math.ceil(dur*1.7+400);C.ag=new Float32Array(N+1);C.agL=new Float32Array(N+1);
+    let a=C.agua0,b=C.agua0*0.9;
+    for(let i=0;i<=N;i++){const l=lluviaEn(C,i);
+      if(l>0.06){const obj=Math.min(1,0.45+0.6*l),vel=0.03+0.05*l;a+=(obj-a)*vel;b+=(obj*0.88-b)*vel;}
+      else{a=Math.max(0,a-0.0055);b=Math.max(0,b-0.016);}
+      C.ag[i]=a;C.agL[i]=b;}
+    C.N=N;C.ant=lluviaEn(C,0);
+    return C;
+  }
+  const SECO={l:0,ag:0,agL:0};
+  function en(C,t){if(!C||C.tipo==='seco')return SECO;t=Math.max(0,t||0);const i=Math.min(C.N,t|0),j=Math.min(C.N,i+1),f=Math.min(1,t-i);
+    return{l:lluviaEn(C,t),ag:C.ag[i]+(C.ag[j]-C.ag[i])*f,agL:C.agL[i]+(C.agL[j]-C.agL[i])*f};}
+  /* lo que agarra un auto ahí (1 = seco): sobre la trazada se seca primero */
+  function agarre(R,c){
+    const C=R&&R.clima;if(!C||C.tipo==='seco')return 1;
+    const t=R.tCarrera||0;if(C._t!==t){C._t=t;C._e=en(C,t);}
+    const E=C._e;if(E.ag<0.01&&E.agL<0.01)return 1;
+    let ag=E.ag;const L=R.L;
+    if(L&&L.o&&c.i!=null){const dl=(c.lat||0)-L.o[c.i];ag=E.ag+(E.agL-E.ag)*Math.exp(-dl*dl/10);}
+    return 1-0.26*ag;
+  }
+  /* lo peor que agarra la pista ahora (afuera de la trazada): la máquina arma su perfil con esto, por si va en fila o pasando */
+  function peor(R){const C=R&&R.clima;if(!C||C.tipo==='seco')return 1;const E=en(C,R.tCarrera||0);return 1-0.26*Math.max(E.ag,E.agL);}
+  /* avisos cuando empieza o para de llover */
+  function revisar(R){
+    const C=R&&R.clima;if(!C||C.tipo==='seco'||!R.verdeYa||R.fin)return;
+    const l=lluviaEn(C,R.tCarrera),antes=C.ant>0.12,ahora=l>0.12;
+    if(ahora&&!antes)aviso('🌧️ ¡Se largó a llover! Frená antes',3);
+    else if(!ahora&&antes)aviso('🌤️ Paró: la trazada se seca primero',3);
+    C.ant=l;
+  }
+  return{TIPOS,nombre,nuevo,en,agarre,peor,revisar,lluviaEn};
+})();
+
+/* ================= v10: PISTA SORPRESA =================
+   Un trazado nuevo en cada largada, que nadie se sabe de memoria: puntos al azar alrededor de un centro (a veces con una chicana)
+   unidos por una curva suave (Catmull-Rom centrípeta) y remuestreados cada 8 m como las demás. Se tira y se prueba otro si queda
+   muy corto o muy largo, si alguna curva es más cerrada que la horquilla de Miami (las esquinas se redondean con radios al azar, de 24 a 170 m), si dos partes de la pista quedan a menos de 62 m
+   o si no tiene una recta larga para largar. La hora, el pasto, los árboles y el fondo también salen al azar. No guarda récords. */
+const SORP=(function(){
+  const NOMS=['Autódromo del Tío Coco','Circuito de la Chacra Perdida','Autódromo Ruta Desierta','Circuito Las Bardas','Autódromo del Médano',
+    'Circuito de los Álamos','Autódromo Barda Negra','Circuito del Canal Grande','Autódromo de la Meseta','Circuito El Manzanar',
+    'Autódromo Villa Ventarrón','Circuito Valle Escondido','Autódromo La Tranquera','Circuito del Viento Blanco','Autódromo Pera de Agua'];
+  const CART=['LA TIMBA','TABERNERA','PISTA SORPRESA','ALTO VALLE','FERNET Y COCA','GRAN PREMIO','PATAGONIA','RUTA 22','LA CHACRA','EL GRAN PREMIO'];
+  function rng(sem){let s=(sem>>>0)||9;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+  function crTramo(P0,P1,P2,P3,out){
+    const tj=(a,b)=>Math.sqrt(Math.hypot(b[0]-a[0],b[1]-a[1]))||1e-3;
+    const t0=0,t1=t0+tj(P0,P1),t2=t1+tj(P1,P2),t3=t2+tj(P2,P3);
+    const m=Math.max(6,Math.ceil(Math.hypot(P2[0]-P1[0],P2[1]-P1[1])/2));
+    const L=(A,B,ta,tb,t)=>{const u=(t-ta)/(tb-ta);return[A[0]+(B[0]-A[0])*u,A[1]+(B[1]-A[1])*u];};
+    for(let s=0;s<m;s++){const t=t1+(t2-t1)*s/m;
+      const A1=L(P0,P1,t0,t1,t),A2=L(P1,P2,t1,t2,t),A3=L(P2,P3,t2,t3,t),B1=L(A1,A2,t0,t2,t),B2=L(A2,A3,t1,t3,t);out.push(L(B1,B2,t1,t2,t));}
+  }
+  /* polilínea cerrada → un punto cada 8 m */
+  function remuestrear(Q,paso){
+    const n=Q.length,out=[];let acc=0;out.push(Q[0].slice());
+    for(let i=0;i<n;i++){const a=Q[i],b=Q[(i+1)%n],l=Math.hypot(b[0]-a[0],b[1]-a[1]);let pos=paso-acc;
+      while(pos<=l){const u=pos/l;out.push([a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u]);pos+=paso;}
+      acc=l-(pos-paso);}
+    const u=out[out.length-1],f=out[0];if(Math.hypot(u[0]-f[0],u[1]-f[1])<paso*0.5)out.pop();
+    return out;
+  }
+  function curv(P,i){const n=P.length,a=P[(i-2+n)%n],b=P[i],c=P[(i+2)%n];
+    const ab=Math.hypot(b[0]-a[0],b[1]-a[1]),bc=Math.hypot(c[0]-b[0],c[1]-b[1]),ca=Math.hypot(a[0]-c[0],a[1]-c[1]);
+    return 2*((b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]))/((ab*bc*ca)||1);}
+  function intento(r){
+    const n=5+Math.floor(r()*5),R0=430+r()*300,sx=0.7+r()*0.8,C=[];
+    for(let i=0;i<n;i++){const an=(i+(r()-0.5)*0.6)/n*2*Math.PI;let rad=R0*(0.55+0.45*r());if(r()<0.35)rad*=0.4;
+      C.push([Math.cos(an)*rad*sx,Math.sin(an)*rad]);}
+    /* a veces una chicana: dos puntos corridos en el medio del tramo más largo */
+    if(r()<0.5){let mj=0,ml=0;for(let i=0;i<C.length;i++){const a=C[i],b=C[(i+1)%C.length],l=Math.hypot(b[0]-a[0],b[1]-a[1]);if(l>ml){ml=l;mj=i;}}
+      if(ml>300){const a=C[mj],b=C[(mj+1)%C.length],dx=(b[0]-a[0])/ml,dy=(b[1]-a[1])/ml,sg=r()<0.5?1:-1,mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;
+        C.splice(mj+1,0,[mx-dx*40-dy*24*sg,my-dy*40+dx*24*sg],[mx+dx*40+dy*24*sg,my+dy*40-dx*24*sg]);}}
+    /* horquillas: una o dos puntas hacia afuera (ahí se frena fuerte) */
+    for(let h=0,nh=r()<0.8?(r()<0.4?2:1):0;h<nh;h++){
+      const i=(r()*C.length)|0,A=C[(i-1+C.length)%C.length],V=C[i],B=C[(i+1)%C.length];
+      let tx=B[0]-A[0],ty=B[1]-A[1];const lt=Math.hypot(tx,ty)||1;tx/=lt;ty/=lt;
+      let ox=V[0],oy=V[1];const lo=Math.hypot(ox,oy)||1;ox/=lo;oy/=lo;const Lh=150+r()*160,ab=Lh*(0.36+r()*0.08);
+      C.splice(i,1,[V[0]-tx*ab,V[1]-ty*ab],[V[0]+ox*Lh,V[1]+oy*Lh],[V[0]+tx*ab,V[1]+ty*ab]);
+    }
+    /* cada esquina se redondea con un radio al azar (de horquilla a curva rápida); entre esquina y esquina, recta */
+    const m=C.length,Q=[];
+    for(let i=0;i<m;i++){
+      const A=C[(i-1+m)%m],V=C[i],B=C[(i+1)%m];
+      let ux=V[0]-A[0],uy=V[1]-A[1];const la=Math.hypot(ux,uy);ux/=la;uy/=la;
+      let wx=B[0]-V[0],wy=B[1]-V[1];const lb=Math.hypot(wx,wy);wx/=lb;wy/=lb;
+      const phi=Math.atan2(ux*wy-uy*wx,ux*wx+uy*wy),ap=Math.abs(phi);
+      if(ap<0.04){Q.push(V.slice());continue;}
+      let rr=24+r()*r()*150;let d=rr*Math.tan(ap/2);const dmax=Math.min(la,lb)*0.48;if(d>dmax){d=dmax;rr=d/Math.tan(ap/2);}
+      const P1=[V[0]-ux*d,V[1]-uy*d],sg=phi>0?1:-1,cx=P1[0]-uy*rr*sg,cy=P1[1]+ux*rr*sg,a0=Math.atan2(P1[1]-cy,P1[0]-cx);
+      const K=Math.max(3,Math.ceil(rr*ap/2));for(let q=0;q<=K;q++){const an=a0+phi*q/K;Q.push([cx+rr*Math.cos(an),cy+rr*Math.sin(an)]);}
+    }
+    let P=remuestrear(Q,8);
+    /* se abren las curvas demasiado cerradas */
+    for(let it=0;it<6;it++){let mal=0;const K=P.map((_,i)=>curv(P,i));
+      for(let i=0;i<P.length;i++)if(Math.abs(K[i])>0.046){mal++;for(let q=-2;q<=2;q++){const j=(i+q+P.length)%P.length,a=P[(j-1+P.length)%P.length],c=P[(j+1)%P.length];P[j]=[P[j][0]*0.5+(a[0]+c[0])*0.25,P[j][1]*0.5+(a[1]+c[1])*0.25];}}
+      if(!mal)break;}
+    P=remuestrear(P,8);
+    const N=P.length,len=N*8;if(len<3300||len>6200)return null;
+    const K=P.map((_,i)=>curv(P,i));if(K.some(k=>Math.abs(k)>0.048))return null;
+    /* dos partes de la pista no pueden quedar pegadas */
+    for(let i=0;i<N;i++)for(let j=i+24;j<N;j++){if(N-(j-i)<24)break;const dx=P[i][0]-P[j][0],dy=P[i][1]-P[j][1];if(dx*dx+dy*dy<62*62)return null;}
+    /* el sentido, al azar; la largada en la recta más larga */
+    if(r()<0.5)P.reverse();
+    const K2=P.map((_,i)=>curv(P,i));let mejor=-1,ml=0;
+    for(let i=0;i<N;i++){if(Math.abs(K2[i])>=0.0045||Math.abs(K2[(i-1+N)%N])<0.0045)continue;let l=0;while(l<N&&Math.abs(K2[(i+l)%N])<0.0045)l++;if(l>ml){ml=l;mejor=i;}}
+    if(ml<32)return null;
+    const ini=(mejor+Math.min(ml-6,26))%N;P=P.slice(ini).concat(P.slice(0,ini));
+    return P;
+  }
+  function ambiente(r){
+    const hora=['dia','dia','dia','tarde','nublado','noche'][(r()*6)|0],est=(r()*4)|0;
+    const cart=CART.slice();for(let i=cart.length-1;i>0;i--){const k=(r()*(i+1))|0;[cart[i],cart[k]]=[cart[k],cart[i]];}
+    const A={hora,bandera:['ar'],pub:['#75aadb','#ffffff','#ffd23f','#1d3f8f','#e8002d'],carteles:cart.slice(0,7),hitos:[{t:'torre',i:6,lado:'afuera',d:55,alto:26,est:'control'}]};
+    if(est===0)Object.assign(A,{pasto:'#5c9c46',escape:'grava',arbol:[['redondo',1]],dens:1,fondo:[{t:'cerros',col:'#6d8a4f',alto:60},{t:'cerros',col:'#5d7a45',alto:35,rad:-700}]});
+    else if(est===1)Object.assign(A,{pasto:'#98a05e',escape:'grava',arbol:[['pino',1]],dens:0.5,fondo:[{t:'cerros',col:'#b8a07c',alto:80},{t:'cerros',col:'#a08866',alto:45,rad:-700}]});
+    else if(est===2)Object.assign(A,{pasto:'#4f8f3f',escape:'asfalto',escCol:['#d01c2f','#ffffff'],arbol:[['abeto',1]],dens:1.2,fondo:[{t:'cerros',col:'#4a6a44',alto:110},{t:'cerros',col:'#3f5c3c',alto:60,rad:-700}]});
+    else Object.assign(A,{pasto:'#5aa346',escape:'asfalto',escCol:['#1f3d8a','#ffd23f'],arbol:[['redondo',1]],dens:0.6,fondo:[{t:'ciudad',a0:-180,a1:180,dist:2600,n:120,alto:[25,120],col:'#9aa3ad'}]});
+    return A;
+  }
+  function generar(sem){
+    sem=(sem>>>0)||((Math.random()*4294967296)>>>0);
+    for(let k=0;k<400;k++){const r=rng((sem+k*2654435761)>>>0);r();const P=intento(r);if(!P)continue;
+      let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;P.forEach(p=>{x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1]);});
+      const cx=(x0+x1)/2,cy=(y0+y1)/2,p=[];P.forEach(q=>{p.push(Math.round((q[0]-cx)*10)/10,Math.round((q[1]-cy)*10)/10);});
+      return{z:'sz-'+sem.toString(36),t:NOMS[(r()*NOMS.length)|0],len:P.length*8,p,amb:ambiente(r)};}
+    return null;
+  }
+  /* se suma a PISTAS y AMB sin aparecer en las listas (no enumerable): no queda en el menú ni en los récords */
+  let ult=[];
+  function registrar(d){
+    if(!d)return null;
+    if(!PISTAS[d.z]){
+      Object.defineProperty(PISTAS,d.z,{value:{t:d.t,loc:'Sorpresa',len:d.len,firstgp:null,p:d.p},enumerable:false,configurable:true,writable:true});
+      Object.defineProperty(AMB,d.z,{value:d.amb,enumerable:false,configurable:true,writable:true});
+    }
+    /* las sorpresas viejas se olvidan (que no crezca la memoria) */
+    ult=ult.filter(z=>{if(z===d.z)return false;if(R&&R.z===z)return true;const T=TRACKS[z];if(T){try{LINEA.olvidar(T);REN.olvidar(T);}catch(e){}delete TRACKS[z];}delete PISTAS[z];delete AMB[z];return false;});
+    ult.push(d.z);return d.z;
+  }
+  const es=z=>typeof z==='string'&&z.indexOf('sz-')===0;
+  /* para mandar por la red: coordenadas en decímetros */
+  const aRed=d=>({z:d.z,t:d.t,len:d.len,p:d.p.map(v=>Math.round(v*10)),amb:d.amb});
+  const deRed=s=>s&&Array.isArray(s.p)?{z:String(s.z),t:String(s.t||'Pista sorpresa').slice(0,60),len:+s.len||s.p.length*4,p:s.p.map(v=>v/10),amb:s.amb||null}:null;
+  return{generar,registrar,es,aRed,deRed};
 })();
 
 /* ================= LA MÁQUINA: rivales que manejan solos =================
@@ -3461,6 +3655,13 @@ const IA=(function(){
   const ERRORES={on:true};
   const NOMBRES=['Pocho','Cacho','Tito','Lalo','Toto','Chueco','Flaco','Pájaro','Ruso','Tano','Gringo','Colo','Turco','Mono','Pipo','Nene',
     'Bocha','Pato','Cholo','Chino','Lucho','Beto','Pepe','Coco','Fito','Quique'];
+  /* v10: los pilotos de la F1 2026 con el nombre cambiado, como las escuderías (dos por escudería) */
+  const PILOTOS={mcl:['Lando Morrón','Óscar Pastrami'],fer:['Charles Leclericó','Lewis Jamónton'],rbr:['Max Verstapón','Isack Hachazo'],
+    mer:['Yorch Ruso','Kimi Tortelli'],ast:['Fernando Abuelonso','Lance Estrolo'],alp:['Pierre Gasolí','Franco Colapinta'],
+    wil:['Alex Albóndiga','Carlos Sanguche'],rb:['Liam Lasaña','Arvid Lindoblá'],haa:['Esteban Bocón','Ollie Birraman'],
+    aud:['Nico Hulkenburger','Gabriel Bortoleche'],cad:['Valtteri Botas','Chueco Pérez']};
+  /* reparte los nombres: el primero de cada escudería sale al azar y el segundo es el otro */
+  function repartidor(rnd){const us={};return id=>{const L=PILOTOS[id];if(!L)return null;let u=us[id];u=us[id]=u==null?((rnd()*2)|0):1-u;return L[u];};}
   /* k = qué parte de la velocidad de la trazada usan. Con 1 van como la trazada; arriba de 1,3 ya no se puede ir más rápido */
   /* v7: con agarre de verdad, pasar el 100 % de la trazada (que ya usa el 93 % del agarre) es irse de trompa */
   const NIVELES={1:{n:'Tranqui',k:0.8},2:{n:'Picante',k:0.92},3:{n:'Bravo',k:1.0}};
@@ -3487,10 +3688,10 @@ const IA=(function(){
     const mezcla=a=>{for(let i=a.length-1;i>0;i--){const k=(rnd()*(i+1))|0;[a[i],a[k]]=[a[k],a[i]];}return a;};
     const otras=ESC.filter(e=>e.id!==escYo),propia=ESC.filter(e=>e.id===escYo);
     const escs=mezcla(otras.slice()).concat(mezcla(otras.slice()),propia);
-    const L=[];let p=0;
+    const L=[];let p=0;const dar=repartidor(rnd);
     for(let q=0;q<cant;q++){
       if(p===puestoYo)p++;
-      const e=escs[q%escs.length],nom=nombres[q%nombres.length]+(q>=nombres.length?' II':'');
+      const e=escs[q%escs.length],nom=(q<escs.length&&dar(e.id))||nombres[q%nombres.length]+(q>=nombres.length?' II':'');
       const car=GPM.nuevoAuto(T,p);
       /* los de adelante en la grilla son un poquito más rápidos: la largada no es un trámite */
       const k=nv.k*(1+0.012*(cant-q)/cant-0.006)+(rnd()-0.5)*0.012;
@@ -3524,6 +3725,8 @@ const IA=(function(){
     const s0=sDe(T,c),latAqui=c.lat;let vTope=1e9,lo=-lim,hi=lim,pasar=null;
     for(const o of todos){
       if(o===c||o.sinChoque>0||o.fantasma)continue;
+      /* v10: el que se fue al pasto no frena a los que siguen por el asfalto (antes se armaban filas paradas detrás de uno que volvía despacio) */
+      if(o.pasto&&!c.pasto&&Math.abs(o.lat||0)>T.w+1)continue;
       let ds=(o.sPista!=null?o.sPista:sDe(T,o))-s0;if(ds<-T.L/2)ds+=T.L;else if(ds>T.L/2)ds-=T.L;
       const dl=o.lat-latAqui,ov=Math.max(0,o.v);
       if(ds<13.5&&ds>-20){
@@ -3564,11 +3767,12 @@ const IA=(function(){
     if(E&&E.tipo==='tarde'&&E.dentro)s*=E.g;
     /* velocidad: el perfil un poco más adelante (los que frenan tarde, un poco más) */
     const ade=(c.i+1+Math.round(v*0.022))%n;   /* v7: el perfil ya trae la frenada: mirar poco adelante (si no, frena 80 m antes) */
-    let vObj=LINEA.perfil(L,k)[ade]*(1+a.frenaTarde*(L.col[ade]>0?1:0));
+    const gm0=Math.min(c.gripMoj||1,CLIMA.peor(R)),gm=gm0<0.99?gm0*Math.min(1,(c.gripSeco||1)+0.03):1;   /* mojado y con gomas frías, todavía más despacio */   /* v10: con la pista mojada, el perfil de la pista mojada (contando lo peor: en fila o pasando se sale de la trazada) */
+    let vObj=(gm<0.98?LINEA.perfilG(L,k,gm):LINEA.perfil(L,k))[ade]*(1+a.frenaTarde*(L.col[ade]>0?1:0));
     /* frenó tarde: llega pasado a la curva y se abre (a veces hasta el pasto) */
     if(E&&E.tipo==='tarde'){if(L.col[ade]>0){E.dentro=true;vObj*=E.m;}else if(E.dentro){if(E.sal==null)E.sal=E.t;if(E.t-E.sal<1.0)vObj*=E.m;else a.err=null;}}
     /* v5: con menos agarre (gomas gastadas, aire sucio) entra más despacio; con rebufo estira en la recta */
-    if(L.v[ade]<CF.vmax*0.85)vObj*=Math.pow(c.grip||1,0.75);else vObj*=1+0.035*(c.reb||0);
+    if(L.v[ade]<CF.vmax*0.85)vObj*=Math.pow(c.gripSeco||c.grip||1,0.75);else vObj*=1+0.035*(c.reb||0);
     if(c.pasto)vObj=Math.min(vObj,CF.vmax*CF.pasto);
     vObj=Math.min(vObj,vTope);
     let gas=0,fr=false;
@@ -3576,7 +3780,7 @@ const IA=(function(){
     if(v>vObj+0.8)fr=Math.min(1,0.3+(v-vObj)*0.22);else if(v<vObj)gas=1;
     return{s,gas,fr};
   }
-  return{crear,control,NIVELES,NOMBRES,ERRORES,cadaErr};
+  return{crear,control,NIVELES,NOMBRES,ERRORES,cadaErr,PILOTOS,repartidor};
 })();
 
 /* ================= CHOQUES =================
@@ -3761,6 +3965,13 @@ const recKey=(z,v)=>'gp-app-rec7-'+z+'-'+v;   /* v7: física nueva, récords nue
 /* pista al azar: nunca repite la anterior */
 const AZAR={prox:null};
 function pistaAzar(no){const L=Object.keys(PISTAS).filter(z=>z!==no);return L[(Math.random()*L.length)|0];}
+/* v10: ícono de la pista sorpresa: un trazado cualquiera con un signo de pregunta */
+function dibujarSorpresa(cv){
+  const W=cv.width=cv.clientWidth*2||168,H=cv.height=cv.clientHeight*2||104,g=cv.getContext&&cv.getContext('2d');if(!g)return;
+  g.clearRect(0,0,W,H);g.strokeStyle='#eeece6';g.lineWidth=Math.max(2,W/40);g.lineJoin='round';g.setLineDash([W/18,W/30]);g.beginPath();
+  for(let i=0;i<=40;i++){const a=i/40*Math.PI*2,r=0.32+0.08*Math.sin(a*3)+0.05*Math.cos(a*5);const x=W/2+Math.cos(a)*r*W*0.95,y=H/2+Math.sin(a)*r*H*0.95;if(i)g.lineTo(x,y);else g.moveTo(x,y);}
+  g.stroke();g.setLineDash([]);g.fillStyle='#e8002d';g.font='900 '+Math.round(H*0.5)+'px Archivo,system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText('?',W/2,H/2+H*0.03);
+}
 function dibujarDado(cv){
   const c=cv.getContext('2d'),S=cv.width=cv.height=240;c.clearRect(0,0,S,S);
   c.save();c.translate(S/2,S/2);c.scale(1.25,1.25);c.rotate(-0.18);
@@ -3826,14 +4037,18 @@ function pintarMenu(){
   $('sens').value=AJ.sens;$('sensTxt').textContent=AJ.sens+'°';
   $('chkAuto').checked=AJ.auto;$('chkSonido').checked=AJ.sonido;$('chkTrazada').checked=AJ.trazada;
   [['chkRebufo','rebufo'],['chkGomas','gomas'],['chkDerrape','derrape'],['chkPenal','penal']].forEach(([id,k])=>{const el=$(id);if(el)el.checked=!!AJ[k];});
-  document.querySelectorAll('.pista').forEach(p=>p.classList.toggle('on',AJ.azar?p.dataset.z==='azar':p.dataset.z===AJ.pista));
+  document.querySelectorAll('.pista').forEach(p=>p.classList.toggle('on',AJ.sorpresa?p.dataset.z==='sorpresa':AJ.azar?p.dataset.z==='azar':p.dataset.z===AJ.pista));
+  document.querySelectorAll('#chipsClima .chip').forEach(p=>p.classList.toggle('on',p.dataset.c===AJ.clima));
   document.querySelectorAll('#chipsVueltas .chip').forEach(p=>p.classList.toggle('on',+p.dataset.v===AJ.vueltas));
   document.querySelectorAll('#chipsIA .chip').forEach(p=>p.classList.toggle('on',+p.dataset.n===AJ.ia));
   document.querySelectorAll('#chipsNivel .chip').forEach(p=>p.classList.toggle('on',+p.dataset.l===AJ.nivel));
   $('opNivel').classList.toggle('hide',!AJ.ia);
   document.querySelectorAll('#chipsEsc .chip').forEach(p=>p.classList.toggle('on',p.dataset.e===AJ.esc));
-  $('pistaNom').textContent=AJ.azar?'Al azar':PISTAS[AJ.pista].loc;
-  if(AJ.azar){
+  $('pistaNom').textContent=AJ.sorpresa?'Sorpresa':AJ.azar?'Al azar':PISTAS[AJ.pista].loc;
+  if(AJ.sorpresa){
+    if(miniSelZ!=='sorpresa'){miniSelZ='sorpresa';dibujarSorpresa($('miniSel'));}
+    $('recordTxt').textContent='Cada largada, una pista nueva que no existe';
+  }else if(AJ.azar){
     /* la próxima pista al azar se elige ya, así su trazada también se calcula antes de largar */
     if(!AZAR.prox)AZAR.prox=pistaAzar(AJ.pista);
     if(miniSelZ!=='azar'){miniSelZ='azar';dibujarDado($('miniSel'));}
@@ -3866,19 +4081,28 @@ function armarMenu(){
     const b=document.createElement('button');b.className='pista';b.dataset.z='azar';
     const cv=document.createElement('canvas');b.appendChild(cv);
     b.insertAdjacentHTML('beforeend','<b>Al azar</b><small>una distinta cada vez</small><em></em>');
-    b.onclick=()=>{AJ.azar=true;AZAR.prox=null;guardar();abrirPistas(false);pintarMenu();};
+    b.onclick=()=>{AJ.azar=true;AJ.sorpresa=false;AZAR.prox=null;guardar();abrirPistas(false);pintarMenu();};
     pb.appendChild(b);dibujarDado(cv);
+  }
+  /* v10: pista sorpresa */
+  {
+    const b=document.createElement('button');b.className='pista';b.dataset.z='sorpresa';
+    const cv=document.createElement('canvas');b.appendChild(cv);
+    b.insertAdjacentHTML('beforeend','<b>Sorpresa</b><small>una pista que no existe</small><em></em>');
+    b.onclick=()=>{AJ.sorpresa=true;AJ.azar=false;guardar();abrirPistas(false);pintarMenu();};
+    pb.appendChild(b);dibujarSorpresa(cv);
   }
   Object.keys(PISTAS).forEach(z=>{
     const d=PISTAS[z],b=document.createElement('button');b.className='pista';b.dataset.z=z;
     const cv=document.createElement('canvas');b.appendChild(cv);
     b.insertAdjacentHTML('beforeend','<b>'+esc(d.loc)+'</b><small>'+(d.len/1000).toFixed(1).replace('.',',')+' km</small><em></em>');
-    b.onclick=()=>{AJ.pista=z;AJ.azar=false;guardar();abrirPistas(false);pintarMenu();};
+    b.onclick=()=>{AJ.pista=z;AJ.azar=false;AJ.sorpresa=false;guardar();abrirPistas(false);pintarMenu();};
     pb.appendChild(b);dibujarMini(cv,z,'#eeece6');
   });
   $('btnPista').onclick=()=>abrirPistas($('panelPistas').classList.contains('hide'));
   const chip=(caja,dato,val,txt,fn)=>{const b=document.createElement('button');b.className='chip';b.dataset[dato]=val;b.textContent=txt;b.onclick=fn;$(caja).appendChild(b);};
   VUELTAS.forEach(v=>chip('chipsVueltas','v',v,v,()=>{AJ.vueltas=v;guardar();pintarMenu();}));
+  CLIMA.TIPOS.forEach(([c,t])=>chip('chipsClima','c',c,t,()=>{AJ.clima=c;guardar();pintarMenu();}));
   RIVALES.forEach(n=>chip('chipsIA','n',n,String(n),()=>{AJ.ia=n;guardar();pintarMenu();}));
   [1,2,3].forEach(l=>chip('chipsNivel','l',l,IA.NIVELES[l].n,()=>{AJ.nivel=l;guardar();pintarMenu();}));
   ESC.forEach(e=>{const b=document.createElement('button');b.className='chip esc';b.dataset.e=e.id;b.innerHTML='<i style="background:'+e.c+'"></i>'+esc(e.n);b.onclick=()=>{AJ.esc=e.id;guardar();pintarMenu();};$('chipsEsc').appendChild(b);});
@@ -4035,6 +4259,18 @@ function sonidoCuadro(rpm,gas,v,pasto,st,piano,on){
   if(on&&SON.gasAnt>0.5&&gas<0.5&&rpm>0.7&&t-SON.ultPop>0.6){SON.ultPop=t;petardos(t,3+Math.floor(Math.random()*3));}
   SON.gasAnt=gas;
   sonidoRivales(on);
+  sonidoClima(on,v);
+}
+/* v10: la lluvia que cae y el agua que levantan las gomas */
+function sonidoClima(on,v){
+  if(!SON.ctx||!SON.nb||!SON.master)return;const C=R&&R.clima,ctx=SON.ctx,t=ctx.currentTime;
+  if(!SON.lluv){if(!C||C.tipo==='seco')return;
+    const mk=(tipo,f,q)=>{const s=ctx.createBufferSource();s.buffer=SON.nb;s.loop=true;s.loopStart=Math.random();const fl=ctx.createBiquadFilter();fl.type=tipo;fl.frequency.value=f;fl.Q.value=q;const g=ctx.createGain();g.gain.value=0;s.connect(fl);fl.connect(g);g.connect(SON.master);s.start();return{s,fl,g};};
+    SON.lluv=mk('highpass',1800,0.5);SON.agua=mk('bandpass',700,0.8);}
+  const E=CLIMA.en(C,R?R.tCarrera:0);
+  SON.lluv.g.gain.setTargetAtTime(on?0.05*E.l:0,t,0.3);
+  SON.agua.g.gain.setTargetAtTime(on?0.12*E.ag*clamp((v-5)/60,0,1):0,t,0.1);
+  SON.agua.fl.frequency.setTargetAtTime(500+500*clamp(v/90,0,1),t,0.2);
 }
 /* rpm de un auto que no es el tuyo: la marcha sale de la velocidad, como la caja de verdad */
 function rpmDe(v){const k=Math.max(0,v)*3.6;let g=1;while(g<8&&k>TOPE[g])g++;const lo=g===1?0:TOPE[g-1];return g===1?0.25+0.75*k/TOPE[1]:0.62+0.38*(k-lo)/(TOPE[g]-lo);}
@@ -4102,7 +4338,7 @@ function sonidoGolpe(k){
 function sonidoCallar(){
   if(!SON.ctx||!SON.yo)return;const t=SON.ctx.currentTime;
   SON.yo.callar();SON.riv.forEach(m=>m.callar());
-  [SON.goma.g,SON.gG,SON.viento.g,SON.pasto.g,SON.piano.g].forEach(g=>{g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(0,t,0.05);});
+  [SON.goma.g,SON.gG,SON.viento.g,SON.pasto.g,SON.piano.g].concat(SON.lluv?[SON.lluv.g,SON.agua.g]:[]).forEach(g=>{g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(0,t,0.05);});
 }
 
 /* ================= CARRERA ================= */
@@ -4120,8 +4356,10 @@ function largar(op){
   try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(w=>WL=w).catch(()=>{});}catch(e){}
   if(AJ.modo==='incl'&&VOL.estado!=='ok'&&VOL.estado!=='probando')activarVolante();
   if(!op.online&&!op.camp&&AJ.azar){AJ.pista=AZAR.prox||pistaAzar(AJ.pista);AZAR.prox=null;guardar();}
+  /* v10: pista sorpresa (una nueva cada largada; "reiniciar" repite la misma) */
+  if(!op.online&&!op.camp&&AJ.sorpresa&&!op.z){const d=SORP.generar();if(d)op.z=SORP.registrar(d);}
   /* modo carrera: la fecha trae su pista, sus vueltas, sus rivales y tu auto */
-  const CP=op.camp||null,z=CP?CP.z:AJ.pista,vueltas=CP?CP.vueltas:AJ.vueltas,escYo=CP?CP.esc:AJ.esc;
+  const CP=op.camp||null,z=op.z&&PISTAS[op.z]?op.z:CP?CP.z:AJ.pista,vueltas=CP?CP.vueltas:AJ.vueltas,escYo=CP?CP.esc:AJ.esc;
   const T=pista(z),conIA=!op.online&&!CP&&AJ.ia>0,nRiv=CP?CP.def.length:conIA?AJ.ia:0;
   const rec=op.online||conIA||CP?null:leerJSON(recKey(z,vueltas));
   /* contra la máquina la grilla se sortea */
@@ -4139,6 +4377,9 @@ function largar(op){
   /* v5: reglas de realismo. En línea manda lo que eligió el organizador; los derrapes son de cada uno */
   R.reglas=op.online&&op.reglas?op.reglas:{reb:AJ.rebufo,gom:AJ.gomas,pen:AJ.penal};
   R.car.derr=!!AJ.derrape;
+  /* v10: clima de esta carrera (en línea lo manda el organizador; en el modo carrera se sortea en cada fecha) */
+  {const ct=op.online?(op.clima||{tipo:'seco',sem:1}):{tipo:CP?'azar':(AJ.clima||'azar'),sem:(Math.random()*4294967296)>>>0};
+   R.clima=CLIMA.nuevo(ct.tipo,ct.sem,vueltas*T.L/50+12);}
   R.cuerpos=[R.car].concat(R.ia.map(a=>a.car));
   FIN_CAMP=false;
   if(R.ia.length)iaVista();
@@ -4159,6 +4400,8 @@ function largar(op){
   if(conIA)ay.unshift('🏁 Largás '+(puesto+1)+'° de '+(AJ.ia+1)+' · nivel '+IA.NIVELES[AJ.nivel].n.toLowerCase());
   if(CP)ay.unshift('🏆 '+CP.titulo,'🏁 Largás '+(puesto+1)+'° de '+(nRiv+1));
   if(AJ.azar&&!op.online&&!op.camp)ay.unshift('🎲 Te tocó: '+PISTAS[AJ.pista].t);
+  if(SORP.es(z))ay.unshift('🌀 Pista sorpresa: '+PISTAS[z].t);
+  {const E=CLIMA.en(R.clima,0);if(E.ag>0.3)ay.unshift('🌧️ Pista mojada: frená antes y doblá suave');else if(R.clima.tipo==='cambia')ay.unshift('🌦️ El cielo está raro: puede cambiar');}
   $('ayudaLuz').innerHTML=ay.map(t=>'<div>'+esc(t)+'</div>').join('<br>');
   $('pedFreno').classList.remove('tenue');$('pedAcel').classList.remove('tenue');$('hPen').classList.add('hide');$('filas').innerHTML='';
   medirPedales();revisarGiro();
@@ -4210,7 +4453,7 @@ function armarToques(){
     const CAMS=['atras','cerca','tcam'],TXT={atras:'🎥 Cámara de atrás',cerca:'🎥 Cámara pegada',tcam:'🎥 Cámara arriba del auto'};
     b.onclick=()=>{const k=(CAMS.indexOf(AJ.cam||'atras')+1)%CAMS.length;AJ.cam=CAMS[k];guardar();aviso(TXT[AJ.cam],1.2);if(REN3)REN3.reset();};}}
   $('btnSeguir').onclick=()=>{if(R&&R.online)$('capaPausa').classList.add('hide');else pausar(false);};
-  $('btnReiniciar').onclick=()=>{const cp=R&&R.camp;salirCarrera();largar(cp?{camp:cp}:undefined);};
+  $('btnReiniciar').onclick=()=>{const cp=R&&R.camp,zs=R&&SORP.es(R.z)?R.z:null;salirCarrera();largar(cp?{camp:cp}:zs?{z:zs}:undefined);};
   $('btnTrazada').onclick=()=>{AJ.trazada=!AJ.trazada;guardar();pintarBtnTrazada();};
   $('btnSalir').onclick=()=>{if(R&&R.online){if(RED.host){RED.fins[RED.mi]={fuera:true};revisarFinal();}else mandarHost({t:'fuera'});salirCarrera();mostrarSala();}else if(R&&R.camp){salirCarrera();CAMP.mostrar();}else aMenu();};
   $('btnCentrarC').onclick=()=>{centrar();aviso('🎯 Volante centrado',1);};
@@ -4237,9 +4480,19 @@ function cuadro(ts){
   if(!R.pausa){if(!R.fin)paso(dt);else pasoDespues(dt);}
   if(R.ia.length)iaVista();
   if(R.online){mandarPos();rivalesAhora(dt);}
+  if(R.clima)CLIMA.revisar(R);
   if(REN3){try{REN3.dibujar(R,dt);}catch(e){console.error('3D',e);}REN.hudSolo(R,dt);}
-  else REN.dibujar(R,dt);
+  else{REN.dibujar(R,dt);lluvia2D(R);}
   hudT-=dt;if(hudT<=0){hudT=0.08;hud();}
+}
+/* v10: en el dibujo plano, la lluvia es un velo gris y unas rayas */
+function lluvia2D(R){
+  const C=R.clima;if(!C||C.tipo==='seco')return;const E=CLIMA.en(C,R.tCarrera);if(E.l<0.03&&E.ag<0.05)return;
+  const cv=$('cv');let g=null;try{g=cv.getContext('2d');}catch(e){}if(!g)return;
+  g.save();g.setTransform(1,0,0,1,0,0);g.fillStyle='rgba(70,80,92,'+(0.2*E.l+0.06*E.ag).toFixed(3)+')';g.fillRect(0,0,cv.width,cv.height);
+  if(E.l>0.03){g.strokeStyle='rgba(210,220,230,'+(0.25+0.35*E.l).toFixed(3)+')';g.lineWidth=1;g.beginPath();const n=(40+120*E.l)|0,t=performance.now()/1000;
+    for(let i=0;i<n;i++){const x=(i*977+t*60*(i%3+1))%cv.width,y=(i*613+t*900)%cv.height;g.moveTo(x,y);g.lineTo(x-3,y+14);}g.stroke();}
+  g.restore();
 }
 function volanteAhora(){
   /* teclado > dedo > celular */
@@ -4330,6 +4583,8 @@ const REAL=(function(){
         g=(0.94+0.06*c.gt)*(1-0.12*Math.pow(c.gw,1.2));
       }
       c.grip=g*(1-0.12*c.sucio);
+      /* v10: pista mojada (sobre la trazada se seca antes) */
+      c.gripSeco=c.grip;c.gripMoj=CLIMA.agarre(R,c);c.grip*=c.gripMoj;
     }
   }
   return{actualizar,cerca};
@@ -4430,7 +4685,8 @@ function paso(dt){
   if(AJ.ayuda===2&&R.choque<=0&&!c.pasto){
     /* frena donde la trazada se pone roja: el perfil de velocidades ya trae las frenadas */
     const n=T.n,j=(c.i+1+Math.round(c.v*0.025))%n;
-    if(c.v>R.L.v[j]*0.97+1.5)frAuto=true;
+    const PV=(c.gripMoj||1)<0.98?LINEA.perfilG(R.L,1,c.gripMoj):R.L.v;   /* v10: mojado frena antes */
+    if(c.v>PV[j]*0.97+1.5)frAuto=true;
   }
   const gas=gasIn,fr=frIn||frAuto;
   if(frAuto)R.frVis=Math.max(R.frVis,0.6);
@@ -4509,7 +4765,8 @@ function sacudir(k){REN.sacudir(k);if(REN3)REN3.sacudir(k);}
 function vibrar(p){try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
 
 /* ---------- tablita de posiciones en vivo (como en la tele) ---------- */
-function abrev(n){const t=String(n||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z]/g,'').toUpperCase();return (t||'VOS').slice(0,3).padEnd(3,' ');}
+/* v10: con nombre y apellido, las tres letras son del apellido (como en la tele) */
+function abrev(n){const pa=String(n||'').trim().split(/\s+/);n=pa.length>1?pa[pa.length-1]:pa[0];const t=String(n||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z]/g,'').toUpperCase();return (t||'VOS').slice(0,3).padEnd(3,' ');}
 /* tiempo en que una historia [[t,..,avance]] llegó a cierto avance */
 function tiempoEn(h,p){
   if(!h||!h.length)return null;
@@ -4561,6 +4818,7 @@ function hud(){
     if(hg){let t='';
       if(rg.gom){const p=Math.round(100*(1-c5.gw)),fr=c5.gt<0.85;t+='<span class="'+(fr?'fria':p<45?'mal':p<70?'med':'')+'">🛞 '+(fr?'frías':p+'%')+'</span>';}
       if(rg.reb&&c5.reb>0.3&&!R.fin)t+='<span class="reb">REBUFO</span>';
+      if(R.clima&&R.clima.tipo!=='seco'){const E=CLIMA.en(R.clima,R.tCarrera);if(E.ag>0.04||E.l>0.05)t+='<span class="'+(E.ag>0.5?'mal':'med')+'">'+(E.l>0.12?'🌧️':'💧')+' '+Math.round(E.ag*100)+'%</span>';}
       if(c5.derr&&Math.abs(c5.beta)>0.12&&!R.fin)t+='<span class="mal">'+(Math.abs(c5.beta)>1.15?'TROMPO':'PATINA')+'</span>';
       if(hg.innerHTML!==t)hg.innerHTML=t;}}
   const hp=$('hPen'),cu=R.car.culpas||0;if(R.pen>0||cu>0){hp.textContent=(R.pen>0?'+'+R.pen+' s':'')+(R.pen>0&&cu?' · ':'')+(cu?'toques '+cu+'/'+CULPAS_MAX:'');hp.classList.remove('hide');}else hp.classList.add('hide');
@@ -4573,10 +4831,12 @@ function terminar(){
   /* tu auto sigue solo, despacio: la vuelta de honor (no queda clavado en la línea) */
   R.honor={car:c,k:0.55,carril:0,esq:0,react:0,frenaTarde:0,rnd:Math.random,ruido:0,tRuido:9};
   /* primero la tabla de mejores tiempos (antes de pisar el récord viejo, que la tabla levanta la primera vez) */
-  const top=anotarTop(R.z,R.vueltas,total,R.laps,R.modo);
-  const k=recKey(R.z,R.vueltas),rec=leerJSON(k);
+  const sorp=SORP.es(R.z);   /* v10: la pista sorpresa no guarda récords (cada una es única) */
+  const top=sorp?{posV:-1}:anotarTop(R.z,R.vueltas,total,R.laps,R.modo);
+  const k=recKey(R.z,R.vueltas),rec=sorp?null:leerJSON(k);
   let txt='';
-  if(!rec||total<rec.t){
+  if(sorp)txt='🌀 Pista sorpresa: no hay récord, cada una es única';
+  else if(!rec||total<rec.t){
     const nuevo={t:total,n:AJ.nombre||'',f:Date.now(),m:R.graba};
     if(!grabarJSON(k,nuevo)){nuevo.m=null;grabarJSON(k,nuevo);}
     txt=rec?'🏆 ¡Nuevo récord! Bajaste '+((rec.t-total)/1000).toFixed(1).replace('.',',')+' s':'🏆 Primer récord en esta pista';
@@ -4585,7 +4845,7 @@ function terminar(){
   else if(top.posV>0)txt+='<div class="tiny" style="margin-top:6px">Tu mejor vuelta quedó '+(top.posV+1)+'ª entre las de esta pista</div>';
   if(R.pen>0)txt+='<div class="tiny" style="margin-top:6px">Incluye +'+R.pen+' s por toques con culpa</div>';
   const mvk='gp-app-mv-'+R.z,mv=leerJSON(mvk);
-  if(R.mejor!=null&&(!mv||R.mejor*1000<mv.t)){grabarJSON(mvk,{t:R.mejor*1000,n:AJ.nombre||''});MVz='';}
+  if(!sorp&&R.mejor!=null&&(!mv||R.mejor*1000<mv.t)){grabarJSON(mvk,{t:R.mejor*1000,n:AJ.nombre||''});MVz='';}
   if(R.online){
     const m={t:'fin',tt:total/1000,pen:R.pen,mejor:R.mejor};
     if(RED.host)finDe(RED.mi,m);else mandarHost(m);
@@ -5129,7 +5389,7 @@ const REN=(function(){
 
   let sacudon=0;
   function sacudir(k){sacudon=Math.max(sacudon,k);}
-  return{dibujar,reset,datos,sacudir,hudSolo};
+  return{dibujar,reset,datos,sacudir,hudSolo,olvidar:T=>DATOS.delete(T)};
 })();
 
 /* ================= DIBUJO EN 3D (WebGL con three.js) ================= */
@@ -5891,6 +6151,7 @@ const REN3=(function(){
     rd.toneMappingExposure=H.exp;
     escena.fog.color.copy(CL(H.hor));escena.fog.near=H.fn;escena.fog.far=H.ff;
     pintarCielo(H.top,H.hor);
+    BASE=H;climaUlt='';   /* v10: la luz de esta pista sin lluvia */
   }
   /* ---------- banderas (dibujadas a mano, sin escudos ni letras) ---------- */
   const texBan={};
@@ -6639,6 +6900,73 @@ const REN3=(function(){
     const s=new T3.Sprite(new T3.SpriteMaterial({map:new T3.CanvasTexture(c),depthTest:false,transparent:true}));s.scale.set(6,1.5,1);s.position.y=4.6;s.renderOrder=5;return s;
   }
 
+  /* ---------- v10: lluvia ----------
+     Con lluvia el cielo se pone gris, el sol se apaga, la niebla se cierra y el asfalto se oscurece. Las gotas son rayas finas en una
+     caja que acompaña a la cámara (una sola tanda de dibujo) y el agua que levantan los autos son puntos blandos (otra tanda). */
+  let BASE=null,climaUlt='',LLU=null,SPR=null;
+  const mezHex=(a,b,k)=>{const A=parseInt(a.slice(1),16),B=parseInt(b.slice(1),16),f=(s)=>Math.round(((A>>s)&255)+((((B>>s)&255)-((A>>s)&255))*k));return'#'+((1<<24)|(f(16)<<16)|(f(8)<<8)|f(0)).toString(16).slice(1);};
+  function armarLluvia(){
+    const D=80,Hh=14,Wd=32,N=520,pos=new Float32Array(N*4*2*3);let o=0;
+    for(let q=0;q<N;q++){const x=Math.random()*D,y=Math.random()*Hh,z=(Math.random()*2-1)*Wd,L=0.7+Math.random()*0.6;
+      for(const [ox,oy] of [[0,0],[D,0],[0,Hh],[D,Hh]]){const X=x+ox-0.3*D,Y=y+oy;pos[o++]=X;pos[o++]=Y;pos[o++]=z;pos[o++]=X+0.08;pos[o++]=Y+L;pos[o++]=z;}}
+    const g=new T3.BufferGeometry();g.setAttribute('position',new T3.BufferAttribute(pos,3));
+    const m=new T3.LineBasicMaterial({color:CL('#c7d0da'),transparent:true,opacity:0,depthWrite:false,fog:false});
+    const Ls=new T3.LineSegments(g,m);Ls.frustumCulled=false;Ls.renderOrder=3;
+    const piv=new T3.Group();piv.add(Ls);piv.visible=false;escena.add(piv);
+    LLU={piv,Ls,m,D,Hh,o:0,f:0};
+    const NP=240,pp=new Float32Array(NP*3),pa=new Float32Array(NP),ps=new Float32Array(NP);
+    const gp=new T3.BufferGeometry();gp.setAttribute('position',new T3.BufferAttribute(pp,3));gp.setAttribute('aA',new T3.BufferAttribute(pa,1));gp.setAttribute('aS',new T3.BufferAttribute(ps,1));
+    const mp=new T3.ShaderMaterial({uniforms:{uPx:{value:500},uC:{value:new T3.Color(0.8,0.83,0.86)}},transparent:true,depthWrite:false,
+      vertexShader:'attribute float aA;attribute float aS;uniform float uPx;varying float vA;void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=aS*uPx/max(0.5,-mv.z);gl_Position=projectionMatrix*mv;vA=aA;}',
+      fragmentShader:'uniform vec3 uC;varying float vA;void main(){vec2 d=gl_PointCoord-0.5;float r=max(0.0,1.0-dot(d,d)*4.0);float a=vA*r*r;if(a<0.01)discard;gl_FragColor=vec4(uC,a);}'});
+    const P=new T3.Points(gp,mp);P.frustumCulled=false;P.renderOrder=4;P.visible=false;escena.add(P);
+    SPR={P,mp,gp,pp,pa,ps,vx:new Float32Array(NP),vy:new Float32Array(NP),vz:new Float32Array(NP),vida:new Float32Array(NP),max:new Float32Array(NP),NP,cur:0,acc:new Map(),vivos:0};
+  }
+  function salpicar(S,a,av){
+    const i=S.cur;S.cur=(S.cur+1)%S.NP;
+    const co=Math.cos(a.th),si=Math.sin(a.th),lat=(Math.random()<0.5?-1:1)*(0.6+Math.random()*0.6);
+    S.pp[i*3]=a.x-co*3.6-si*lat;S.pp[i*3+1]=0.35;S.pp[i*3+2]=a.y-si*3.6+co*lat;
+    const k=0.3+Math.random()*0.15;S.vx[i]=co*av*k+(Math.random()-0.5)*3;S.vz[i]=si*av*k+(Math.random()-0.5)*3;S.vy[i]=1.2+Math.random()*1.8;
+    S.vida[i]=S.max[i]=0.5+Math.random()*0.35;
+  }
+  function climaCuadro(R,dt,car,v){
+    const C=R.clima,E=C&&C.tipo!=='seco'?CLIMA.en(C,R.tCarrera):null,l=E?E.l:0,ag=E?E.ag:0;
+    /* cielo, sol, niebla y asfalto: se recalculan solo cuando cambian de a un poco */
+    const k=Math.round(Math.min(1,l*0.85+ag*0.2)*30)/30,ka=Math.round(ag*20)/20,key=k+'|'+ka;
+    if(BASE&&key!==climaUlt){climaUlt=key;const H=BASE,noche=H===HORAS.noche;
+      sol.intensity=H.si*(1-0.65*k);hemi.intensity=H.hi*(1+0.1*k);rd.toneMappingExposure=H.exp*(1-0.08*k);
+      const hor=mezHex(H.hor,noche?'#1a1f2b':'#8f979f',k);
+      escena.fog.color.copy(CL(hor));escena.fog.near=H.fn*(1-0.72*k);escena.fog.far=H.ff*(1-0.6*k);
+      pintarCielo(mezHex(H.top,noche?'#05070c':'#5c656f',k),hor);
+      MAT.asfalto.color.setScalar(1-0.42*ka);
+    }
+    /* gotas */
+    if(l>0.03){if(!LLU)armarLluvia();
+      const L=LLU,th=cam?cam.th:car.th;L.piv.visible=true;L.m.opacity=Math.min(0.55,0.12+0.5*l);
+      L.piv.position.set(camara.position.x,0,camara.position.z);L.piv.rotation.y=-th;
+      L.o=(L.o+v*dt*Math.cos(car.th-th)+L.D)%L.D;L.f=(L.f+(10+6*l)*dt)%L.Hh;
+      L.Ls.position.set(-L.o,-L.f,0);
+    }else if(LLU)LLU.piv.visible=false;
+    /* agua que levantan los autos (la tuya y la de los de adelante te tapan un poco la vista) */
+    if(ag>0.08||(SPR&&SPR.vivos)){
+      if(!LLU)armarLluvia();const S=SPR;S.P.visible=true;
+      S.mp.uniforms.uPx.value=H*rd.getPixelRatio()/(2*Math.tan(camara.fov*Math.PI/360));
+      if(ag>0.08){const lista=[{id:'yo',x:car.x,y:car.y,th:car.th,v}].concat(R.rivales3||[]);
+        for(const a of lista){const av=a.v||0;if(av<14)continue;const dx=a.x-car.x,dy=a.y-car.y;if(dx*dx+dy*dy>110*110)continue;
+          let acc=(S.acc.get(a.id)||0)+dt*ag*clamp((av-14)/45,0,1)*44;
+          while(acc>=1){acc-=1;salpicar(S,a,av);}S.acc.set(a.id,acc);}}
+      let vivos=0;const f=Math.exp(-dt*2.2);
+      for(let i=0;i<S.NP;i++){if(S.vida[i]<=0){S.pa[i]=0;continue;}
+        S.vida[i]-=dt;if(S.vida[i]<=0){S.pa[i]=0;continue;}vivos++;
+        S.vx[i]*=f;S.vz[i]*=f;S.vy[i]-=3*dt;
+        S.pp[i*3]+=S.vx[i]*dt;S.pp[i*3+1]=Math.max(0.2,S.pp[i*3+1]+S.vy[i]*dt);S.pp[i*3+2]+=S.vz[i]*dt;
+        const e=1-S.vida[i]/S.max[i];S.pa[i]=0.45*Math.max(ag,0.3)*(1-e)*(e<0.15?e/0.15:1);S.ps[i]=1.4+4.6*e;}
+      S.vivos=vivos;
+      S.gp.attributes.position.needsUpdate=true;S.gp.attributes.aA.needsUpdate=true;S.gp.attributes.aS.needsUpdate=true;
+      if(!vivos&&ag<=0.08)S.P.visible=false;
+    }
+  }
+
   /* ---------- cuadro ---------- */
   let cam=null,autoYo=null,autoYoKey='',fantasmaA=null,shake=0,W=0,H=0;
   const RIV=new Map();
@@ -6711,6 +7039,7 @@ const REN3=(function(){
     {const tt=performance.now()/1000;for(let q=0;q<ANIM.length;q++)ANIM[q](tt,dt||0.016);}
     sol.position.set(car.x+SOL_OFF[0],SOL_OFF[1],car.y+SOL_OFF[2]);sol.target.position.set(car.x,0,car.y);
     cielo.position.set(car.x,0,car.y);
+    try{climaCuadro(R,dt||0.016,car,v);}catch(e){}   /* v10 */
     rd.render(escena,camara);
   }
   return{dibujar,reset,sacudir,ok:true,renderer:rd,escena};
@@ -6816,7 +7145,7 @@ function pararRed(){
 function armarSala(intento){
   const q=new URLSearchParams(location.search),conP2P=!!window.Peer&&!q.has('rele'),conRele=!q.has('sinrele');
   if(!conP2P&&!conRele){salaError('No se pudo cargar la conexión. Revisá internet y recargá.');return;}
-  pararRed();RED.host=true;RED.code=codigoNuevo();RED.fase='conectando';RED.pista=AJ.azar?'azar':AJ.pista;RED.vueltas=AJ.vueltas;
+  pararRed();RED.host=true;RED.code=codigoNuevo();RED.fase='conectando';RED.pista=AJ.sorpresa?'sorpresa':AJ.azar?'azar':AJ.pista;RED.vueltas=AJ.vueltas;
   RED.mi=idSala(RED.code);
   mostrarSala();
   if(conP2P){try{
@@ -6888,7 +7217,7 @@ function hostRecibe(c,d){
   }else if(d.t==='listo'){
     const j=RED.jug.find(x=>x.id===id);if(j){j.listo=!!d.v;mandarSala();pintarSala();}
   }else if(d.t==='ping'){try{c.send({t:'pong',c:d.c,h:Date.now()});}catch(e){}}
-  else if(d.t==='pos'){RED.est[id]=Object.assign({},d,{id,rx:Date.now()});}
+  else if(d.t==='pos'){RED.est[id]=Object.assign({},d,{id,rx:Date.now()});if(R&&R.online)recibirEstados([RED.est[id]]);}   /* v10: llega al dibujo apenas llega, no en la próxima vuelta del reparto */
   else if(d.t==='fin'){finDe(id,d);}
   else if(d.t==='fuera'){RED.fins[id]={fuera:true};revisarFinal();}
 }
@@ -6901,7 +7230,7 @@ function salio(id){
   else{RED.jug=RED.jug.filter(x=>x.id!==id);}
   mandarSala();pintarSala();
 }
-function mandarSala(){repartir({t:'sala',jug:RED.jug,pista:RED.pista,vueltas:RED.vueltas,fase:RED.fase,ia:RED.iaN,niv:RED.nivIA,camp:RED.camp,campN:RED.campN});}
+function mandarSala(){repartir({t:'sala',jug:RED.jug,pista:RED.pista,vueltas:RED.vueltas,fase:RED.fase,ia:RED.iaN,niv:RED.nivIA,camp:RED.camp,campN:RED.campN,clima:AJ.clima});}
 /* la máquina en la carrera con amigos: el organizador la maneja y la manda a todos como si fueran pilotos más.
    Los nombres y escuderías quedan fijos mientras no cambie la cantidad, así pueden pelear el campeonato. */
 function rosterIA(){
@@ -6910,7 +7239,8 @@ function rosterIA(){
     const usados=new Set(RED.jug.map(j=>(j.n||'').toLowerCase())),noms=IA.NOMBRES.filter(n=>!usados.has(n.toLowerCase()));
     for(let i=noms.length-1;i>0;i--){const q=(Math.random()*(i+1))|0;[noms[i],noms[q]]=[noms[q],noms[i]];}
     const ocup=new Set(RED.jug.map(j=>j.esc)),libres=ESC.map(e=>e.id).filter(id=>!ocup.has(id)).concat(ESC.map(e=>e.id));
-    RED.iaDef=[];for(let q=0;q<RED.iaN;q++)RED.iaDef.push({id:'m'+q,n:noms[q%noms.length],esc:libres[q%libres.length],k});
+    const dar=IA.repartidor(Math.random);   /* v10: con el nombre trucho del piloto de esa escudería */
+    RED.iaDef=[];for(let q=0;q<RED.iaN;q++){const ei=libres[q%libres.length];RED.iaDef.push({id:'m'+q,n:dar(ei)||noms[q%noms.length],esc:ei,k});}
   }
   RED.iaDef.forEach(d=>d.k=k);
   return RED.iaDef;
@@ -6939,8 +7269,11 @@ function largarSala(){
   if(RED.campN>0&&(!RED.camp||RED.camp.fin||RED.camp.n!==RED.campN))campNuevo();
   const ids=RED.jug.map(j=>j.id).concat(ia.map(d=>d.id));
   for(let i=ids.length-1;i>0;i--){const k=(Math.random()*(i+1))|0;[ids[i],ids[k]]=[ids[k],ids[i]];}
-  const pz=RED.pista==='azar'?pistaAzar(RED.ultPista):RED.pista;RED.ultPista=pz;
-  const L={t:'largada',inicio:Date.now()+3500,verde:4.2+0.3+Math.random()*0.9,grid:ids,pista:pz,vueltas:RED.vueltas,
+  let pz=RED.pista==='azar'?pistaAzar(RED.ultPista):RED.pista,sorp=null;
+  /* v10: pista sorpresa: el organizador la arma y la manda entera; y el clima que eligió */
+  if(pz==='sorpresa'||!PISTAS[pz]){const d=SORP.generar();if(d){SORP.registrar(d);pz=d.z;sorp=SORP.aRed(d);}else pz=AJ.pista;}
+  RED.ultPista=pz;
+  const L={t:'largada',sorp,clima:{tipo:AJ.clima||'azar',sem:(Math.random()*4294967296)>>>0},inicio:Date.now()+3500,verde:4.2+0.3+Math.random()*0.9,grid:ids,pista:pz,vueltas:RED.vueltas,
     jug:RED.jug.concat(ia.map(d=>({id:d.id,n:d.n,esc:d.esc,ia:true,listo:true}))),ia,camp:RED.camp?{n:RED.camp.n,fecha:RED.camp.fecha}:null,
     reglas:{reb:AJ.rebufo,gom:AJ.gomas,pen:AJ.penal}};
   RED.fase='carrera';RED.fins={};RED.tPrimerFin=0;RED.est={};RED.res=null;
@@ -7059,7 +7392,7 @@ function vigiaInvitado(){
 function invitadoRecibe(d){
   if(!d||typeof d!=='object')return;
   if(RED.error&&RED.fase){RED.error='';$('salaError').classList.add('hide');}
-  if(d.t==='sala'){RED.jug=d.jug||[];RED.pista=d.pista;RED.vueltas=d.vueltas;RED.iaN=d.ia||0;RED.nivIA=d.niv||2;RED.camp=d.camp||null;RED.campN=d.campN||0;if(RED.fase!=='carrera'||d.fase==='sala'&&!R)RED.fase=d.fase==='carrera'?'carrera':'sala';pintarSala();}
+  if(d.t==='sala'){RED.jug=d.jug||[];RED.pista=d.pista;RED.clima=d.clima||'seco';RED.vueltas=d.vueltas;RED.iaN=d.ia||0;RED.nivIA=d.niv||2;RED.camp=d.camp||null;RED.campN=d.campN||0;if(RED.fase!=='carrera'||d.fase==='sala'&&!R)RED.fase=d.fase==='carrera'?'carrera':'sala';pintarSala();}
   else if(d.t==='pong'){
     const now=Date.now(),rtt=now-d.c;
     /* se queda con la medición de viaje más corto (envejece de a poco) */
@@ -7073,12 +7406,13 @@ function invitadoRecibe(d){
 }
 /* ---------- durante la carrera ---------- */
 function empezarOnline(L){
-  RED.largada=L;RED.buf=new Map();RED.hist=new Map();
-  AJ.pista=L.pista;AJ.vueltas=L.vueltas;
+  RED.largada=L;RED.buf=new Map();RED.hist=new Map();RED.redDe=new Map();
+  if(L.sorp)SORP.registrar(SORP.deRed(L.sorp));   /* v10: la pista sorpresa viene entera del organizador */
+  if(!L.sorp)AJ.pista=L.pista;AJ.vueltas=L.vueltas;
   const yo=(L.jug||RED.jug).find(j=>j.id===RED.mi);if(yo){AJ.esc=yo.esc;}
   $('sala').classList.add('hide');
   largar({online:true,inicio:L.inicio,verde:L.verde,puesto:Math.max(0,L.grid.indexOf(RED.mi)),pista:L.pista,vueltas:L.vueltas,
-    reglas:L.reglas||null,iaDef:RED.host&&L.ia?L.ia:null,iaPuestos:RED.host&&L.ia?L.ia.map(d=>Math.max(0,L.grid.indexOf(d.id))):null});
+    z:L.pista,clima:L.clima||{tipo:'seco',sem:1},reglas:L.reglas||null,iaDef:RED.host&&L.ia?L.ia:null,iaPuestos:RED.host&&L.ia?L.ia.map(d=>Math.max(0,L.grid.indexOf(d.id))):null});
 }
 /* cada celular manda su estado: lo llama el cuadro de la carrera */
 let tPos=0;
@@ -7088,45 +7422,92 @@ function mandarPos(){
   const c=R.car,m={t:'pos',x:+c.x.toFixed(2),y:+c.y.toFixed(2),th:+c.th.toFixed(3),v:+c.v.toFixed(1),st:+c.st.toFixed(2),p:+GPM.avance(R.T,c).toFixed(5),tc:+R.tCarrera.toFixed(3),f:R.fin?1:0,tt:R.totalFin,r:c.reset};
   if(RED.host)RED.est[RED.mi]=Object.assign(m,{id:RED.mi,rx:Date.now()});else mandarHost(m);
 }
+/* v10: cada dato que llega se guarda con su hora de llegada. De ahí sale, para cada piloto, cuánto tarda la red, cuánto varía
+   y cada cuánto llegan (para el colchón), y comparando con el dato anterior, cuánto está doblando (giro, rad/s) y cuánto acelera o frena. */
+function tRed(){return R&&R.online?(ahoraHost()-R.inicio)/1000-R.verde:0;}
 function recibirEstados(l){
+  if(!RED.buf)return;if(!RED.redDe)RED.redDe=new Map();
+  const ar=tRed();
   l.forEach(e=>{
-    if(e.id===RED.mi)return;
+    if(!e||e.id===RED.mi)return;
     let b=RED.buf.get(e.id);if(!b){b=[];RED.buf.set(e.id,b);}
     const ult=b[b.length-1];if(ult&&ult.tc>=e.tc)return;
-    b.push(e);if(b.length>40)b.splice(0,b.length-40);
+    const s=Object.assign({},e);s.ar=ar;s.v=Math.max(0,+s.v||0);s.w=s.v*GPM.kReal(s.v,s.st||0);s.a=0;
+    if(ult&&ult.r!==s.r)b.length=0;   /* volvió a la pista: lo de antes ya no sirve */
+    else if(ult){const dt=s.tc-ult.tc;
+      if(dt>0.004&&dt<0.6){let dth=s.th-ult.th;dth=Math.atan2(Math.sin(dth),Math.cos(dth));
+        s.w=clamp(0.65*dth/dt+0.35*(ult.w||0),-3,3);s.a=clamp(0.6*(s.v-ult.v)/dt+0.4*(ult.a||0),-60,25);}}
+    b.push(s);if(b.length>60)b.splice(0,b.length-60);
+    if(R&&R.online){
+      let m=RED.redDe.get(e.id);const lat=ar-s.tc;
+      if(!m){m={lat,jit:0.03,gap:0.06};RED.redDe.set(e.id,m);}
+      else{m.lat+=(lat-m.lat)*0.08;m.jit+=(Math.abs(lat-m.lat)-m.jit)*0.08;if(ult&&ult.r===s.r)m.gap+=(clamp(s.tc-ult.tc,0.02,0.5)-m.gap)*0.1;}
+    }
     /* historia larga y liviana (una muestra cada 0,1 s) para las diferencias de la tablita */
     let hh=RED.hist.get(e.id);if(!hh){hh=[];RED.hist.set(e.id,hh);}
     const uh=hh[hh.length-1];if(!uh||e.tc-uh[0]>=0.1)hh.push([e.tc,0,0,0,e.p]);
   });
 }
-/* rivales para dibujar, para la tablita y para chocar. Cada auto se proyecta al instante actual con su velocidad y su
-   volante (no 0,2 s atrás), así se ve donde está de verdad; cuando llega un dato nuevo, la diferencia se va corrigiendo
-   de a poco en vez de saltar. */
+/* proyecta un estado tau segundos hacia adelante con su giro y su aceleración, que se van apagando (nadie dobla ni frena para siempre) */
+function proyectar(s,tau,o){
+  let x=s.x,y=s.y,th=s.th,v=s.v,t=0;const w=s.w||0,a=s.a||0;
+  tau=Math.min(tau,1.2);
+  while(t<tau-1e-6){const h=Math.min(0.02,tau-t),mw=Math.exp(-t/0.9),ma=Math.exp(-t/0.6);
+    th+=w*mw*h;v=Math.max(0,v+a*ma*h);x+=v*Math.cos(th)*h;y+=v*Math.sin(th)*h;t+=h;}
+  o.x=x;o.y=y;o.th=th;o.v=v;return o;
+}
+/* dónde está un auto "ahora" usando los datos hasta el índice m: se interpola entre dos datos que ya llegaron, un poquito en el
+   pasado (tr = ahora − colchón, con posición y velocidad continuas), y desde ahí se lo lleva al presente. Así el movimiento es
+   siempre continuo: un dato que llega tarde o amontonado no hace saltar al auto. */
+function estadoEn(b,m,tr,now,o){
+  if(m===0||tr>=b[m].tc){const s=b[m];return proyectar(s,Math.max(0,now-s.tc),o);}
+  let k=m-1;while(k>0&&b[k].tc>tr)k--;
+  const s0=b[k],s1=b[k+1];
+  if(tr<=s0.tc)return proyectar(s0,Math.max(0,now-s0.tc),o);
+  const dt=s1.tc-s0.tc,u=(tr-s0.tc)/dt;
+  let x,y;
+  if(dt>0.5){x=s0.x+(s1.x-s0.x)*u;y=s0.y+(s1.y-s0.y)*u;}
+  else{const u2=u*u,u3=u2*u,h00=2*u3-3*u2+1,h10=u3-2*u2+u,h01=-2*u3+3*u2,h11=u3-u2;
+    x=h00*s0.x+h10*dt*s0.v*Math.cos(s0.th)+h01*s1.x+h11*dt*s1.v*Math.cos(s1.th);
+    y=h00*s0.y+h10*dt*s0.v*Math.sin(s0.th)+h01*s1.y+h11*dt*s1.v*Math.sin(s1.th);}
+  let dth=s1.th-s0.th;dth=Math.atan2(Math.sin(dth),Math.cos(dth));
+  const S={x,y,th:s0.th+dth*u,v:s0.v+(s1.v-s0.v)*u,w:(s0.w||0)+((s1.w||0)-(s0.w||0))*u,a:(s0.a||0)+((s1.a||0)-(s0.a||0))*u};
+  return proyectar(S,Math.max(0,now-tr),o);
+}
+/* rivales para dibujar, para la tablita y para chocar. El colchón de cada uno se ajusta solo a su red (demora + cada cuánto llegan
+   + 2,2 veces lo que varía) y cambia despacio; si igual llega algo que cambia lo que se ve, la diferencia se absorbe de a poco. */
 const DISP=new Map();
+const O1={},O2={};
 function rivalesAhora(dt){
   if(!R||!R.online)return;
   dt=dt||0.016;
-  const now=R.tCarrera,dib=[],otros=[],rem=[],CF=GPM.CFG,fe=Math.exp(-dt*7);
+  const now=tRed(),dib=[],otros=[],rem=[],fe=Math.exp(-dt*5);
   RED.buf.forEach((b,id)=>{
     if(!b.length)return;
     const j=(RED.largada&&RED.largada.jug||RED.jug).find(x=>x.id===id)||RED.jug.find(x=>x.id===id);if(!j)return;
-    const e=ESC.find(x=>x.id===j.esc)||ESC[0],u=b[b.length-1];
-    let x=u.x,y=u.y,th=u.th;const v=Math.max(0,u.v||0),st=u.st||0;
-    let pt=R.verdeYa&&!u.f?clamp(now-u.tc,0,0.4):0;
-    const k=GPM.kReal(v,st);
-    while(pt>1e-4){const hh=Math.min(0.02,pt);th+=v*k*hh;x+=v*Math.cos(th)*hh;y+=v*Math.sin(th)*hh;pt-=hh;}
+    const e=ESC.find(x=>x.id===j.esc)||ESC[0],m=b.length-1,u=b[m];
+    const red=(RED.redDe&&RED.redDe.get(id))||{lat:0.1,jit:0.03,gap:0.06};
+    const Dobj=clamp(red.lat+red.gap+2.2*red.jit+0.02,0.05,0.7);
     let d=DISP.get(id);
-    if(!d||d.r!==u.r){d={ex:0,ey:0,eth:0,tc:u.tc,r:u.r,x,y,th,fant:d?1.6:0};DISP.set(id,d);}   /* volvió a la pista: aparece ahí y un rato no choca */
-    else if(d.tc!==u.tc){
-      d.ex=d.x-x;d.ey=d.y-y;let a=d.th-th;d.eth=Math.atan2(Math.sin(a),Math.cos(a));d.tc=u.tc;
-      if(Math.hypot(d.ex,d.ey)>25){d.ex=0;d.ey=0;d.eth=0;}
-    }
+    if(!d||d.r!==u.r){d={ex:0,ey:0,eth:0,r:u.r,D:Dobj,lt:u.tc,x:u.x,y:u.y,th:u.th,fant:d?1.6:0,iLoc:d?d.iLoc:null};DISP.set(id,d);}   /* volvió a la pista: aparece ahí y un rato no choca */
+    d.D+=clamp(Dobj-d.D,-0.12*dt,0.12*dt);
+    let S;
+    if(R.verdeYa){
+      S=estadoEn(b,m,now-d.D,now,O1);
+      if(d.lt!==u.tc){
+        let mo=m;while(mo>0&&b[mo].tc>d.lt)mo--;
+        if(b[mo].tc<=d.lt){const P=estadoEn(b,mo,now-d.D,now,O2);d.ex+=P.x-S.x;d.ey+=P.y-S.y;let q=P.th-S.th;d.eth+=Math.atan2(Math.sin(q),Math.cos(q));}
+        d.lt=u.tc;
+      }
+    }else{S={x:u.x,y:u.y,th:u.th,v:u.v};d.ex=d.ey=d.eth=0;d.lt=u.tc;}
+    if(Math.hypot(d.ex,d.ey)>25){d.ex=0;d.ey=0;d.eth=0;}
     d.ex*=fe;d.ey*=fe;d.eth*=fe;if(d.fant>0)d.fant-=dt;
-    d.x=x+d.ex;d.y=y+d.ey;d.th=th+d.eth;
+    d.x=S.x+d.ex;d.y=S.y+d.ey;d.th=S.th+d.eth;
+    const v=S.v,st=u.st||0;
     dib.push({id,n:j.n,col:e.c,col2:e.s,x:d.x,y:d.y,th:d.th,st,v});
     const ob={id,x:d.x,y:d.y,th:d.th,v,st,ex:0,ey:0,choca:!u.f&&d.fant<=0,d};
-    if(R.ia.length){const T=R.T,n=T.n;let bi=d.iLoc==null?0:d.iLoc,bd=1e18;const desde=d.iLoc==null?0:-20,hasta=d.iLoc==null?n-1:20;
-      for(let q=desde;q<=hasta;q++){const i=((bi+q)%n+n)%n,dx=d.x-T.x[i],dy=d.y-T.y[i],dd=dx*dx+dy*dy;if(dd<bd){bd=dd;var mi=i;}}
+    if(R.ia.length){const T=R.T,n=T.n;let bi=d.iLoc==null?0:d.iLoc,bd=1e18,mi=bi;const desde=d.iLoc==null?0:-20,hasta=d.iLoc==null?n-1:20;
+      for(let q=desde;q<=hasta;q++){const i=((bi+q)%n+n)%n,dx=d.x-T.x[i],dy=d.y-T.y[i],dd=dx*dx+dy*dy;if(dd<bd){bd=dd;mi=i;}}
       d.iLoc=mi;ob.sPista=T.s[mi];ob.lat=(d.x-T.x[mi])*(-T.ty[mi])+(d.y-T.y[mi])*T.tx[mi];}
     rem.push(ob);
     otros.push({n:abrev(j.n),col:e.c,prog:u.f?R.vueltas:u.p,fin:u.f&&u.tt!=null?u.tt:null,h:RED.hist.get(id)||[]});
@@ -7165,7 +7546,8 @@ function pintarSala(){
   /* pista y vueltas: las elige el organizador */
   const d=PISTAS[RED.pista||AJ.pista],vtxt=' · '+RED.vueltas+(RED.vueltas>1?' vueltas':' vuelta');
   const mtxt=RED.iaN?' · '+RED.iaN+' de la máquina ('+IA.NIVELES[RED.nivIA].n.toLowerCase()+')':'';
-  $('salaPistaTxt').textContent=(RED.pista==='azar'?'🎲 Pista al azar'+vtxt:d?d.t+vtxt:'')+mtxt;
+  const ctxt=' · '+CLIMA.nombre(RED.host?AJ.clima:RED.clima||'seco');
+  $('salaPistaTxt').textContent=(RED.pista==='azar'?'🎲 Pista al azar'+vtxt:RED.pista==='sorpresa'?'🌀 Pista sorpresa'+vtxt:d?d.t+vtxt:'')+mtxt+ctxt;
   /* campeonato: la tabla en la sala */
   const cE=$('salaCamp'),c=RED.camp;
   if(c&&Object.keys(c.pts).length){
@@ -7178,7 +7560,8 @@ function pintarSala(){
   if(RED.host){$('salaPistaSel').value=RED.pista;$('salaVueltas').querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',+b.dataset.v===RED.vueltas));
     $('salaIA').querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',+b.dataset.n===RED.iaN));
     $('salaNivel').querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',+b.dataset.l===RED.nivIA));$('opSalaNivel').classList.toggle('hide',!RED.iaN);
-    $('salaCampN').querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',+b.dataset.c===RED.campN));}
+    $('salaCampN').querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',+b.dataset.c===RED.campN));
+    $('salaClima').querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',b.dataset.c===AJ.clima));}
   /* botones */
   const yo=RED.jug.find(j=>j.id===RED.mi);
   $('btnSalaLargar').classList.toggle('hide',!RED.host);
@@ -7195,8 +7578,10 @@ function pintarSala(){
 function armarPantallaSala(){
   const sel=$('salaPistaSel');
   {const o=document.createElement('option');o.value='azar';o.textContent='🎲 Al azar (una distinta cada vez)';sel.appendChild(o);}
+  {const o=document.createElement('option');o.value='sorpresa';o.textContent='🌀 Sorpresa (una pista que no existe)';sel.appendChild(o);}
   Object.keys(PISTAS).forEach(z=>{const o=document.createElement('option');o.value=z;o.textContent=PISTAS[z].t;sel.appendChild(o);});
-  sel.onchange=()=>{RED.pista=sel.value;if(sel.value==='azar')AJ.azar=true;else{AJ.pista=sel.value;AJ.azar=false;}guardar();mandarSala();pintarSala();};
+  sel.onchange=()=>{RED.pista=sel.value;if(sel.value==='azar'){AJ.azar=true;AJ.sorpresa=false;}else if(sel.value==='sorpresa'){AJ.sorpresa=true;AJ.azar=false;}else{AJ.pista=sel.value;AJ.azar=false;AJ.sorpresa=false;}guardar();mandarSala();pintarSala();};
+  CLIMA.TIPOS.forEach(([c,t])=>{const b=document.createElement('button');b.className='chip';b.dataset.c=c;b.textContent=t;b.onclick=()=>{AJ.clima=c;guardar();mandarSala();pintarSala();};$('salaClima').appendChild(b);});
   VUELTAS.forEach(v=>{const b=document.createElement('button');b.className='chip';b.dataset.v=v;b.textContent=v;b.onclick=()=>{RED.vueltas=v;AJ.vueltas=v;guardar();mandarSala();pintarSala();};$('salaVueltas').appendChild(b);});
   [0,3,5,7,11].forEach(n=>{const b=document.createElement('button');b.className='chip';b.dataset.n=n;b.textContent=n?n:'Nadie';b.onclick=()=>{RED.iaN=n;rosterIA();mandarSala();pintarSala();};$('salaIA').appendChild(b);});
   [1,2,3].forEach(l=>{const b=document.createElement('button');b.className='chip';b.dataset.l=l;b.textContent=IA.NIVELES[l].n;b.onclick=()=>{RED.nivIA=l;mandarSala();pintarSala();};$('salaNivel').appendChild(b);});
@@ -7271,7 +7656,8 @@ const CAMP=(function(){
     const pz=(C.fijas||[]).concat(resto).slice(0,C.fechas);
     if(cat>=2)mezcla(pz);
     const noms=mezcla(IA.NOMBRES.slice()),escs=mezcla(ESC.map(e=>e.id).filter(id=>id!==esc)).concat(mezcla(ESC.map(e=>e.id).filter(id=>id!==esc)),[esc]);
-    const riv=[];for(let q=0;q<C.riv;q++){const e=escs[q%escs.length];riv.push({id:'r'+q,n:noms[q%noms.length],esc:e,k:+(C.k*(0.94+0.06*rk[e]/10)*(1+(Math.random()-0.5)*0.04)).toFixed(4)});}
+    const dar=cat===4?IA.repartidor(Math.random):null;   /* v10: en la F1, los pilotos de verdad con el nombre cambiado */
+    const riv=[];for(let q=0;q<C.riv;q++){const e=escs[q%escs.length];riv.push({id:'r'+q,n:(dar&&dar(e))||noms[q%noms.length],esc:e,k:+(C.k*(0.94+0.06*rk[e]/10)*(1+(Math.random()-0.5)*0.04)).toFixed(4)});}
     S.nTemp=(S.nTemp||0)+1;
     S.t={cat,esc,rank:rk[esc],fechas:pz.map(z=>({z})),fecha:0,pts:{yo:0},res:[],riv};
     riv.forEach(r=>S.t.pts[r.id]=0);
