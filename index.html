@@ -3301,10 +3301,11 @@ const GPM=(function(){
   return{CFG,construir,nuevoAuto,paso,avance,puntoEn,volanteIdeal,volver:volverAPista,aLat,aFreno,arrastre,aMotor,kSteer,kReal};
 })();
 /* v7: lugares de Cipolletti en el callejero (dibujados a mano, ubicados a ojo: no van a escala).
-   i = punto de la pista, sg = lado (-1 izquierda, 1 derecha), d = metros desde la defensa */
+   i = punto de la pista, sg = lado (-1 izquierda, 1 derecha), d = metros desde la defensa
+   v8: rehechos a partir de fotos; la estación pasa a la derecha del arco (como se ve al entrar), y se suman la sede del Club Cipolletti e Il Nero (en la esquina de Alem) */
 if(PISTAS.cipo&&PISTAS.cipo.zona){const Zc=PISTAS.cipo.zona;
-  Zc.lugares=[{t:'arco',i:372},{t:'aca',i:380,sg:-1,d:26},{t:'wpc',i:245,sg:-1,d:44},{t:'runadi',i:112,sg:1,d:30},
-    {t:'rosauer',i0:396,i1:428,sg:-1},{t:'loba',i:330,sg:-1,d:12}];
+  Zc.lugares=[{t:'arco',i:372},{t:'aca',i:381,sg:1,d:24},{t:'wpc',i:245,sg:-1,d:56},{t:'runadi',i:112,sg:1,d:30},
+    {t:'rosauer',i0:396,i1:428,sg:-1},{t:'loba',i:330,sg:-1,d:30},{t:'sede',i:180,sg:1,d:19},{t:'ilnero',i:437,sg:-1,d:19}];
   /* el bulevar termina antes de las esquinas: el murito pegado no puede meterse adentro de una curva cerrada */
   Zc.bulevar=[[446,481,-1],[0,86,-1]];
   Zc.calles=(Zc.calles||[]).concat([{i:364,t:'TOSCHI'},{i:236,t:'RUTA 151'}]);}
@@ -4654,7 +4655,7 @@ const REN=(function(){
     ((Z&&Z.lugares)||[]).forEach(L=>{
       if(L.t==='rosauer'){const len=((L.i1-L.i0+n)%n),im=(L.i0+(len>>1))%n,p=pt(im,L.sg*(LB+58));lugares.push(Object.assign({x:p[0],y:p[1],r:Math.max(70,len*4.6),im},L));}
       else if(L.t==='arco'){const p=pt(L.i,0);lugares.push(Object.assign({x:p[0],y:p[1],r:0},L));}
-      else{const R0={aca:30,wpc:58,runadi:42,loba:16}[L.t]||30,p=pt(L.i,L.sg*(LB+L.d));lugares.push(Object.assign({x:p[0],y:p[1],r:R0},L));}
+      else{const R0={aca:30,wpc:64,runadi:44,loba:40,sede:30,ilnero:22}[L.t]||30,p=pt(L.i,L.sg*(LB+L.d));lugares.push(Object.assign({x:p[0],y:p[1],r:R0},L));}
     });
     const cercaLugar=(x,y,m)=>lugares.some(L=>L.r>0&&Math.hypot(x-L.x,y-L.y)<L.r+(m||0));
     const AG=aguaDe(T,AM);
@@ -5365,7 +5366,8 @@ const REN3=(function(){
     (Z.chacras||[]).forEach(([a,b,sg])=>{
       for(let q=0,len=((b-a+n)%n)+1;q<len;q+=2){const i=(a+q)%n;for(let r=0;r<5;r++){
         const h=hs(i,r),p=pt(T,i,sg*(DD.LBa[i]+16+r*8+(h%3)));
-        if(lejosDe(p[0],p[1],LB+4))copas.push([p[0],p[1],1.9+(h%5)*0.12,(h>>>5)%4?'#4f8a35':'#6d9a2e']);
+        /* v8: sin frutales encima de los lugares */
+        if(lejosDe(p[0],p[1],LB+4)&&!(DD.lugares||[]).some(L=>L.r>0&&Math.hypot(p[0]-L.x,p[1]-L.y)<L.r+4))copas.push([p[0],p[1],1.9+(h%5)*0.12,(h>>>5)%4?'#4f8a35':'#6d9a2e']);
       }}
     });
     if(copas.length){
@@ -5396,96 +5398,414 @@ const REN3=(function(){
       im.receiveShadow=true;G.add(im);
     }
   }
-  /* v7: los lugares de Cipolletti, dibujados a mano (formas simples, no a escala) */
+  /* v8: los lugares de Cipolletti rehechos a partir de fotos (dibujados a mano y ubicados a ojo: no van a escala).
+     Sin logos: solo los nombres en letras. Cada lugar se arma en su grupo y al final se funde por material (pocas llamadas de dibujo). */
   function lugaresZona(T,DD,G){
     const n=T.n,LB=DD.LB,thI=i=>{i=((i%n)+n)%n;return Math.atan2(T.ty[i],T.tx[i]);};
-    const M=(c,o)=>new T3.MeshLambertMaterial(Object.assign({color:CL(c)},o||{}));
-    const box=(g,w_,h_,d_,m,x,y,z,ry)=>{const b=new T3.Mesh(new T3.BoxGeometry(w_,h_,d_),m);b.position.set(x,y,z);if(ry)b.rotation.y=ry;b.castShadow=true;b.receiveShadow=true;g.add(b);return b;};
-    const cyl=(g,rt,rb,h_,m,x,y,z,seg)=>{const c=new T3.Mesh(new T3.CylinderGeometry(rt,rb,h_,seg||10),m);c.position.set(x,y,z);c.castShadow=true;g.add(c);return c;};
-    const cartel=(g,t,fondo,letra,ancho,alto,x,y,z,ry)=>{const m=new T3.Mesh(new T3.PlaneGeometry(ancho,alto),new T3.MeshBasicMaterial({map:texTexto(t,fondo,letra,1024,Math.round(1024*alto/ancho))}));m.position.set(x,y,z);m.rotation.y=ry||0;g.add(m);return m;};
-    const piso=(g,a,l,m,x,z,y)=>{const pl=new T3.Mesh(new T3.PlaneGeometry(a,l),m);pl.rotation.x=-Math.PI/2;pl.position.set(x,y||0.05,z);pl.receiveShadow=true;g.add(pl);return pl;};
-    const grupo=(L,dist)=>{const i=((L.i%n)+n)%n,p=pt(T,i,L.sg*dist),g=new T3.Group();g.position.set(p[0],0,p[1]);g.rotation.y=-thI(i);G.add(g);return g;};
-    /* la cara que mira a la pista: en el grupo, el lado -sg del eje z */
+    const MC=new Map();
+    const M=(c,o)=>{if(o)return new T3.MeshLambertMaterial(Object.assign({color:CL(c)},o));let m=MC.get(c);if(!m){m=new T3.MeshLambertMaterial({color:CL(c)});MC.set(c,m);}return m;};
+    const MT=(t,o)=>new T3.MeshLambertMaterial(Object.assign({map:t},o||{}));
+    const MB=t=>new T3.MeshBasicMaterial({map:t});
+    const malla=(g,geo,m,x,y,z,ry)=>{const o=new T3.Mesh(geo,m);o.position.set(x||0,y||0,z||0);if(ry)o.rotation.y=ry;g.add(o);return o;};
+    const box=(g,a,h,d,m,x,y,z,ry)=>malla(g,new T3.BoxGeometry(a,h,d),m,x,y,z,ry);
+    /* caja con la textura medida en metros (ladrillo, piedra, chapa): la textura se repite igual en cualquier tamaño */
+    const boxM=(g,a,h,d,m,x,y,z,ry)=>{const geo=new T3.BoxGeometry(a,h,d),uv=geo.attributes.uv,dim=[[d,h],[d,h],[a,d],[a,d],[a,h],[a,h]];
+      for(let k=0;k<24;k++){const f=dim[k>>2];uv.setXY(k,uv.getX(k)*f[0],uv.getY(k)*f[1]);}return malla(g,geo,m,x,y,z,ry);};
+    const cyl=(g,rt,rb,h,m,x,y,z,seg)=>malla(g,new T3.CylinderGeometry(rt,rb,h,seg||10),m,x,y,z);
+    const bola=(g,r,m,x,y,z,sx,sy,sz,seg)=>{const o=malla(g,new T3.SphereGeometry(r,seg||10,Math.max(6,(seg||10)-3)),m,x,y,z);if(sx)o.scale.set(sx,sy,sz);return o;};
+    const plano=(g,a,h,m,x,y,z,ry)=>malla(g,new T3.PlaneGeometry(a,h),m,x,y,z,ry);
+    const piso=(g,a,l,m,x,z,y,uvM)=>{const geo=new T3.PlaneGeometry(a,l);if(uvM){const uv=geo.attributes.uv;for(let k=0;k<uv.count;k++)uv.setXY(k,uv.getX(k)*a,uv.getY(k)*l);}geo.rotateX(-Math.PI/2);return malla(g,geo,m,x,y==null?0.05:y,z);};
+    /* palo entre dos puntos */
+    const palo=(g,a,b,r1,r2,m,seg)=>{const d=new T3.Vector3(b[0]-a[0],b[1]-a[1],b[2]-a[2]),L=d.length(),o=new T3.Mesh(new T3.CylinderGeometry(r2,r1,L,seg||8),m);
+      o.position.set((a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2);o.quaternion.setFromUnitVectors(new T3.Vector3(0,1,0),d.normalize());g.add(o);return o;};
+    const grupo=(i,sg,dist)=>{i=((i%n)+n)%n;const p=pt(T,i,sg*dist),g=new T3.Group();g.position.set(p[0],0,p[1]);g.rotation.y=-thI(i);G.add(g);return g;};
+    /* pasa las piezas de un subgrupo al grupo con su posición ya aplicada (así después se pueden fundir) */
+    const aplanar=(sub,g)=>{sub.updateMatrix();sub.children.slice().forEach(c=>{c.updateMatrix();c.geometry.applyMatrix4(new T3.Matrix4().multiplyMatrices(sub.matrix,c.matrix));
+      c.position.set(0,0,0);c.rotation.set(0,0,0);c.quaternion.identity();c.scale.set(1,1,1);g.add(c);});};
+    const terminar=g=>{fundir(g);g.children.forEach(c=>{c.castShadow=true;c.receiveShadow=true;});};
     const hacia=sg=>sg>0?Math.PI:0;
-    const auto=(g,x,z,c,ry)=>{box(g,8.6,2.4,3.6,M(c),x,1.5,z,ry);box(g,4.6,1.6,3.3,MAT.oscuro,x,3.3,z,ry);};
-    const mCem=M('#a9aaa6'),mBlanco=M('#f3f3f1'),mVidrio=M('#cfe8f2',{transparent:true,opacity:0.28,depthWrite:false,side:T3.DoubleSide});
+    const cartel=(g,t,fondo,letra,ancho,alto,x,y,z,ry)=>plano(g,ancho,alto,MB(texTexto(t,fondo,letra,1024,Math.max(32,Math.round(1024*alto/ancho)))),x,y,z,ry);
+    const lz=(W,H,fn)=>tex(lienzo(W,H,fn),1,1);
+    const tono=(hex,k)=>{const c=new T3.Color(hex);return 'rgb('+[c.r,c.g,c.b].map(v=>Math.max(0,Math.min(255,Math.round(v*255*k)))).join(',')+')';};
+    const FUENTE='Archivo,"Helvetica Neue",Arial,system-ui,sans-serif';
+    /* texturas medidas en metros: 256 px = 2 m */
+    const ladrillo=(base,junta)=>{const t=lz(256,256,(g,W,H)=>{g.fillStyle=junta;g.fillRect(0,0,W,H);
+      for(let r=0;r<16;r++){const off=(r&1)?32:0;for(let x=-64;x<W;x+=64){g.fillStyle=tono(base,0.8+Math.random()*0.32);g.fillRect(x+off+2,r*16+2,60,13);
+        g.fillStyle='rgba(255,255,255,.06)';g.fillRect(x+off+2,r*16+2,60,3);}}});t.repeat.set(0.5,0.5);return t;};
+    const piedra=(base,junta)=>{const t=lz(256,256,(g,W,H)=>{g.fillStyle=junta;g.fillRect(0,0,W,H);
+      for(let r=0;r<4;r++){let x=-((r*37)%60);while(x<W){const a=46+Math.random()*54;g.fillStyle=tono(base,0.84+Math.random()*0.26);g.fillRect(x+3,r*64+3,a-6,58);
+        g.fillStyle='rgba(0,0,0,.08)';g.fillRect(x+3,r*64+50,a-6,11);x+=a;}}});t.repeat.set(0.5,0.5);return t;};
+    /* un escudito redondo genérico (aros dorados y azul): no es ningún logo */
+    const emblema=(g,x,y,r)=>{g.fillStyle='#a77d1c';g.beginPath();g.arc(x,y,r,0,7);g.fill();g.fillStyle='#e0b23a';g.beginPath();g.arc(x,y,r*0.92,0,7);g.fill();
+      g.fillStyle='#1d3f86';g.beginPath();g.arc(x,y,r*0.76,0,7);g.fill();g.strokeStyle='#f1d070';g.lineWidth=r*0.07;g.beginPath();g.arc(x,y,r*0.58,0,7);g.stroke();
+      g.fillStyle='#e9c14a';g.beginPath();g.arc(x,y,r*0.26,0,7);g.fill();};
+    const auto=(g,x,z,c,ry)=>{box(g,8.6,2.2,3.6,M(c),x,1.45,z,ry);box(g,4.8,1.5,3.3,M('#22272e'),x,3.2,z,ry);
+      for(const [dx,dz] of[[2.8,1.7],[-2.8,1.7],[2.8,-1.7],[-2.8,-1.7]]){const c_=Math.cos(ry||0),s_=Math.sin(ry||0);cyl(g,0.75,0.75,0.5,M('#151515'),x+dx*c_+dz*s_,0.75,z-dx*s_+dz*c_,10).rotation.set(Math.PI/2,0,0);}};
+    const hojas=(g,x,z,h,r,c)=>{cyl(g,0.25,0.4,h*0.5,MAT.tronco,x,h*0.25,z,6);bola(g,1,M(c),x,h*0.62,z,r,h*0.45,r,8);};
+    const cipres=(g,x,z,h)=>{cyl(g,0.25,0.35,2,MAT.tronco,x,1,z,6);bola(g,1,M('#24452b'),x,h*0.52,z,h*0.11,h*0.5,h*0.11,9);};
+    const alamo=(g,x,z,h)=>{cyl(g,0.25,0.4,3,MAT.tronco,x,1.5,z,6);bola(g,1,M('#6b9a3a'),x,h*0.56,z,h*0.085,h*0.46,h*0.085,8);};
+    const mVidrio=M('#cfe8f2',{transparent:true,opacity:0.3,depthWrite:false,side:T3.DoubleSide});
+    const mBlanco=M('#f2f1ee'),mCem=M('#b9b6ae'),mNegro=M('#1b1d20');
+
+    /* ---------- el arco curvo de la entrada: banda curva con las letras de los dos lados ---------- */
+    function banda(S,yE,yC,hB,dB,mCara,mLado){
+      const hh=yC-yE,R=(S*S+hh*hh)/(2*hh),y0=yC-R,a0=Math.asin(S/R),N=64;
+      const fP=[],fU=[],sP=[];
+      const P=(a,o)=>[(R+o)*Math.sin(a),y0+(R+o)*Math.cos(a)];
+      const V=(x,p)=>[x,p[1],p[0]];
+      const quad=(PP,UU,a,b,c,d,ua,ub,uc,ud)=>{PP.push(...a,...b,...c,...a,...c,...d);if(UU)UU.push(...ua,...ub,...uc,...ua,...uc,...ud);};
+      const X0=-dB/2,X1=dB/2;
+      for(let k=0;k<N;k++){
+        const a1=-a0+2*a0*k/N,a2=-a0+2*a0*(k+1)/N,u1=k/N,u2=(k+1)/N;
+        const b1=P(a1,-hB/2),t1=P(a1,hB/2),b2=P(a2,-hB/2),t2=P(a2,hB/2);
+        quad(fP,fU,V(X0,b1),V(X0,b2),V(X0,t2),V(X0,t1),[u1,0],[u2,0],[u2,1],[u1,1]);
+        quad(fP,fU,V(X1,b2),V(X1,b1),V(X1,t1),V(X1,t2),[1-u2,0],[1-u1,0],[1-u1,1],[1-u2,1]);
+        quad(sP,null,V(X0,t1),V(X0,t2),V(X1,t2),V(X1,t1));
+        quad(sP,null,V(X0,b1),V(X1,b1),V(X1,b2),V(X0,b2));
+      }
+      for(const a of[-a0,a0]){const b=P(a,-hB/2),t=P(a,hB/2);quad(sP,null,V(X0,b),V(X1,b),V(X1,t),V(X0,t));}
+      const geo=(PP,UU)=>{const g=new T3.BufferGeometry();g.setAttribute('position',new T3.Float32BufferAttribute(PP,3));
+        g.setAttribute('uv',new T3.Float32BufferAttribute(UU||new Array(PP.length/3*2).fill(0),2));g.computeVertexNormals();return g;};
+      return{cara:new T3.Mesh(geo(fP,fU),mCara),lado:new T3.Mesh(geo(sP),mLado),arc:2*R*a0,yAbajo:z=>y0+Math.sqrt(Math.max(0,R*R-z*z))-hB/2};
+    }
+    /* un paño de pared con un arco abierto abajo (para la Loba y el portal del Rosauer) */
+    const formaArco=(b,H,a,hs)=>{const s=new T3.Shape();s.moveTo(-b/2,0);s.lineTo(-a/2,0);s.lineTo(-a/2,hs);s.absarc(0,hs,a/2,Math.PI,0,true);
+      s.lineTo(a/2,0);s.lineTo(b/2,0);s.lineTo(b/2,H);s.lineTo(-b/2,H);s.lineTo(-b/2,0);return s;};
+    const aro=(r0,r1)=>{const s=new T3.Shape();s.absarc(0,0,r1,0,Math.PI,false);s.lineTo(-r0,0);s.absarc(0,0,r0,Math.PI,0,true);s.lineTo(r1,0);return s;};
+    const extruir=(shape,d,m)=>{const geo=new T3.ExtrudeGeometry(shape,{depth:d,bevelEnabled:false,curveSegments:14});geo.translate(0,0,-d/2);return new T3.Mesh(geo,m);};
+
     (DD.lugares||[]).forEach(L=>{
       if(L.t==='arco'){
-        /* el arco de la entrada: dos columnas y el travesaño con el cartel, de lado a lado de la avenida */
+        /* "BIENVENIDOS A CIPOLLETTI": banda curva gris azulada con las letras claras y dos escuditos, sobre dos columnas con su placa,
+           canteros con cordón amarillo y el farol rojo de un lado */
         const i=((L.i%n)+n)%n,p=pt(T,i,0),g=new T3.Group();g.position.set(p[0],0,p[1]);g.rotation.y=-thI(i);G.add(g);
-        const an=Math.max(DD.LBi?DD.LBi[i]:LB,DD.LBd?DD.LBd[i]:LB)+2.5,mCol=M('#b5543a'),mViga=M('#efe9dc');
-        for(const z of[-an,an]){box(g,3.4,16,3.4,mCol,0,8,z);box(g,4.4,1,4.4,mViga,0,16.3,z);}
-        box(g,2.2,3.6,2*an+3.4,mViga,0,14.6,0);
-        cartel(g,'BIENVENIDO A CIPOLLETTI','#0b4f8a','#ffffff',Math.min(46,2*an-6),3.2,-1.15,14.6,0,-Math.PI/2);
-        const bk=new T3.Mesh(new T3.PlaneGeometry(Math.min(46,2*an-6),3.2),M('#0b4f8a'));bk.position.set(1.15,14.6,0);bk.rotation.y=Math.PI/2;g.add(bk);
+        const aI=DD.LBi?DD.LBi[i]:LB,aD=DD.LBd?DD.LBd[i]:LB,S=Math.max(aI,aD)+9,hB=4.2;
+        const R0=banda(S,12.5,22.5,hB,2.4,null,M('#3d5266',{side:T3.DoubleSide}));
+        const W=Math.min(4096,Math.round(128*R0.arc/hB));
+        const tB=lz(W,128,(c,W_,H)=>{
+          const gr=c.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#5a7286');gr.addColorStop(0.5,'#465d71');gr.addColorStop(1,'#374b5e');c.fillStyle=gr;c.fillRect(0,0,W_,H);
+          c.fillStyle='#7d93a6';c.fillRect(0,0,W_,8);c.fillRect(0,H-8,W_,8);c.fillStyle='rgba(0,0,0,.35)';c.fillRect(0,8,W_,2);c.fillRect(0,H-10,W_,2);
+          c.font='800 80px '+FUENTE;c.textAlign='center';c.textBaseline='middle';try{c.letterSpacing='5px';}catch(e){}
+          const txt='BIENVENIDOS A CIPOLLETTI',tw=c.measureText(txt).width,k=Math.min(1,W_*0.5/tw);
+          c.save();c.translate(W_/2,H/2+4);c.scale(k,1);c.lineJoin='round';c.lineWidth=9;c.strokeStyle='#1a2530';c.strokeText(txt,0,0);c.fillStyle='#e9eef1';c.fillText(txt,0,0);c.restore();
+          emblema(c,W_*0.205,H/2,44);emblema(c,W_*0.795,H/2,44);});
+        R0.cara.material=MT(tB,{side:T3.DoubleSide});g.add(R0.cara);g.add(R0.lado);
+        const mCol=M('#566b7d'),mGab=M('#8996a2'),mPl=MT(lz(128,128,(c,W_,H)=>{c.fillStyle='#e9ecee';c.fillRect(0,0,W_,H);c.strokeStyle='#566b7d';c.lineWidth=8;c.strokeRect(4,4,W_-8,H-8);emblema(c,W_/2,H/2,44);}));
+        for(const z of[-(aI+3.2),aD+3.2]){
+          const yb=R0.yAbajo(z);
+          boxM(g,7.6,1.0,7.6,mCem,0,0.5,z);box(g,7.9,0.3,7.9,M('#e3b51e'),0,0.15,z);piso(g,6.8,6.8,M('#4c8a3b'),0,z,1.02);
+          box(g,3.6,5,3.6,mGab,0,3.5,z);for(const dx of[-1.85,1.85])for(const dz of[-1.85,1.85])box(g,0.25,5.2,0.25,mCol,dx,3.6,z+dz);
+          box(g,2.6,yb-6+0.6,2.6,mCol,0,6+(yb-6+0.6)/2,z);
+          box(g,3.2,0.5,3.2,mCol,0,6.2,z);
+          /* la placa con el escudito, de los dos lados */
+          for(const sx of[-1,1]){const pl=plano(g,2.6,2.6,mPl,sx*1.43,yb-2.4,z,sx<0?-Math.PI/2:Math.PI/2);}
+          box(g,2.8,2.9,2.9,M('#d9dde0'),0,yb-2.4,z);
+        }
+        /* el farol rojo, antes del arco y del lado de adentro */
+        {const z=-(aI+6),mR=M('#c3282a');cyl(g,0.28,0.4,15,mR,-16,7.5,z,10);palo(g,[-16,14.6,z],[-16,15.6,z+3.4],0.16,0.16,mR);
+          box(g,1.4,0.4,0.7,M('#2a2a2a'),-16,15.5,z+3.8);cyl(g,0.8,0.8,0.6,mCem,-16,0.3,z,10);}
+        fundir(g);g.children.forEach(c=>{c.castShadow=true;c.receiveShadow=true;});
       }
       else if(L.t==='aca'){
-        /* la estación de servicio al lado del arco: playa, techo, surtidores, minimercado y el cartel alto */
-        const g=grupo(L,LB+L.d),f=-L.sg,mAz=M('#0e4c96');
+        /* la estación de servicio al lado del arco: playa, techo blanco con la franja azul, surtidores, minimercado y el cartel alto */
+        const g=grupo(L.i,L.sg,LB+L.d),f=-L.sg,mAz=M('#0e4c96');
         piso(g,52,34,mCem,0,0,0.06);
-        for(const x of[-11,11])for(const z of[-6,6])cyl(g,0.35,0.35,6.4,mBlanco,x,3.2,z,8);
-        box(g,30,1,18,mBlanco,0,6.9,0);box(g,30.2,0.9,18.2,mAz,0,7.8,0);
-        for(const x of[-7,0,7]){box(g,1.4,0.4,5,mCem,x,0.25,0);box(g,1,2.6,1.6,M('#d9dde2'),x,1.7,-1.4);box(g,1,2.6,1.6,M('#d9dde2'),x,1.7,1.4);}
-        box(g,18,5.2,10,M('#e9e6df'),0,2.6,-f*21);cartel(g,'MINIMERCADO','#0e4c96','#ffffff',12,1.6,0,4.2,-f*21+f*5.05,hacia(L.sg));
+        for(const x of[-11,11])for(const z of[-6,6])cyl(g,0.4,0.4,6.4,mBlanco,x,3.2,z,10);
+        box(g,30,0.9,18,mBlanco,0,6.8,0);box(g,30.4,1.1,18.4,mAz,0,7.8,0);box(g,30.5,0.22,18.5,mBlanco,0,7.95,0);
+        for(const x of[-7,0,7]){box(g,1.6,0.4,5.4,mCem,x,0.25,0);for(const z of[-1.4,1.4]){box(g,1.1,2.8,1.6,M('#e2e5e8'),x,1.8,z);box(g,1.12,0.6,1.62,mAz,x,2.9,z);}}
+        box(g,18,5.2,10,M('#ebe8e1'),0,2.6,-f*21);box(g,18.2,1,10.2,mAz,0,5.5,-f*21);
+        cartel(g,'MINIMERCADO','#0e4c96','#ffffff',12,1.4,0,3.9,-f*21+f*5.06,hacia(L.sg));
+        plano(g,14,2.4,mVidrio,0,1.6,-f*21+f*5.05,hacia(L.sg));
         cyl(g,0.45,0.45,14,M('#7d858f'),20,7,f*11,8);box(g,6,3.6,0.8,mAz,20,15.4,f*11);
         cartel(g,'ACA','#0e4c96','#ffffff',5.6,3,20,15.4,f*11+f*0.42,hacia(L.sg));
         auto(g,-7,4.2,'#e8e8e8');auto(g,7,-4.2,'#b3261e');
+        terminar(g);
       }
       else if(L.t==='wpc'){
-        /* World Padel Center Patagonia: el galpón grande con techo curvo, la playa de estacionamiento y el cartel */
-        const g=grupo(L,LB+L.d),f=-L.sg,mCh=M('#d6dadf'),mTe=M('#9aa3ad',{side:T3.DoubleSide});
-        box(g,84,11,42,mCh,0,5.5,0);
-        {const ge=new T3.CylinderGeometry(21.5,21.5,84,24,1,true,0,Math.PI);ge.rotateZ(Math.PI/2);ge.scale(1,0.34,1);const te=new T3.Mesh(ge,mTe);te.position.y=11;te.castShadow=true;g.add(te);}
-        cartel(g,'WORLD PADEL CENTER','#101418','#ffd23f',60,4.4,0,8.2,f*21.06,hacia(L.sg));
-        cartel(g,'PATAGONIA','#101418','#ffffff',24,2.2,0,3.4,f*21.06,hacia(L.sg));
-        piso(g,84,22,mCem,0,f*33,0.06);
-        [['#2b2f36',-30],['#e8e8e8',-18],['#9aa3ad',-6],['#1f4e8c',10],['#b3261e',24]].forEach(([c,x],k)=>auto(g,x,f*(29+(k&1)*7),c,Math.PI/2));
+        /* World Padel Center Patagonia: el galpón gris oscuro de chapa, el nombre en blanco con el jugador saltando, la puerta,
+           y adelante la playa de estacionamiento con los techitos sobre caños */
+        const g=grupo(L.i,L.sg,LB+L.d),f=-L.sg,AN=96,AL=18,FO=44;
+        const nerv=(c,W_,H,base)=>{c.fillStyle=base;c.fillRect(0,0,W_,H);for(let x=0;x<W_;x+=12){c.fillStyle='rgba(255,255,255,.07)';c.fillRect(x,0,4,H);c.fillStyle='rgba(0,0,0,.22)';c.fillRect(x+5,0,1,H);}
+          c.fillStyle='rgba(255,255,255,.18)';c.fillRect(0,0,W_,3);};
+        const tF=lz(2048,384,(c,W_,H)=>{nerv(c,W_,H,'#3c4045');
+          const cx=W_*0.42;c.textAlign='center';c.textBaseline='alphabetic';c.fillStyle='#ffffff';
+          c.font='800 '+Math.round(H*0.14)+'px '+FUENTE;c.fillText('WORLD PADEL',cx,H*0.42);
+          c.font='700 '+Math.round(H*0.055)+'px '+FUENTE;try{c.letterSpacing='5px';}catch(e){}c.fillText('CENTER',cx,H*0.505);
+          c.font='800 '+Math.round(H*0.1)+'px '+FUENTE;c.fillText('PATAGONIA',cx,H*0.62);try{c.letterSpacing='0px';}catch(e){}
+          /* la puerta con su marco blanco */
+          c.fillStyle='#f4f4f4';c.fillRect(cx-W_*0.035,H*0.74,W_*0.07,H*0.26);c.fillStyle='#1d2125';c.fillRect(cx-W_*0.029,H*0.78,W_*0.058,H*0.22);
+          c.fillStyle='#3a4148';c.fillRect(cx-W_*0.026,H*0.8,W_*0.025,H*0.2);c.fillRect(cx+W_*0.001,H*0.8,W_*0.025,H*0.2);
+          /* un jugador saltando para el remate, con la paleta arriba (silueta blanca, genérica) */
+          {const s=H/125,X=x=>W_*0.8+x*s,Y=y=>H*0.66+y*s;c.fillStyle='#f6f6f6';c.strokeStyle='#f6f6f6';c.lineCap='round';c.lineJoin='round';
+            const linea=(w,pp)=>{c.lineWidth=w*s;c.beginPath();pp.forEach((q,k)=>k?c.lineTo(X(q[0]),Y(q[1])):c.moveTo(X(q[0]),Y(q[1])));c.stroke();};
+            c.beginPath();c.arc(X(6),Y(-38),6.5*s,0,7);c.fill();
+            linea(13,[[4,-28],[0,-2]]);
+            linea(6,[[3,-27],[-7,-40],[-4,-54]]);linea(6,[[6,-26],[16,-34],[23,-45]]);
+            linea(7.5,[[1,0],[10,14],[6,31]]);linea(7.5,[[-2,1],[-11,12],[-21,7]]);
+            linea(3,[[-4,-54],[-2,-60]]);c.beginPath();c.ellipse(X(1),Y(-68),6*s,8.5*s,0.3,0,7);c.fill();
+            c.fillStyle='#3c4045';for(const [px,py] of[[0,-70],[2,-66],[-1,-64],[3,-71]]){c.beginPath();c.arc(X(px),Y(py),0.8*s,0,7);c.fill();}}
+        });
+        tF.anisotropy=ANIS;
+        const tL=lz(512,128,(c,W_,H)=>nerv(c,W_,H,'#3c4045'));tL.repeat.set(FO/24,1);const tL2=lz(512,128,(c,W_,H)=>nerv(c,W_,H,'#3c4045'));tL2.repeat.set(AN/24,1);
+        const mF=MT(tF),mL=MT(tL),mL2=MT(tL2),mTe=M('#585d63');
+        const mats=[mL,mL,mTe,mTe,f>0?mF:mL2,f>0?mL2:mF];
+        const ed=new T3.Mesh(new T3.BoxGeometry(AN,AL,FO),mats);ed.position.y=AL/2;ed.castShadow=true;ed.receiveShadow=true;g.add(ed);
+        box(g,AN+0.4,0.5,FO+0.4,M('#9ea3a8'),0,AL+0.2,0);
+        /* playa de estacionamiento: hormigón claro, topes amarillos y dos filas de techitos sobre caños, perpendiculares al galpón */
+        const zF=f*FO/2,lar=L.d-FO/2-4,zm=zF+f*lar/2;
+        piso(g,AN,lar,M('#d9d5cc'),0,zm,0.06);
+        const mCa=M('#c4c9ce'),mTech=M('#e6e8ea');
+        for(const xc of[-24,22]){
+          const anT=13,lT=lar-6,z0=zF+f*2,z1=zF+f*(lar-4);
+          for(let q=0;q<=4;q++){const z=z0+(z1-z0)*q/4;for(const dx of[-anT/2+0.6,anT/2-0.6])box(g,0.3,dx<0?4.4:4.9,0.3,mCa,xc+dx,dx<0?2.2:2.45,z);
+            box(g,anT,0.3,0.3,mCa,xc,4.75,z);}
+          const te=box(g,anT+1,0.25,lT+1,mTech,xc,5.05,(z0+z1)/2);te.rotation.z=0.04;
+          box(g,0.25,0.4,lT,mCa,xc-anT/2+0.6,4.55,(z0+z1)/2);box(g,0.25,0.4,lT,mCa,xc+anT/2-0.6,4.8,(z0+z1)/2);
+          for(let q=0;q<6;q++){const z=z0+(z1-z0)*(q+0.5)/6;box(g,0.35,0.15,1.8,M('#e8c21f'),xc-anT/2+1.4,0.12,z);}
+        }
+        [['#e8e8e8',-24,0.18],['#2b2f36',-24,0.55],['#9aa3ad',22,0.3],['#1f4e8c',22,0.78],['#e8e8e8',-24,0.86]].forEach(([c,xc,q])=>{
+          const z=zF+f*(2+(lar-6)*q);auto(g,xc-1.2,z,c,0);});
+        terminar(g);
       }
       else if(L.t==='runadi'){
-        /* Runadi Pádel: el club con su edificio, canchas de vidrio al aire libre y el cartel */
-        const g=grupo(L,LB+L.d),f=-L.sg,mCes=M('#2f6fb8'),mNeg=M('#16181c');
-        box(g,26,7,12,M('#ece7dc'),-26,3.5,0);cartel(g,'RUNADI PÁDEL','#16181c','#ffffff',20,2.6,-26,5.2,f*6.06,hacia(L.sg));
-        for(const x of[2,26]){piso(g,20,36,mCes,x,0,0.07);
-          for(const z of[-18,18]){const v=new T3.Mesh(new T3.PlaneGeometry(20,4),mVidrio);v.position.set(x,2,z);g.add(v);}
-          for(const xx of[x-10,x+10]){const v=new T3.Mesh(new T3.PlaneGeometry(10,4),mVidrio);v.position.set(xx,2,-13);v.rotation.y=Math.PI/2;g.add(v);const v2=v.clone();v2.position.z=13;g.add(v2);
-            const al=new T3.Mesh(new T3.PlaneGeometry(16,4),MAT.alambre);al.position.set(xx,2,0);al.rotation.y=Math.PI/2;g.add(al);}
-          for(const xx of[x-10,x+10])for(const z of[-18,-8,8,18])box(g,0.2,4.2,0.2,mNeg,xx,2.1,z);
-          box(g,20,1,0.1,mNeg,x,0.5,0);
-          const lin=new T3.Mesh(new T3.PlaneGeometry(0.15,36),mBlanco);lin.rotation.x=-Math.PI/2;lin.position.set(x,0.09,0);g.add(lin);}
-        cyl(g,0.35,0.35,10,M('#7d858f'),-10,5,f*15,8);cartel(g,'RUNADI PÁDEL','#2f6fb8','#ffffff',9,2.4,-10,9.6,f*15+f*0.05,hacia(L.sg));
+        /* Runadi Pádel: la casa del club con el nombre, dos canchas de vidrio con alambrado, red, líneas y torres de luz, y el cartel en la ruta */
+        const g=grupo(L.i,L.sg,LB+L.d),f=-L.sg,mCes=M('#2a64ad'),mLin=M('#f4f4f4');
+        const tN=lz(1024,256,(c,W_,H)=>{c.fillStyle='#ffffff';c.fillRect(0,0,W_,H);c.fillStyle='#bdeef4';c.fillRect(0,H*0.68,W_,H*0.32);
+          c.textAlign='center';c.textBaseline='middle';c.fillStyle='#1d2f8c';c.font='italic 900 '+Math.round(H*0.5)+'px '+FUENTE;c.fillText('RUNADI',W_/2,H*0.36);
+          c.fillStyle='#1d2f8c';c.font='700 '+Math.round(H*0.18)+'px '+FUENTE;try{c.letterSpacing='6px';}catch(e){}c.fillText('CLUB DE PÁDEL',W_/2,H*0.84);});
+        const mN=MB(tN);
+        /* la casa del club */
+        const tC=lz(512,128,(c,W_,H)=>{c.fillStyle='#ecebe6';c.fillRect(0,0,W_,H);for(let k=0;k<4;k++){const x=20+k*124;c.fillStyle='#2b3239';c.fillRect(x,40,100,80);c.fillStyle='rgba(255,255,255,.12)';c.fillRect(x+6,44,30,72);c.fillStyle='#2b3239';c.fillRect(x+48,40,3,80);}});
+        const ed=new T3.Mesh(new T3.BoxGeometry(26,7,12),[mBlanco,mBlanco,M('#9aa1a8'),mBlanco,f>0?MT(tC):mBlanco,f>0?mBlanco:MT(tC)]);ed.position.set(-28,3.5,0);g.add(ed);
+        box(g,27,0.5,14,M('#4a5058'),-28,7.2,f*0.6);
+        plano(g,13,3.25,mN,-28,9.4,f*5.6,hacia(L.sg));box(g,13.4,3.6,0.3,mBlanco,-28,9.4,f*5.4);
+        for(const x of[0,24]){
+          piso(g,20,40,mCes,x,0,0.07);
+          for(const z of[-13.9,13.9])piso(g,20,0.14,mLin,x,z,0.09);piso(g,0.14,27.8,mLin,x,0,0.09);
+          for(const z of[-20,20]){plano(g,20,6,mVidrio,x,3,z);box(g,20,0.25,0.25,mNegro,x,6,z);}
+          for(const xx of[x-10,x+10]){
+            for(const z of[-16,16]){const v=plano(g,8,6,mVidrio,xx,3,z,Math.PI/2);}
+            const al=plano(g,24,6,MAT.alambre,xx,3,0,Math.PI/2);
+            box(g,0.2,0.2,40,mNegro,xx,6,0);
+            for(const z of[-20,-12,-4,4,12,20])box(g,0.22,6.6,0.22,mNegro,xx,3.3,z);
+          }
+          box(g,20,1.05,0.08,M('#222428'),x,0.55,0);box(g,20,0.12,0.1,mLin,x,1.1,0);box(g,0.2,1.2,0.2,mNegro,x-10,0.6,0);box(g,0.2,1.2,0.2,mNegro,x+10,0.6,0);
+          for(const xx of[x-11,x+11])for(const z of[-14,14]){cyl(g,0.18,0.24,11,M('#7d858f'),xx,5.5,z,6);box(g,1.6,0.5,0.9,M('#2a2d31'),xx-Math.sign(xx-x)*0.6,11,z);}
+        }
+        /* el cartel de la ruta */
+        for(const dx of[-3.6,3.6])cyl(g,0.25,0.25,9,M('#7d858f'),-9+dx,4.5,f*17,8);
+        plano(g,9,2.25,mN,-9,8.6,f*17.12,hacia(L.sg));box(g,9.4,2.6,0.2,M('#7d858f'),-9,8.6,f*17);
+        terminar(g);
       }
       else if(L.t==='rosauer'){
-        /* Parque Rosauer: pasto, senderos, árboles, bancos y el cartel de la entrada */
+        /* Parque Rosauer: pasto, senderos, árboles y bancos; en el medio, el portal de ladrillo con almenas y el portón de rejas, con los álamos atrás */
         const sg=L.sg,f=i=>enR(i,L.i0,L.i1)&&enR((i+1)%n,L.i0,L.i1),mP=M('#4e9b3d'),mS=M('#cdbb98');
         function enR(i,a,b){return a<=b?i>=a&&i<=b:(i>=a||i<=b);}
         const O=(a,b)=>[Math.min(sg*a,sg*b),Math.max(sg*a,sg*b)];
         const ps=cinta(T,...O(LB+5,LB+118),0.045,mP,8,f,0,1);if(ps)G.add(ps);
         for(const [a,b] of[[LB+11,LB+15],[LB+66,LB+70]]){const c=cinta(T,...O(a,b),0.06,mS,8,f,0,1);if(c)G.add(c);}
-        const len=((L.i1-L.i0+n)%n);
-        for(let q=4;q<len;q+=10){const i=(L.i0+q)%n,a=pt(T,i,sg*(LB+11)),b=pt(T,i,sg*(LB+70)),th=thI(i),c=new T3.Mesh(new T3.PlaneGeometry(4,59),mS);
+        const len=((L.i1-L.i0+n)%n),im=(L.i0+(len>>1))%n,dP=LB+19,pP=pt(T,im,sg*dP);
+        const lejosPortal=(x,y,m)=>Math.hypot(x-pP[0],y-pP[1])>m;
+        for(let q=4;q<len;q+=10){const i=(L.i0+q)%n;if(Math.abs(i-im)<3)continue;const a=pt(T,i,sg*(LB+11)),b=pt(T,i,sg*(LB+70)),th=thI(i),c=new T3.Mesh(new T3.PlaneGeometry(4,59),mS);
           c.rotation.x=-Math.PI/2;c.rotation.z=-th;c.position.set((a[0]+b[0])/2,0.058,(a[1]+b[1])/2);G.add(c);}
         const cop=[],CO=['#3f7d34','#4f8f3a','#5e9a3c','#2f6d2c'];
-        for(let q=0;q<=len;q++)for(let r=0;r<4;r++){const i=(L.i0+q)%n,h=((i*2654435761+r*40503)>>>0);if(h%3===0)continue;const p=pt(T,i,sg*(LB+20+r*24+(h%9)));cop.push([p[0],p[1],3.4+(h>>>5)%3,CO[(h>>>8)%4]]);}
+        for(let q=0;q<=len;q++)for(let r=0;r<4;r++){const i=(L.i0+q)%n,h=((i*2654435761+r*40503)>>>0);if(h%3===0)continue;const p=pt(T,i,sg*(LB+20+r*24+(h%9)));
+          if(!lejosPortal(p[0],p[1],22))continue;cop.push([p[0],p[1],3.4+(h>>>5)%3,CO[(h>>>8)%4]]);}
         if(cop.length){const cm=new T3.InstancedMesh(new T3.SphereGeometry(1,8,6),MAT.copa,cop.length),tr=new T3.InstancedMesh(new T3.CylinderGeometry(0.3,0.42,1,6),MAT.tronco,cop.length),o=new T3.Object3D();
           cop.forEach(([x,y,r,c],k)=>{o.position.set(x,r*1.5,y);o.scale.set(r,r*1.05,r);o.rotation.set(0,k,0);o.updateMatrix();cm.setMatrixAt(k,o.matrix);cm.setColorAt(k,CL(c));o.position.set(x,r*0.55,y);o.scale.set(1,r*1.1,1);o.updateMatrix();tr.setMatrixAt(k,o.matrix);});G.add(cm);G.add(tr);}
-        for(let q=6;q<len;q+=8){const i=(L.i0+q)%n,p=pt(T,i,sg*(LB+16.5)),b=new T3.Mesh(new T3.BoxGeometry(3,0.5,1),MAT.tronco);b.position.set(p[0],0.7,p[1]);b.rotation.y=-thI(i);G.add(b);}
-        const im=(L.i0+(len>>1))%n,g=grupo({i:im,sg},LB+7);
-        box(g,18,2.2,1,M('#8a6a4a'),0,1.1,0);cartel(g,'PARQUE ROSAUER','#2f5a2a','#ffffff',16,1.6,0,1.25,-sg*0.52,hacia(sg));
+        for(let q=6;q<len;q+=8){const i=(L.i0+q)%n;if(Math.abs(i-im)<3)continue;const p=pt(T,i,sg*(LB+16.5)),b=new T3.Mesh(new T3.BoxGeometry(3,0.5,1),MAT.tronco);b.position.set(p[0],0.7,p[1]);b.rotation.y=-thI(i);G.add(b);}
+        /* el portal: dos torres con almenas, el paño del medio con el arco de dovelas claras, zócalo de piedra y el portón de rejas */
+        const g=grupo(im,sg,dP),fr=-sg;
+        const mLad=MT(ladrillo('#8a5b3d','#6b4a36')),mPie=MT(piedra('#b3ab9c','#8d877c')),mCre=M('#d8c9a8'),mReja=M('#4a4f55');
+        const pared=extruir(formaArco(9.2,9.4,5.8,5.0),2.6,mLad);g.add(pared);
+        const dov=extruir(aro(2.9,3.55),2.75,mCre);dov.position.y=5.0;g.add(dov);
+        for(const x of[-3.25,3.25])boxM(g,1.95,2.0,2.8,mPie,x,1.0,0);
+        for(const x of[-3.22,3.22])box(g,1.0,0.35,2.8,mCre,x,5.05,0);
+        box(g,9.4,0.3,2.8,mCre,0,9.55,0);
+        for(let k=0;k<5;k++)boxM(g,0.95,1.05,2.2,mLad,-3.6+k*1.8,10.2,0);
+        for(const sx of[-1,1]){const x=sx*6.5;
+          boxM(g,3.8,11.4,3.8,mLad,x,5.7,0);boxM(g,4.1,2.2,4.1,mPie,x,1.1,0);box(g,4.1,0.3,4.1,mCre,x,11.4,0);
+          for(const [a,b] of[[-1.45,-1.45],[0,-1.45],[1.45,-1.45],[-1.45,0],[1.45,0],[-1.45,1.45],[0,1.45],[1.45,1.45]])boxM(g,0.9,1.15,0.9,mLad,x+a,12.1,b);
+          box(g,0.5,1.1,0.5,mNegro,sx*4.35,7.2,fr*1.35);box(g,0.36,0.6,0.36,M('#f2d68a'),sx*4.35,7.1,fr*1.42);}
+        /* portón de dos hojas */
+        for(let x=-2.8;x<=2.81;x+=0.23)box(g,0.07,4.4,0.07,mReja,x,2.3,fr*0.5);
+        for(const y of[0.35,2.4,4.45])box(g,5.8,0.12,0.1,mReja,0,y,fr*0.5);box(g,0.14,4.6,0.14,mReja,0,2.3,fr*0.5);
+        /* el camino de tierra que entra al parque, los álamos y unos pinos atrás */
+        piso(g,12,dP-LB+2,M('#bfa47a'),0,fr*(dP-LB+2)/2,0.075);piso(g,6.5,40,M('#bfa47a'),0,-fr*20,0.075);
+        for(let k=0;k<9;k++){const x=-15+k*3.7+((k*7)%3-1)*0.6;alamo(g,x,-fr*(9+(k&1)*3),20+(k*5)%6);}
+        for(const [x,z] of[[-20,-5],[19,-6],[-23,-14],[23,-15]])hojas(g,x,-fr*(-z),12,4.2,'#2f5f32');
+        /* el cartel del parque */
+        box(g,0.3,2.6,0.3,MAT.tronco,-12.2,1.3,fr*3);box(g,0.3,2.6,0.3,MAT.tronco,-7.8,1.3,fr*3);
+        cartel(g,'PARQUE ROSAUER','#2f5a2a','#ffffff',4.8,0.9,-10,2.2,fr*3.17,hacia(sg));box(g,5,1.1,0.25,M('#6a4b30'),-10,2.2,fr*3);
+        terminar(g);
       }
       else if(L.t==='loba'){
-        /* la Loba: la loba con los mellizos sobre un pedestal, en una placita */
-        const g=grupo(L,LB+L.d),f=-L.sg,mBr=new T3.MeshStandardMaterial({color:CL('#6e5136'),roughness:0.45,metalness:0.6}),mPi=M('#c9c3b5');
-        const pz=new T3.Mesh(new T3.CircleGeometry(14,32),M('#bdb6a6'));pz.rotation.x=-Math.PI/2;pz.position.y=0.06;g.add(pz);
-        box(g,8,1,8,mPi,0,0.5,0);box(g,6,5,6,mPi,0,3.5,0);box(g,7,0.6,7,mPi,0,6.3,0);
-        const s=new T3.Group();s.position.y=6.6;s.scale.setScalar(1.5);g.add(s);
-        const el=(rx,ry,rz,x,y,z,m)=>{const e=new T3.Mesh(new T3.SphereGeometry(1,14,10),m||mBr);e.scale.set(rx,ry,rz);e.position.set(x,y,z);e.castShadow=true;s.add(e);return e;};
-        el(2.3,0.95,0.85,0,2.9,0);el(0.75,0.8,0.7,2.2,3.6,0);
-        const ho=new T3.Mesh(new T3.ConeGeometry(0.42,1.1,10),mBr);ho.rotation.z=-Math.PI/2;ho.position.set(3.2,3.6,0);s.add(ho);
-        for(const z of[-0.32,0.32]){const o=new T3.Mesh(new T3.ConeGeometry(0.2,0.55,6),mBr);o.position.set(2.0,4.45,z);s.add(o);}
-        for(const [x,z] of[[1.5,0.45],[1.5,-0.45],[-1.5,0.45],[-1.5,-0.45]]){const p=new T3.Mesh(new T3.CylinderGeometry(0.2,0.16,2.2,8),mBr);p.position.set(x,1.1,z);s.add(p);}
-        const co=new T3.Mesh(new T3.CylinderGeometry(0.16,0.1,2.2,8),mBr);co.position.set(-2.8,2.4,0);co.rotation.z=-0.9;s.add(co);
-        for(const z of[-0.5,0.5]){el(0.55,0.42,0.42,0.2,0.62,z);el(0.32,0.32,0.32,0.9,0.95,z*0.9);}
-        cartel(g,'LA LOBA','#3b3f45','#f2f2f2',4.6,0.9,0,3.3,f*3.03,hacia(L.sg));
+        /* el monumento de la Loba: la columnata de ladrillo en medio círculo con arcos y columnas blancas, el templete redondo blanco en el medio,
+           la loba con los mellizos sobre su pedestal, la escalinata, la reja negra con cadenas adelante y los cipreses atrás */
+        const g=grupo(L.i,L.sg,LB+L.d),sg=L.sg;
+        const Rc=21,N=13,Hp=1.2,dB=1.5,b=2*Rc*Math.sin(Math.PI/(2*N))+0.06,a=2.7,hs=4.0,H=6.3;
+        const mLad=MT(ladrillo('#b5603b','#d6c9b8')),mBl=M('#f1efe9'),mBl2=M('#e2dfd7');
+        const P=(u,v)=>[u,sg*v];
+        /* plataforma en medio círculo y la escalinata hacia la calle */
+        {const geo=new T3.CylinderGeometry(Rc+1.2,Rc+1.2,Hp,48,1,false,sg>0?-Math.PI/2:Math.PI/2,Math.PI);malla(g,geo,mBl2,0,Hp/2,0);
+          box(g,2*(Rc+1.2),Hp,0.2,mBl2,0,Hp/2,0);
+          box(g,2*(Rc+1.2),Hp*0.66,1.2,mBl,0,Hp*0.33,-sg*0.6);box(g,2*(Rc+1.2),Hp*0.33,1.2,mBl,0,Hp*0.165,-sg*1.8);}
+        piso(g,2*(Rc+9),14,M('#cfcbc1'),0,-sg*9.4,0.06);
+        /* la columnata: paños de ladrillo con su arco, columnas blancas entre arcos, cornisa y zócalo blancos */
+        for(let k=0;k<N;k++){
+          if(k===(N>>1))continue;
+          const ph=(k+0.5)*Math.PI/N,er=[Math.cos(ph),sg*Math.sin(ph)],beta=Math.atan2(er[0],er[1]);
+          const sub=new T3.Group();sub.position.set(Rc*er[0],Hp,Rc*er[1]);sub.rotation.y=beta;
+          sub.add(extruir(formaArco(b,H,a,hs),dB,mLad));
+          const ar=new T3.Mesh(new T3.RingGeometry(a/2,a/2+0.42,14,1,0,Math.PI),mBl);ar.position.set(0,hs,-dB/2-0.04);ar.rotation.y=Math.PI;sub.add(ar);
+          const c1=new T3.Mesh(new T3.BoxGeometry(b+0.12,0.75,dB+0.7),mBl);c1.position.set(0,H+0.37,0);sub.add(c1);
+          const c2=new T3.Mesh(new T3.BoxGeometry(b+0.12,0.35,dB+0.3),mBl);c2.position.set(0,H-0.1,0);sub.add(c2);
+          const z1=new T3.Mesh(new T3.BoxGeometry(b,0.45,dB+0.25),mBl);z1.position.set(0,0.22,0);sub.add(z1);
+          for(const sx of[-1,1]){const im_=new T3.Mesh(new T3.BoxGeometry(0.5,0.3,dB+0.2),mBl);im_.position.set(sx*(a/2+0.2),hs,0);sub.add(im_);}
+          g.add(sub);aplanar(sub,g);g.remove(sub);
+        }
+        for(let j=0;j<=N;j++){
+          const ph=j*Math.PI/N,r=Rc-dB/2-0.45,x=r*Math.cos(ph),z=sg*r*Math.sin(ph);
+          if(Math.abs(j-N/2)<1)continue;
+          cyl(g,0.38,0.44,H-0.9,mBl,x,Hp+0.45+(H-0.9)/2,z,12);box(g,1.1,0.4,1.1,mBl,x,Hp+H-0.3,z);box(g,1.2,0.45,1.2,mBl,x,Hp+0.22,z);
+        }
+        /* las puntas de la columnata: un pilar más grueso */
+        for(const sx of[-1,1]){boxM(g,2.6,H+0.8,2.6,mLad,sx*Rc,Hp+(H+0.8)/2,0);box(g,3,0.5,3,mBl,sx*Rc,Hp+H+1.0,0);}
+        /* el templete redondo del medio */
+        {const tz=sg*(Rc-1.2),rT=4.3;
+          cyl(g,rT+0.9,rT+1.1,1.3,mBl,0,Hp+0.65,tz,32);
+          for(let k=0;k<10;k++){const a_=k/10*Math.PI*2;cyl(g,0.34,0.4,7.4,mBl,rT*Math.cos(a_),Hp+1.3+3.7,tz+rT*Math.sin(a_),12);}
+          cyl(g,rT+0.6,rT+0.6,1.4,mBl,0,Hp+9.4,tz,32);cyl(g,rT+1.0,rT+0.8,0.45,mBl,0,Hp+10.3,tz,32);
+          const cup=new T3.Mesh(new T3.SphereGeometry(rT+0.9,28,10,0,Math.PI*2,0,Math.PI/2),mBl);cup.scale.set(1,0.26,1);cup.position.set(0,Hp+10.5,tz);g.add(cup);
+          cyl(g,rT-0.6,rT-0.6,0.2,M('#8d8a83'),0,Hp+8.6,tz,24);}
+        /* la loba con los mellizos sobre el pedestal */
+        {const pz=sg*(Rc-9.6),mBr=new T3.MeshStandardMaterial({color:CL('#4a3a2a'),roughness:0.42,metalness:0.65});
+          boxM(g,4.4,0.5,2.8,mBl,0,Hp+0.25,pz);box(g,3.8,2.6,2.2,M('#d6d2c8'),0,Hp+1.8,pz);box(g,4.2,0.35,2.6,mBl,0,Hp+3.25,pz);
+          const s=new T3.Group();s.position.set(0,Hp+3.42,pz);s.scale.setScalar(0.8);s.rotation.y=sg>0?0:Math.PI;
+          const el=(rx,ry,rz,x,y,z,rzR)=>{const e=new T3.Mesh(new T3.SphereGeometry(1,14,10),mBr);e.scale.set(rx,ry,rz);e.position.set(x,y,z);if(rzR)e.rotation.z=rzR;s.add(e);return e;};
+          const pa=(A,B,r1,r2)=>palo(s,A,B,r1,r2,mBr,8);
+          el(2.0,0.78,0.72,-0.2,3.0,0);el(1.0,1.05,0.8,1.5,3.15,0);el(0.62,0.62,0.6,-1.9,2.95,0);
+          el(0.7,0.5,0.5,2.35,3.75,-0.15,0.7);
+          const cab=new T3.Group();cab.position.set(2.75,4.25,-0.45);cab.rotation.y=0.75;s.add(cab);
+          {const e=new T3.Mesh(new T3.SphereGeometry(0.62,14,10),mBr);e.scale.set(1,0.85,0.85);cab.add(e);
+            const ho=new T3.Mesh(new T3.CylinderGeometry(0.18,0.36,1.1,10),mBr);ho.rotation.z=-Math.PI/2;ho.position.set(0.82,-0.12,0);cab.add(ho);
+            const bo=new T3.Mesh(new T3.BoxGeometry(0.7,0.12,0.42),mBr);bo.position.set(0.72,-0.38,0);bo.rotation.z=-0.2;cab.add(bo);
+            for(const z of[-0.3,0.3]){const o=new T3.Mesh(new T3.ConeGeometry(0.17,0.6,6),mBr);o.position.set(-0.15,0.62,z);o.rotation.z=0.25;cab.add(o);}
+            cab.updateMatrix();cab.children.slice().forEach(c=>{c.updateMatrix();c.geometry.applyMatrix4(new T3.Matrix4().multiplyMatrices(cab.matrix,c.matrix));c.position.set(0,0,0);c.rotation.set(0,0,0);c.scale.set(1,1,1);s.add(c);});s.remove(cab);}
+          for(const z of[-0.42,0.42]){pa([1.7,2.6,z],[1.75,0.2,z*1.05],0.2,0.15);el(0.32,0.14,0.2,1.85,0.12,z*1.05);
+            pa([-1.7,2.8,z],[-1.55,1.4,z],0.26,0.18);pa([-1.55,1.4,z],[-1.95,0.2,z],0.17,0.14);el(0.32,0.14,0.2,-1.85,0.12,z);}
+          pa([-2.4,3.1,0],[-2.95,2.0,0.1],0.17,0.13);pa([-2.95,2.0,0.1],[-2.9,0.7,0.15],0.13,0.09);
+          for(let k=0;k<4;k++)el(0.13,0.16,0.13,-0.6+k*0.45,2.18,(k&1)?0.22:-0.22);
+          /* los mellizos debajo: uno sentado y otro arrodillado, mirando para arriba */
+          for(const [x,z,al] of[[0.35,0.48,1],[-0.55,-0.42,0.85]]){el(0.36*al+0.06,0.46*al,0.32,x,0.5*al+0.05,z);const hd=el(0.27,0.27,0.27,x+0.12,1.05*al+0.15,z);
+            pa([x,0.75*al,z],[x+0.25,1.55*al,z*0.6],0.08,0.07);el(0.3,0.16,0.18,x+0.2,0.12,z);}
+          s.updateMatrix();s.children.slice().forEach(c=>{c.updateMatrix();c.geometry.applyMatrix4(new T3.Matrix4().multiplyMatrices(s.matrix,c.matrix));c.position.set(0,0,0);c.rotation.set(0,0,0);c.quaternion.identity();c.scale.set(1,1,1);g.add(c);});
+          cartel(g,'LA LOBA','#3b3f45','#f2f2f2',2.6,0.55,0,Hp+1.8,pz-sg*1.12,hacia(sg));}
+        /* la reja negra con postes y las cadenas colgando adelante */
+        {const zf=-sg*6.6,u0=-(Rc+5),u1=Rc+5,mR=M('#17181a'),mCad=M('#6a6b6d'),paso=3.2;
+          for(let x=u0;x<=u1+0.01;x+=0.36)box(g,0.07,2.6,0.07,mR,x,1.35,zf);
+          for(const y of[0.15,2.55])box(g,u1-u0,0.12,0.1,mR,(u0+u1)/2,y,zf);
+          for(let x=u0;x<=u1+0.01;x+=0.36)box(g,0.12,0.18,0.12,mR,x,2.72,zf);
+          for(let x=u0;x<=u1+0.01;x+=paso){box(g,0.26,3.3,0.26,mR,x,1.65,zf);bola(g,0.2,mR,x,3.45,zf,0,0,0,6);box(g,0.5,0.35,0.5,M('#c7a24a'),x,0.18,zf-sg*0.9);
+            if(x+paso<=u1+0.01){const zc=zf-sg*0.9;let prev=[x,1.25,zc];for(let q=1;q<=4;q++){const t=q/4,xx=x+paso*t,yy=1.25-0.5*Math.sin(Math.PI*t);const cur=[xx,yy,zc];palo(g,prev,cur,0.05,0.05,mCad,5);prev=cur;}}}
+          for(let x=u0;x<=u1+0.01;x+=paso)box(g,0.16,1.4,0.16,mR,x,0.7,zf-sg*0.9);}
+        /* los cipreses y unos árboles atrás de la columnata */
+        for(let k=0;k<11;k++){const ph=(0.08+0.84*k/10)*Math.PI,r=Rc+5+(k%3)*2.6;cipres(g,r*Math.cos(ph),sg*r*Math.sin(ph),17+(k*7)%6);}
+        for(const [x,v] of[[-30,8],[30,7],[-26,26],[27,25]])hojas(g,x,sg*v,13,4.6,'#3f7d34');
+        terminar(g);
+      }
+      else if(L.t==='sede'){
+        /* la sede del Club Cipolletti: planta baja vidriada con el bar (sillas rojas adentro), la franja gris oscura con el nombre,
+           el piso de arriba blanco con ventanas, y en la vereda las vallas verdes con canteros y unas mesas afuera */
+        const g=grupo(L.i,L.sg,LB+L.d),f=-L.sg,AN=46,FO=20,zF=f*FO/2,ry=hacia(L.sg);
+        const tFa=lz(2048,112,(c,W_,H)=>{c.fillStyle='#2b2e33';c.fillRect(0,0,W_,H);c.fillStyle='rgba(255,255,255,.08)';c.fillRect(0,0,W_,4);
+          c.fillStyle='#ffffff';c.textAlign='center';c.textBaseline='middle';c.font='800 '+Math.round(H*0.66)+'px '+FUENTE;try{c.letterSpacing='4px';}catch(e){}
+          c.fillText('CLUB CIPOLLETTI',W_*0.6,H*0.54);});
+        const tVi=lz(1024,112,(c,W_,H)=>{const gr=c.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#2a3036');gr.addColorStop(1,'#1c2024');c.fillStyle=gr;c.fillRect(0,0,W_,H);
+          for(let x=6;x<W_;x+=18){c.fillStyle='#f3efe6';c.fillRect(x,8,3,3);}
+          for(const [y,e] of[[0.58,0.7],[0.74,1]])for(let x=W_*0.23;x<W_-14;x+=34*e){c.fillStyle='#e9e3d6';c.fillRect(x,H*y,16*e,4*e);c.fillStyle='#c4232c';c.fillRect(x-7*e,H*y+2*e,6*e,11*e);c.fillRect(x+17*e,H*y+2*e,6*e,11*e);c.fillStyle='#2a2a2a';c.fillRect(x+7*e,H*y+4*e,2,9*e);}
+          c.fillStyle='rgba(255,255,255,.07)';for(let k=0;k<7;k++){const x=k*160+40;c.beginPath();c.moveTo(x,0);c.lineTo(x+60,0);c.lineTo(x+10,H);c.lineTo(x-50,H);c.fill();}
+          c.fillStyle='#2f3337';c.fillRect(0,0,W_*0.2,H);c.fillStyle='#e8e8e8';c.fillRect(W_*0.07,H*0.25,W_*0.06,H*0.42);
+          c.fillStyle='#121417';for(let x=W_*0.2;x<W_;x+=72)c.fillRect(x,0,5,H);c.fillRect(0,H*0.18,W_,4);c.fillRect(0,H-5,W_,5);});
+        const tAr=lz(1024,128,(c,W_,H)=>{c.fillStyle='#ebe9e4';c.fillRect(0,0,W_,H);c.fillStyle='rgba(0,0,0,.08)';c.fillRect(0,H-6,W_,6);
+          for(let k=0;k<8;k++){const x=30+k*126;c.fillStyle='#f8f8f6';c.fillRect(x-5,26,86,60);c.fillStyle='#39424a';c.fillRect(x,31,76,50);c.fillStyle='rgba(255,255,255,.14)';c.fillRect(x+4,34,20,44);
+            if(k%3===1){c.fillStyle='#cfd2d4';c.fillRect(x+16,92,40,20);}}});
+        const ed=new T3.Mesh(new T3.BoxGeometry(AN,13,FO),mBlanco);ed.position.y=6.5;g.add(ed);
+        box(g,AN+0.4,0.5,FO+0.4,M('#cfcdc7'),0,13.2,0);
+        plano(g,AN,5,MT(tVi),0,2.55,zF+f*0.04,ry);
+        boxM(g,AN+0.6,2.4,1.2,M('#2b2e33'),0,6.2,zF+f*0.5);plano(g,AN+0.6,2.4,MB(tFa),0,6.2,zF+f*1.12,ry);
+        plano(g,AN,5.6,MT(tAr),0,10.0,zF+f*0.04,ry);
+        /* un bloque más alto atrás, como el edificio de al lado */
+        box(g,14,22,14,M('#dedcd6'),-AN/2+6,11,-f*3);
+        for(let k=0;k<6;k++)box(g,10,0.25,1.2,M('#c9c6bf'),-AN/2+6,7+k*2.6,-f*3+f*7.4);
+        /* vereda, vallas verdes con canteros y la terraza con sillas rojas */
+        piso(g,AN+4,10,M('#bdb9b0'),0,zF+f*5,0.08);
+        const mVe=M('#2f8a58');
+        for(const x0 of[-12,-4.4,3.2,10.8,18.4]){box(g,7,1.0,0.1,mVe,x0,0.9,zF+f*4.6);box(g,7,0.12,0.14,mVe,x0,1.4,zF+f*4.6);for(const dx of[-3.4,3.4])box(g,0.14,1.4,0.14,mVe,x0+dx,0.7,zF+f*4.6);
+          box(g,6.4,0.55,0.8,M('#2a6e46'),x0,0.36,zF+f*5.2);for(let k=0;k<4;k++)bola(g,0.45,M('#3f8a3a'),x0-2.4+k*1.6,0.85,zF+f*5.2,0,0,0,6);}
+        for(let k=0;k<5;k++){const x=-8+k*6.4;box(g,1.4,0.1,1.4,mBlanco,x,1.25,zF+f*2.4);cyl(g,0.08,0.08,1.2,mNegro,x,0.65,zF+f*2.4,5);
+          for(const dx of[-1.05,1.05]){box(g,0.7,0.1,0.7,M('#c4232c'),x+dx,0.75,zF+f*2.4);box(g,0.7,0.8,0.1,M('#c4232c'),x+dx,1.15,zF+f*2.4-f*0.34);}}
+        terminar(g);
+      }
+      else if(L.t==='ilnero'){
+        /* Il Nero Pasta: la esquina blanca con la ochava, las pilastras azules, el cartel negro sobre blanco, la puerta de vidrio,
+           las ventanas con rejas blancas, la marquesina, los globos azules y blancos en la puerta y las baldosas amarillas */
+        const i=((L.i%n)+n)%n,sg=L.sg,gp=4.5,li=k=>(sg<0?(DD.LBi||DD.LBa):(DD.LBd||DD.LBa))[((k%n)+n)%n];
+        const i1=(i-12+n)%n,i2=(i+12)%n,t1=[T.tx[i1],T.ty[i1]],t2=[T.tx[i2],T.ty[i2]];
+        const Q1=pt(T,i1,sg*(li(i1)+gp)),Q2=pt(T,i2,sg*(DD.LBa[i2]+gp));
+        const det=t1[0]*(-t2[1])-t1[1]*(-t2[0]);if(Math.abs(det)<0.2)return;
+        const s_=((Q2[0]-Q1[0])*(-t2[1])-(Q2[1]-Q1[1])*(-t2[0]))/det,Pc=[Q1[0]+t1[0]*s_,Q1[1]+t1[1]*s_];
+        let e1=[-t1[0],-t1[1]],e2=t2,DA=20,DB=17;
+        let phi=Math.atan2(-e1[1],e1[0]);if(Math.sin(phi)*e2[0]+Math.cos(phi)*e2[1]<0){const tmp=e1;e1=e2;e2=tmp;const t_=DA;DA=DB;DB=t_;phi=Math.atan2(-e1[1],e1[0]);}
+        const g=new T3.Group();g.position.set(Pc[0],0,Pc[1]);g.rotation.y=phi;G.add(g);
+        const ch=5.66,H1=6.6,H2=11.5,PXM=48;
+        const foot=[[ch,0],[DA,0],[DA,DB],[0,DB],[0,ch]];
+        const ofs=(pp,d)=>{const m=pp.length,out=[];for(let k=0;k<m;k++){const a=pp[(k-1+m)%m],b=pp[k],c=pp[(k+1)%m];
+          const n1=nrm2([b[1]-a[1],-(b[0]-a[0])]),n2=nrm2([c[1]-b[1],-(c[0]-b[0])]),bis=nrm2([n1[0]+n2[0],n1[1]+n2[1]]),cs=bis[0]*n1[0]+bis[1]*n1[1];out.push([b[0]+bis[0]*d/cs,b[1]+bis[1]*d/cs]);}return out;};
+        function nrm2(v){const l=Math.hypot(v[0],v[1])||1;return[v[0]/l,v[1]/l];}
+        /* el sentido del contorno: que las normales apunten para afuera */
+        let ar_=0;for(let k=0;k<foot.length;k++){const a=foot[k],b=foot[(k+1)%foot.length];ar_+=a[0]*b[1]-b[0]*a[1];}
+        const sgO=ar_>0?1:-1;
+        const losa=(pp,y0,h,m)=>{const s=new T3.Shape();pp.forEach((q,k)=>k?s.lineTo(q[0],-q[1]):s.moveTo(q[0],-q[1]));const geo=new T3.ExtrudeGeometry(s,{depth:h,bevelEnabled:false});geo.rotateX(-Math.PI/2);
+          const uv=geo.attributes.uv;for(let k=0;k<uv.count;k++)uv.setXY(k,uv.getX(k)*0.5,uv.getY(k)*0.5);return malla(g,geo,m,0,y0,0);};
+        losa(foot,0,H2,mBlanco);
+        losa(ofs(foot,0.7*sgO),H1,0.35,M('#f8f8f6'));losa(ofs(foot,0.25*sgO),H2,0.55,M('#d9d9d6'));
+        losa(ofs(foot,5.5*sgO),0,0.12,MAT.vereda);
+        /* las fachadas pintadas */
+        const nero=(lm,ochava)=>lz(Math.round(lm*PXM),Math.round(H2*PXM),(c,W_,H)=>{
+          const m=PXM,yG=v=>H-v*m;c.fillStyle='#f4f4f2';c.fillRect(0,0,W_,H);c.fillStyle='rgba(0,0,0,.05)';c.fillRect(0,yG(H1+0.2),W_,0.6*m);
+          c.fillStyle='#8e8f8c';c.fillRect(0,yG(0.3),W_,0.3*m);
+          const reja=(x,y0,ww,hh)=>{c.fillStyle='#4f6470';c.fillRect(x,yG(y0+hh),ww,hh*m);const gr=c.createLinearGradient(x,0,x+ww,0);gr.addColorStop(0,'rgba(255,255,255,.18)');gr.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=gr;c.fillRect(x,yG(y0+hh),ww,hh*m);
+            c.fillStyle='#ffffff';for(let q=x+3;q<x+ww;q+=8)c.fillRect(q,yG(y0+hh),2.4,hh*m);for(let k=0;k<=4;k++)c.fillRect(x,yG(y0+hh*k/4)-1.5,ww,3);c.lineWidth=5;c.strokeStyle='#ffffff';c.strokeRect(x,yG(y0+hh),ww,hh*m);};
+          const ventana=(x,y0,ww,hh)=>{c.fillStyle='#ffffff';c.fillRect(x-5,yG(y0+hh)-5,ww+10,hh*m+10);const gr=c.createLinearGradient(x,yG(y0+hh),x+ww,yG(y0));gr.addColorStop(0,'#a9bcc7');gr.addColorStop(1,'#5f7682');c.fillStyle=gr;c.fillRect(x,yG(y0+hh),ww,hh*m);
+            c.fillStyle='#ffffff';c.fillRect(x+ww/2-2,yG(y0+hh),4,hh*m);for(let q=x+16;q<x+ww-6;q+=17)c.fillRect(q,yG(y0+hh),2,hh*m);c.fillRect(x,yG(y0+hh*0.5)-1.5,ww,3);c.fillStyle='#d9d9d6';c.fillRect(x-8,yG(y0)-2,ww+16,7);};
+          if(ochava){
+            c.fillStyle='#2b7bc6';c.fillRect(0,yG(H1),0.8*m,H1*m);c.fillRect(W_-0.8*m,yG(H1),0.8*m,H1*m);
+            c.fillStyle='#111111';c.textAlign='center';c.textBaseline='alphabetic';c.font='700 '+Math.round(1.05*m)+'px "Century Gothic","Futura","Avenir",'+FUENTE;
+            try{c.letterSpacing='3px';}catch(e){}c.fillText('IL NERO',W_/2,yG(5.0));c.font='600 '+Math.round(0.34*m)+'px '+FUENTE;c.fillText('PASTA',W_/2,yG(4.55));try{c.letterSpacing='0px';}catch(e){}
+            const dw=3.3*m,dx=(W_-dw)/2;c.fillStyle='#3a3d40';c.fillRect(dx-6,yG(4.15),dw+12,4.15*m);
+            const gr=c.createLinearGradient(dx,yG(4),dx+dw,H);gr.addColorStop(0,'#c9d7de');gr.addColorStop(0.5,'#8ea3ae');gr.addColorStop(1,'#b7c7cf');c.fillStyle=gr;c.fillRect(dx,yG(3.95),dw,3.95*m);
+            c.fillStyle='#3a3d40';c.fillRect(W_/2-3,yG(3.95),6,3.95*m);c.fillRect(dx,yG(3.95),dw,6);c.fillStyle='#d0d0d0';c.fillRect(W_/2-14,yG(2.3),5,0.8*m);c.fillRect(W_/2+9,yG(2.3),5,0.8*m);
+            ventana(W_/2-1.2*m,8.0,2.4*m,1.8);
+            c.fillStyle='#d4d6d7';c.fillRect(W_/2+1.5*m,yG(8.3),1.0*m,0.6*m);
+          }else{
+            c.fillStyle='#2b7bc6';c.fillRect(0,yG(H1),0.7*m,H1*m);c.fillRect(W_-0.7*m,yG(H1),0.7*m,H1*m);
+            const nV=Math.max(1,Math.floor((lm-1.6)/4.4)),paso=(lm-1.4)/nV;
+            for(let k=0;k<nV;k++){const x=(0.7+paso*k+(paso-3)/2)*m;reja(x,1.0,3*m,3.6);ventana(x+0.4*m,7.9,2.2*m,2.0);}
+          }});
+        const fA=nero(DA-ch,false),fB=nero(DB-ch,false),fO=nero(8,true);
+        plano(g,DA-ch,H2,MT(fA),(ch+DA)/2,H2/2,-0.04,Math.PI);
+        plano(g,DB-ch,H2,MT(fB),-0.04,H2/2,(ch+DB)/2,-Math.PI/2);
+        plano(g,8,H2,MT(fO),ch/2-0.03,H2/2,ch/2-0.03,-3*Math.PI/4);
+        /* globos en la puerta, macetas y las baldosas amarillas de las rampas */
+        const ox=ch/2,oz=ch/2,nx=-Math.SQRT1_2,nz=-Math.SQRT1_2,tx_=Math.SQRT1_2,tz_=-Math.SQRT1_2;
+        const CG=['#1e5aa8','#4a90d9','#f4f4f4','#2f73c4'];
+        {const bx=ox+tx_*2.4+nx*0.9,bz=oz+tz_*2.4+nz*0.9;
+          for(let k=0;k<22;k++){const y=0.45+k*0.17,a_=k*2.1,r=0.32;bola(g,0.33,M(CG[k%4]),bx+Math.cos(a_)*r,y,bz+Math.sin(a_)*r,0,0,0,8);}
+          for(let k=0;k<9;k++){const a_=k*0.7;bola(g,0.42,M(CG[(k+2)%4]),bx+Math.cos(a_)*0.7,4.2+Math.sin(k*1.7)*0.4,bz+Math.sin(a_)*0.7,0,0,0,8);}}
+        for(const s of[-2.6,2.6]){const x=ox+tx_*s+nx*0.8,z=oz+tz_*s+nz*0.8;cyl(g,0.38,0.3,0.7,mNegro,x,0.35,z,10);bola(g,0.55,M('#3c7a34'),x,1.3,z,1,1.4,1,8);}
+        box(g,1.6,0.05,1.6,M('#e8c21f'),ch+1.4,0.15,-3.6);box(g,1.6,0.05,1.6,M('#e8c21f'),-3.6,0.15,ch+1.4);
+        terminar(g);
       }
     });
   }
